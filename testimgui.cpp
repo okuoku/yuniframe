@@ -10,7 +10,7 @@ bool ImGui_ImplYfrm_ProcessEvent0(const int32_t* events, size_t start, size_t en
 bool ImGui_ImplYfrm_Init();
 
 
-int
+extern "C" int
 YFRM_ENTRYPOINT(int ac, char** av){
     int w,h;
     int buf[128];
