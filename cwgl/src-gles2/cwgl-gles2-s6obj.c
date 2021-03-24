@@ -276,7 +276,10 @@ cwgl_getRenderbufferParameter_i1(cwgl_ctx_t* ctx, cwgl_enum_t target,
 CWGL_API int 
 cwgl_isTexture(cwgl_ctx_t* ctx, cwgl_Texture_t* texture){
     int r;
+    GLuint name;
     CTX_ENTER(ctx);
+    name = CTX_GETNAME(ctx, texture);
+    r = glIsTexture(name);
     CTX_LEAVE(ctx);
     return r;
 }
