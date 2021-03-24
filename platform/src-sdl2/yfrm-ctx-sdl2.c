@@ -92,15 +92,18 @@ ctx_create_DX11(int32_t width, int32_t height, int32_t reserved,
     void* dev;
     cwgl_ctx_t* r;
     SDL_SysWMinfo info;
-    HWND hWnd;
+    void* pfwnd;
     void* pf;
 
     if(! wnd){
         SDL_Window* window;
         /* Init SDL and Create a window */
-        if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_GAMECONTROLLER|SDL_INIT_AUDIO|SDL_INIT_TIMER)){
+        if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_GAMECONTROLLER|SDL_INIT_TIMER)){
             printf("SDL Init failed.\n");
             return NULL;
+        }
+        if(SDL_InitSubSystem(SDL_INIT_AUDIO)){
+            printf("WARNING: SDL Audio Init failed.\n");
         }
 
         if(!(window = SDL_CreateWindow("cwgl",
@@ -118,9 +121,13 @@ ctx_create_DX11(int32_t width, int32_t height, int32_t reserved,
 
     SDL_VERSION(&info.version);
     SDL_GetWindowWMInfo(wnd, &info);
-    hWnd = (HWND)(info.info.win.window);
+#ifndef YFRM_USE_UWP
+    pfwnd = (HWND)(info.info.win.window);
+#else
+    pfwnd = info.info.winrt.window;
+#endif
 
-    pf = yfrm_cwgl_pfctx_create_angle(dev, hWnd);
+    pf = yfrm_cwgl_pfctx_create_angle(dev, pfwnd);
 
     r = malloc(sizeof(cwgl_ctx_t));
     r->wnd = wnd;
