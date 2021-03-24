@@ -10,6 +10,7 @@
 
 void* yfrm_cwgl_pfctx_create_angle(void* pfdev, void* pfwnd);
 void yfrm_cwgl_pfctx_flip_angle(void* pf);
+void* yfrm_gpu_initpfdev_d3d11(void);
 
 /* Globals */
 static SDL_Window* wnd;
@@ -88,8 +89,7 @@ ctx_create_EGL(int32_t width, int32_t height, int32_t reserved,
 static cwgl_ctx_t*
 ctx_create_DX11(int32_t width, int32_t height, int32_t reserved,
                      int32_t flags){
-    ID3D11Device* dev;
-    SDL_Renderer* rnd;
+    void* dev;
     cwgl_ctx_t* r;
     SDL_SysWMinfo info;
     HWND hWnd;
@@ -114,10 +114,7 @@ ctx_create_DX11(int32_t width, int32_t height, int32_t reserved,
         wnd = window;
     }
 
-    SDL_SetHint(SDL_HINT_RENDER_DRIVER, "direct3d11");
-    SDL_SetHint(SDL_HINT_RENDER_DIRECT3D11_DEBUG, "1");
-    rnd = SDL_CreateRenderer(wnd, -1, SDL_RENDERER_ACCELERATED);
-    dev = SDL_RenderGetD3D11Device(rnd);
+    dev = yfrm_gpu_initpfdev_d3d11();
 
     SDL_VERSION(&info.version);
     SDL_GetWindowWMInfo(wnd, &info);
