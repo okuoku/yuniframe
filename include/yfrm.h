@@ -48,6 +48,8 @@ YFRM_API void yfrm_audio_pause0(void);
 struct yfrm_file_s;
 typedef struct yfrm_file_s yfrm_file_t;
 
+YFRM_API void yfrm_file_set_prefix0(const char* prefix);
+
 /* Open / Close */
 YFRM_API int yfrm_file_open_ro(const char* path, yfrm_file_t** file);
 YFRM_API int yfrm_file_open_rw(const char* path, yfrm_file_t** file);

@@ -9,9 +9,19 @@
 namespace fs = std::filesystem;
 
 struct yfrm_file_s {
-    fs::path* pth;
+    fs::path* pth; // may be prefixed
     std::fstream* strm;
 };
+
+static fs::path* prefix = nullptr;
+
+YFRM_API void
+yfrm_file_set_prefix0(const char* px){
+    if(prefix){
+        delete prefix;
+    }
+    prefix = new fs::path(fs::u8path(px));
+}
 
 /* Open / Close */
 static int
@@ -20,9 +30,15 @@ file_open_gen(const char* path, yfrm_file_t** file,
     try {
         // FIXME: should we try-catch this? maybe.
         auto pth = fs::u8path(path);
-        auto strm = new std::fstream(pth, mode | std::ios_base::binary);
+        fs::path p;
+        if(prefix){
+            p = *prefix / pth;
+        }else{
+            p = pth;
+        }
+        auto strm = new std::fstream(p, mode | std::ios_base::binary);
         auto out = new yfrm_file_t();
-        out->pth = new fs::path(pth);
+        out->pth = new fs::path(p);
         out->strm = strm;
 
         *file = out;
@@ -101,7 +117,14 @@ file_info_gen(const std::filesystem::path& path,
 YFRM_API int
 yfrm_file_pathinfo(const char* path, uint64_t* flags, uint64_t* size,
                    uint64_t* time_create, uint64_t* time_mod){
-    return file_info_gen(fs::u8path(path), flags, size, time_create, time_mod);
+    auto pth = fs::u8path(path);
+    fs::path p;
+    if(prefix){
+        p = *prefix / pth;
+    }else{
+        p = pth;
+    }
+    return file_info_gen(p, flags, size, time_create, time_mod);
 }
 
 YFRM_API int
