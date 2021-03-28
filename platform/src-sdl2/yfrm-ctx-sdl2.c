@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include "SDL.h"
 
-#ifdef YFRM_CWGL_USE_DX11
+#ifdef YFRM_CWGL_USE_ANGLE
 #include "SDL_syswm.h"
 #endif
 
@@ -85,10 +85,10 @@ ctx_create_EGL(int32_t width, int32_t height, int32_t reserved,
     return r;
 }
 
-#ifdef YFRM_CWGL_USE_DX11
+#ifdef YFRM_CWGL_USE_ANGLE
 static cwgl_ctx_t*
-ctx_create_DX11(int32_t width, int32_t height, int32_t reserved,
-                     int32_t flags){
+ctx_create_ANGLE(int32_t width, int32_t height, int32_t reserved,
+                 int32_t flags){
     void* dev;
     cwgl_ctx_t* r;
     SDL_SysWMinfo info;
@@ -117,7 +117,11 @@ ctx_create_DX11(int32_t width, int32_t height, int32_t reserved,
         wnd = window;
     }
 
+#ifdef YFRM_CWGL_USE_VULKAN
+    dev = NULL;
+#else
     dev = yfrm_gpu_initpfdev_d3d11();
+#endif
 
     SDL_VERSION(&info.version);
     SDL_GetWindowWMInfo(wnd, &info);
@@ -141,10 +145,10 @@ ctx_create_DX11(int32_t width, int32_t height, int32_t reserved,
 YFRM_API cwgl_ctx_t*
 yfrm_cwgl_ctx_create(int32_t width, int32_t height, int32_t reserved,
                      int32_t flags){
-#ifndef YFRM_CWGL_USE_DX11
+#ifndef YFRM_CWGL_USE_ANGLE
     return ctx_create_EGL(width, height, reserved, flags);
 #else
-    return ctx_create_DX11(width, height, reserved, flags);
+    return ctx_create_ANGLE(width, height, reserved, flags);
 #endif
 }
 
@@ -168,7 +172,7 @@ YFRM_API void
 yfrm_frame_end0(void* c){
     cwgl_ctx_t* ctx = (cwgl_ctx_t*)c;
     cur = NULL;
-#ifndef YFRM_CWGL_USE_DX11
+#ifndef YFRM_CWGL_USE_ANGLE
     SDL_GL_SwapWindow(ctx->wnd);
 #else
     yfrm_cwgl_pfctx_flip_angle(ctx->pf);

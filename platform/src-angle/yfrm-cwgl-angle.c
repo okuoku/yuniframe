@@ -24,9 +24,14 @@ yfrm_cwgl_pfctx_create_angle(void* pfdev, void* pfwnd){
     pfctx_angle_t* r;
 
     /* ANGLE EGL+GLES context creation */
+#ifdef YFRM_CWGL_USE_VULKAN
+    (void)pfdev;
+    egl_disp = eglGetDisplay((EGLNativeDisplayType)EGL_DEFAULT_DISPLAY);
+#else
     egl_dev = eglCreateDeviceANGLE(EGL_D3D11_DEVICE_ANGLE, pfdev, NULL);
     egl_disp = eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT,
                                         egl_dev, NULL);
+#endif
     eglInitialize(egl_disp, NULL, NULL);
     const EGLint attrs[] = {
         EGL_DEPTH_SIZE, 16,
