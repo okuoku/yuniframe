@@ -28,7 +28,6 @@ static int
 file_open_gen(const char* path, yfrm_file_t** file, 
               std::ios_base::openmode mode){
     try {
-        // FIXME: should we try-catch this? maybe.
         auto pth = fs::u8path(path);
         fs::path p;
         if(prefix){
@@ -37,6 +36,10 @@ file_open_gen(const char* path, yfrm_file_t** file,
             p = pth;
         }
         auto strm = new std::fstream(p, mode | std::ios_base::binary);
+        if(! strm->is_open()){
+            delete strm;
+            return -1;
+        }
         auto out = new yfrm_file_t();
         out->pth = new fs::path(p);
         out->strm = strm;
