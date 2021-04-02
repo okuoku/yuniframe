@@ -65,8 +65,26 @@ YFRM_API int
 yfrm_file_info(yfrm_file_t* file, uint64_t* flags,
                uint64_t* size, uint64_t* time_create,
                uint64_t* time_mod){
-    UNSUPPORTED();
-    return -1;
+    // FIXME: Tentative filesize-only implementation
+    int64_t siz;
+    siz = SDL_RWseek(file->rw, 0, RW_SEEK_END);
+    if(siz < 0){
+        return -1;
+    }else{
+        if(size){
+            *size = siz;
+        }
+        if(flags){
+            *flags = 0;
+        }
+        if(time_create){
+            *time_create = 0;
+        }
+        if(time_mod){
+            *time_mod = 0;
+        }
+        return 0;
+    }
 }
 
 YFRM_API int
