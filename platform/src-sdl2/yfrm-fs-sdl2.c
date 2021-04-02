@@ -149,11 +149,15 @@ yfrm_file_read(yfrm_file_t* file, uint64_t offset, char* buf, uint64_t buflen,
         if(SDL_GetError()){
             return 0;
         }else{
-            *readcnt = cnt;
+            if(readcnt){
+                *readcnt = cnt;
+            }
             return 0;
         }
     }else{
-        *readcnt = cnt;
+        if(readcnt){
+            *readcnt = cnt;
+        }
         return 0;
     }
 }
