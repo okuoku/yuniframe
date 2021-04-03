@@ -1,3 +1,4 @@
+#include <string.h>
 #include "cwgl-gles2-priv.h"
 
 // 6.1.1 Simple Queries
