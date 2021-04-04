@@ -94,6 +94,10 @@ ctx_create_ANGLE(int32_t width, int32_t height, int32_t reserved,
     SDL_SysWMinfo info;
     void* pfwnd;
     void* pf;
+    uint32_t wndflags = 0;
+#if defined(SDL_VIDEO_DRIVER_COCOA)
+    wndflags |= SDL_WINDOW_METAL;
+#endif
 
     if(! wnd){
         SDL_Window* window;
@@ -109,7 +113,7 @@ ctx_create_ANGLE(int32_t width, int32_t height, int32_t reserved,
         if(!(window = SDL_CreateWindow("cwgl",
                                        SDL_WINDOWPOS_UNDEFINED,
                                        SDL_WINDOWPOS_UNDEFINED,
-                                       width, height, 0))){
+                                       width, height, wndflags))){
             SDL_Quit();
             printf("SDL CreateWindow failed.\n");
             return NULL;
@@ -117,18 +121,23 @@ ctx_create_ANGLE(int32_t width, int32_t height, int32_t reserved,
         wnd = window;
     }
 
-#ifdef YFRM_CWGL_USE_VULKAN
-    dev = NULL;
-#else
+#ifdef YFRM_CWGL_USE_DX11
     dev = yfrm_gpu_initpfdev_d3d11();
+#else
+    dev = NULL;
 #endif
 
     SDL_VERSION(&info.version);
     SDL_GetWindowWMInfo(wnd, &info);
-#ifndef YFRM_USE_UWP
-    pfwnd = (HWND)(info.info.win.window);
-#else
+#ifdef YFRM_USE_UWP
     pfwnd = info.info.winrt.window;
+#elif defined(_WIN32)
+    pfwnd = (HWND)(info.info.win.window);
+#elif defined(SDL_VIDEO_DRIVER_COCOA)
+    // pfwnd is CALayer 
+    pfwnd = SDL_Metal_GetLayer(SDL_Metal_CreateView(wnd));
+#else
+    pfwnd = NULL; //FIXME
 #endif
 
     pf = yfrm_cwgl_pfctx_create_angle(dev, pfwnd);
