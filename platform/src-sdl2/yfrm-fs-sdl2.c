@@ -144,7 +144,7 @@ yfrm_file_read(yfrm_file_t* file, uint64_t offset, char* buf, uint64_t buflen,
         return -1;
     }
     SDL_ClearError();
-    cnt = SDL_RWread(file->rw, buf, buflen, buflen);
+    cnt = SDL_RWread(file->rw, buf, 1, buflen);
     if(cnt == 0){
         if(SDL_GetError()){
             return 0;
