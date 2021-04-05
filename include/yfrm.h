@@ -49,6 +49,7 @@ struct yfrm_file_s;
 typedef struct yfrm_file_s yfrm_file_t;
 
 YFRM_API void yfrm_file_set_prefix0(const char* prefix);
+YFRM_API void yfrm_file_configure0(const char* slotname);
 
 /* Open / Close */
 YFRM_API int yfrm_file_open_ro(const char* path, yfrm_file_t** file);
