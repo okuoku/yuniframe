@@ -96,7 +96,7 @@ ctx_create_ANGLE(int32_t width, int32_t height, int32_t reserved,
     void* pf;
     uint32_t wndflags = 0;
 #if defined(SDL_VIDEO_DRIVER_COCOA) || defined(SDL_VIDEO_DRIVER_UIKIT)
-    wndflags |= SDL_WINDOW_METAL;
+    wndflags |= SDL_WINDOW_METAL|SDL_WINDOW_ALLOW_HIGHDPI;
 #endif
 
     if(! wnd){
