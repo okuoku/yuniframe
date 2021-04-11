@@ -95,7 +95,7 @@ ctx_create_ANGLE(int32_t width, int32_t height, int32_t reserved,
     void* pfwnd;
     void* pf;
     uint32_t wndflags = 0;
-#if defined(SDL_VIDEO_DRIVER_COCOA)
+#if defined(SDL_VIDEO_DRIVER_COCOA) || defined(SDL_VIDEO_DRIVER_UIKIT)
     wndflags |= SDL_WINDOW_METAL;
 #endif
 
@@ -133,7 +133,7 @@ ctx_create_ANGLE(int32_t width, int32_t height, int32_t reserved,
     pfwnd = info.info.winrt.window;
 #elif defined(_WIN32)
     pfwnd = (HWND)(info.info.win.window);
-#elif defined(SDL_VIDEO_DRIVER_COCOA)
+#elif defined(SDL_VIDEO_DRIVER_COCOA) || defined(SDL_VIDEO_DRIVER_UIKIT)
     // pfwnd is CALayer 
     pfwnd = SDL_Metal_GetLayer(SDL_Metal_CreateView(wnd));
 #else
