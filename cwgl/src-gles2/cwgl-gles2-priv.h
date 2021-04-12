@@ -2,6 +2,7 @@
 #define __YUNI_CWGL_GLES2_PRIV_H
 
 #include <GLES2/gl2.h>
+#define GL_GLEXT_PROTOTYPES
 #include <GLES2/gl2ext.h>
 #include <cwgl.h>
 
@@ -41,6 +42,10 @@ struct cwgl_Renderbuffer_s {
 };
 
 struct cwgl_Framebuffer_s {
+    int name;
+};
+
+struct cwgl_VertexArrayObject_s {
     int name;
 };
 

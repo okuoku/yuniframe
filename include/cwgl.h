@@ -91,6 +91,7 @@ struct cwgl_Program_s;
 struct cwgl_Texture_s;
 struct cwgl_Framebuffer_s;
 struct cwgl_Renderbuffer_s;
+struct cwgl_VertexArrayObject_s;
 
 typedef struct cwgl_Buffer_s cwgl_Buffer_t;
 typedef struct cwgl_Shader_s cwgl_Shader_t;
@@ -98,6 +99,7 @@ typedef struct cwgl_Program_s cwgl_Program_t;
 typedef struct cwgl_Texture_s cwgl_Texture_t;
 typedef struct cwgl_Framebuffer_s cwgl_Framebuffer_t;
 typedef struct cwgl_Renderbuffer_s cwgl_Renderbuffer_t;
+typedef struct cwgl_VertexArrayObject_s cwgl_VertexArrayObject_t;
 
 CWGL_API void cwgl_Buffer_release(cwgl_ctx_t* ctx, cwgl_Buffer_t* buffer);
 CWGL_API void cwgl_Shader_release(cwgl_ctx_t* ctx, cwgl_Shader_t* shader);
@@ -317,6 +319,10 @@ CWGL_API cwgl_query_result_t cwgl_getUniform_f4(cwgl_ctx_t* ctx, cwgl_Program_t*
 CWGL_API cwgl_query_result_t cwgl_getUniform_m2(cwgl_ctx_t* ctx, cwgl_Program_t* program, cwgl_UniformLocation_t* location, float* x);
 CWGL_API cwgl_query_result_t cwgl_getUniform_m3(cwgl_ctx_t* ctx, cwgl_Program_t* program, cwgl_UniformLocation_t* location, float* x);
 CWGL_API cwgl_query_result_t cwgl_getUniform_m4(cwgl_ctx_t* ctx, cwgl_Program_t* program, cwgl_UniformLocation_t* location, float* x);
+
+// OES_vertex_array_object
+CWGL_API cwgl_VertexArrayObject_t* cwgl_createVertexArray(cwgl_ctx_t* ctx);
+CWGL_API void cwgl_bindVertexArray(cwgl_ctx_t* ctx, cwgl_VertexArrayObject_t* obj);
 
 // {
 #ifdef __cplusplus

@@ -555,4 +555,13 @@ nccc_api(cwgl_getShaderPrecisionFormat
     IN ptr u32 u32 ptr ptr ptr
     OUT u32)
 
+# OES_vertex_array_object
+nccc_api(cwgl_createVertexArray
+    IN ptr
+    OUT ptr)
+
+nccc_api(cwgl_bindVertexArray
+    IN ptr ptr
+    OUT)
+
 nccc_stub_end(cwgl)
