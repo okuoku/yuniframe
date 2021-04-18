@@ -1,3 +1,4 @@
+#define CWGL_DECL_ENUMS
 #include "cwgl.h"
 #include "yfrm.h"
 
@@ -40,9 +41,9 @@ YFRM_ENTRYPOINT(int ac, char** av){
         }else{
             /* Clear */
             cwgl_viewport(ctx, 0, 0, w, h);
-            cwgl_disable(ctx, (cwgl_enum_t)0x0C11); /* disable scissor */
+            cwgl_disable(ctx, SCISSOR_TEST);
             cwgl_clearColor(ctx, 0, 0, 0, 1.0f);
-            cwgl_clear(ctx, 0x4000 /* COLOR BUFFER BIT */);
+            cwgl_clear(ctx, COLOR_BUFFER_BIT);
 
             /* Draw something */
             // FIXME: Should go to backend
