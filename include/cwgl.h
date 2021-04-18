@@ -71,11 +71,14 @@ enum cwgl_query_result_e {
 };
 typedef enum cwgl_query_result_e cwgl_query_result_t;
 
-enum cwgl_enum_e{
 #ifdef CWGL_DECL_ENUMS
-#endif
+#include "cwgl_enums.h"
+#else
+enum cwgl_enum_e{
     CWGL_ENUM_DUMMY = 0x7fffffff
 };
+#endif
+
 typedef enum cwgl_enum_e cwgl_enum_t;
 
 /* Heap Objects */
