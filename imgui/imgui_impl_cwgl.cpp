@@ -1,7 +1,8 @@
 // Based on imgui_impl_opengl3.cpp
 
-#include "imgui.h"
+#define CWGL_DECL_ENUMS
 #include "cwgl.h"
+#include "imgui.h"
 
 /* Global Objects */
 cwgl_ctx_t* g_ctx = 0;
@@ -52,8 +53,8 @@ ImGui_ImplCwgl_Init(cwgl_ctx_t* ctx){
 
     // FIXME: Backup states
     // Shaders
-    g_FragHandle = cwgl_createShader(g_ctx, (cwgl_enum_t)0x8B30);
-    g_VertHandle = cwgl_createShader(g_ctx, (cwgl_enum_t)0x8B31);
+    g_FragHandle = cwgl_createShader(g_ctx, FRAGMENT_SHADER);
+    g_VertHandle = cwgl_createShader(g_ctx, VERTEX_SHADER);
     cwgl_shaderSource(g_ctx, g_FragHandle, shader_frag,
                       sizeof(shader_frag));
     cwgl_compileShader(g_ctx,g_FragHandle);
@@ -85,10 +86,10 @@ ImGui_ImplCwgl_Init(cwgl_ctx_t* ctx){
     unsigned char* pixels;
     io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
     g_FontTexture = cwgl_createTexture(g_ctx);
-    cwgl_bindTexture(g_ctx, (cwgl_enum_t)0x0DE1, g_FontTexture);
-    cwgl_texParameteri(g_ctx, (cwgl_enum_t)0x0DE1, (cwgl_enum_t)0x2801, 0x2601);
-    cwgl_texParameteri(g_ctx, (cwgl_enum_t)0x0DE1, (cwgl_enum_t)0x2800, 0x2601);
-    cwgl_texImage2D(g_ctx, (cwgl_enum_t)0x0DE1, 0, (cwgl_enum_t)0x1908, width, height, 0, (cwgl_enum_t)0x1908, (cwgl_enum_t)0x1401,
+    cwgl_bindTexture(g_ctx, TEXTURE_2D, g_FontTexture);
+    cwgl_texParameteri(g_ctx, TEXTURE_2D, TEXTURE_MIN_FILTER, LINEAR);
+    cwgl_texParameteri(g_ctx, TEXTURE_2D, TEXTURE_MAG_FILTER, LINEAR);
+    cwgl_texImage2D(g_ctx, TEXTURE_2D, 0, RGBA, width, height, 0, RGBA, UNSIGNED_BYTE,
                     pixels, width * height * 4);
     io.Fonts->SetTexID((ImTextureID)(intptr_t)g_FontTexture);
 
@@ -108,14 +109,14 @@ ImGui_ImplCwgl_NewFrame(){
 
 static void
 SetupRenderState(ImDrawData* draw_data, int fb_width, int fb_height){
-    cwgl_enable(g_ctx, (cwgl_enum_t)0x0BE2);
-    cwgl_blendEquation(g_ctx, (cwgl_enum_t)0x8006);
-    cwgl_blendFuncSeparate(g_ctx, (cwgl_enum_t)0x0302, (cwgl_enum_t)0x0303, (cwgl_enum_t)1,
-        (cwgl_enum_t)0x0303);
-    cwgl_disable(g_ctx, (cwgl_enum_t)0x0B44);
-    cwgl_disable(g_ctx, (cwgl_enum_t)0x0B71);
-    cwgl_disable(g_ctx, (cwgl_enum_t)0x0B90);
-    cwgl_enable(g_ctx, (cwgl_enum_t)0x0C11);
+    cwgl_enable(g_ctx, BLEND);
+    cwgl_blendEquation(g_ctx, FUNC_ADD);
+    cwgl_blendFuncSeparate(g_ctx, SRC_ALPHA, ONE_MINUS_SRC_ALPHA, ONE,
+        ONE_MINUS_SRC_ALPHA);
+    cwgl_disable(g_ctx, CULL_FACE);
+    cwgl_disable(g_ctx, DEPTH_TEST);
+    cwgl_disable(g_ctx, STENCIL_TEST);
+    cwgl_enable(g_ctx, SCISSOR_TEST);
 
     cwgl_viewport(g_ctx, 0, 0, fb_width, fb_height);
 
@@ -137,19 +138,19 @@ SetupRenderState(ImDrawData* draw_data, int fb_width, int fb_height){
 
     // FIXME: No VAO
     
-    cwgl_bindBuffer(g_ctx, (cwgl_enum_t)0x8892, g_VboHandle);
-    cwgl_bindBuffer(g_ctx, (cwgl_enum_t)0x8893, g_ElementsHandle);
+    cwgl_bindBuffer(g_ctx, ARRAY_BUFFER, g_VboHandle);
+    cwgl_bindBuffer(g_ctx, ELEMENT_ARRAY_BUFFER, g_ElementsHandle);
     cwgl_enableVertexAttribArray(g_ctx, g_AttribLocationVtxPos);
     cwgl_enableVertexAttribArray(g_ctx, g_AttribLocationVtxUV);
     cwgl_enableVertexAttribArray(g_ctx, g_AttribLocationVtxColor);
     cwgl_vertexAttribPointer(g_ctx, g_AttribLocationVtxPos,
-                             2, (cwgl_enum_t)0x1406, 0, sizeof(ImDrawVert),
+                             2, FLOAT, 0, sizeof(ImDrawVert),
                              IM_OFFSETOF(ImDrawVert, pos));
     cwgl_vertexAttribPointer(g_ctx, g_AttribLocationVtxUV,
-                             2, (cwgl_enum_t)0x1406, 0, sizeof(ImDrawVert),
+                             2, FLOAT, 0, sizeof(ImDrawVert),
                              IM_OFFSETOF(ImDrawVert, uv));
     cwgl_vertexAttribPointer(g_ctx, g_AttribLocationVtxColor,
-                             4, (cwgl_enum_t)0x1401, 1, sizeof(ImDrawVert),
+                             4, UNSIGNED_BYTE, 1, sizeof(ImDrawVert),
                              IM_OFFSETOF(ImDrawVert, col));
 }
 
@@ -173,12 +174,12 @@ ImGui_ImplCwgl_RenderDrawData(ImDrawData* draw_data){
     for(int n = 0; n < draw_data->CmdListsCount; n++){
         const ImDrawList* cmd_list = draw_data->CmdLists[n];
 
-        cwgl_bufferData(g_ctx, (cwgl_enum_t)0x8892, cmd_list->VtxBuffer.Size *
+        cwgl_bufferData(g_ctx, ARRAY_BUFFER, cmd_list->VtxBuffer.Size *
                         sizeof(ImDrawVert), cmd_list->VtxBuffer.Data,
-            (cwgl_enum_t)0x88E0);
-        cwgl_bufferData(g_ctx, (cwgl_enum_t)0x8893, cmd_list->IdxBuffer.Size *
+            STREAM_DRAW);
+        cwgl_bufferData(g_ctx, ELEMENT_ARRAY_BUFFER, cmd_list->IdxBuffer.Size *
                         sizeof(ImDrawIdx), cmd_list->IdxBuffer.Data,
-            (cwgl_enum_t)0x88E0);
+            STREAM_DRAW);
 
         for(int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++){
             const ImDrawCmd* pcmd = &cmd_list->CmdBuffer[cmd_i];
@@ -199,11 +200,11 @@ ImGui_ImplCwgl_RenderDrawData(ImDrawData* draw_data){
                    clip_rect.z >= 0.0f && clip_rect.w >= 0.0f){
                     cwgl_scissor(g_ctx, clip_rect.x, fb_height - clip_rect.w,
                                  clip_rect.z - clip_rect.x, clip_rect.w - clip_rect.y);
-                    cwgl_bindTexture(g_ctx, (cwgl_enum_t)0x0DE1,
+                    cwgl_bindTexture(g_ctx, TEXTURE_2D,
                                      (cwgl_Texture_t*)(intptr_t)pcmd->TextureId);
 
-                    cwgl_drawElements(g_ctx, (cwgl_enum_t)0x0004, pcmd->ElemCount,
-                                      sizeof(ImDrawIdx) == 2 ? (cwgl_enum_t)0x1403 : (cwgl_enum_t)0x1405,
+                    cwgl_drawElements(g_ctx, TRIANGLES, pcmd->ElemCount,
+                                      sizeof(ImDrawIdx) == 2 ? UNSIGNED_SHORT : UNSIGNED_INT,
                                       pcmd->IdxOffset * sizeof(ImDrawIdx));
                 }
             }
