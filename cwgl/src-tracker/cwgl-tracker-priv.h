@@ -3,6 +3,7 @@
 
 #define CWGL_DECL_ENUMS
 #include "cwgl.h"
+#include "cwgl-tracker-states.h"
 
 /* Context */
 void cwgl_priv_check_current(cwgl_ctx_t* ctx);
