@@ -284,6 +284,18 @@ cwgl_getParameter_Texture(cwgl_ctx_t* ctx, cwgl_enum_t pname,
 
 CWGL_API int 
 cwgl_isEnabled(cwgl_ctx_t* ctx, cwgl_enum_t cap){
+    int32_t r;
+    cwgl_query_result_t qr;
+    qr = cwgl_getParameter_b1(ctx, cap, &r);
+    if(qr == CWGL_QR_SUCCESS){
+        if(r){
+            return 1;
+        }else{
+            return 0;
+        }
+    }else{
+        return 0;
+    }
 }
 
 // 6.1.3 Enumerated Queries
