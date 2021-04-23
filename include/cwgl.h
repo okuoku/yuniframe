@@ -81,6 +81,13 @@ enum cwgl_enum_e{
 
 typedef enum cwgl_enum_e cwgl_enum_t;
 
+enum cwgl_bool_e {
+    CWGL_FALSE = 0,
+    CWGL_TRUE = 1
+};
+
+typedef enum cwgl_bool_e cwgl_bool_t;
+
 /* Heap Objects */
 struct cwgl_string_s;
 typedef struct cwgl_string_s cwgl_string_t;
