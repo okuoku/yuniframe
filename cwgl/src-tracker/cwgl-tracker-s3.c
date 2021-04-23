@@ -27,6 +27,18 @@ cwgl_pixelStorei(cwgl_ctx_t* ctx, cwgl_enum_t pname, int32_t param){
 // 3.7 Texturing
 CWGL_API void 
 cwgl_activeTexture(cwgl_ctx_t* ctx, cwgl_enum_t texture){
+    const int maxtexture = ctx->state.cfg.MAX_COMBINED_TEXTURE_IMAGE_UNITS;
+    const int number = (int)texture;
+    const int base = (int)TEXTURE0;
+    const int diff = number - base;
+
+    if(diff < 0){
+        CTX_SET_ERROR(ctx, INVALID_ENUM);
+    }else if(diff > maxtexture){
+        CTX_SET_ERROR(ctx, INVALID_ENUM);
+    }else{
+        ctx->state.glo.ACTIVE_TEXTURE = texture;
+    }
 }
 
 // 3.7.1 Texture Image Specification

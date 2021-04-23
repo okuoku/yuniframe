@@ -16,5 +16,7 @@ cwgl_priv_ctx_init(cwgl_ctx_t* ctx){
     SETB1(SCISSOR_TEST,0);
     SETB1(STENCIL_TEST,0);
 
+    ctx->state.glo.ACTIVE_TEXTURE = TEXTURE0;
+
 }
 
