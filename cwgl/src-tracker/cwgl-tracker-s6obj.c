@@ -214,26 +214,72 @@ cwgl_getParameter_str(cwgl_ctx_t* ctx, cwgl_enum_t pname, cwgl_string_t** str){
 CWGL_API cwgl_query_result_t 
 cwgl_getParameter_Buffer(cwgl_ctx_t* ctx, cwgl_enum_t pname, 
                          cwgl_Buffer_t** buffer){
+    switch(pname){
+        case ARRAY_BUFFER_BINDING:
+            *buffer = ctx->state.bin.ARRAY_BUFFER_BINDING;
+            return CWGL_QR_SUCCESS;
+        case ELEMENT_ARRAY_BUFFER_BINDING:
+            *buffer = ctx->state.bin.ELEMENT_ARRAY_BUFFER_BINDING;
+            return CWGL_QR_SUCCESS;
+        default:
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        return CWGL_QR_GLERROR;
+    }
 }
 
 CWGL_API cwgl_query_result_t 
 cwgl_getParameter_Program(cwgl_ctx_t* ctx, cwgl_enum_t pname, 
                           cwgl_Program_t** program){
+    switch(pname){
+        case CURRENT_PROGRAM:
+            *program = ctx->state.bin.CURRENT_PROGRAM;
+            return CWGL_QR_SUCCESS;
+        default:
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        return CWGL_QR_GLERROR;
+    }
 }
 
 CWGL_API cwgl_query_result_t 
 cwgl_getParameter_Framebuffer(cwgl_ctx_t* ctx, cwgl_enum_t pname, 
                               cwgl_Framebuffer_t** framebuffer){
+    switch(pname){
+        case FRAMEBUFFER_BINDING:
+            *framebuffer = ctx->state.bin.FRAMEBUFFER_BINDING;
+            return CWGL_QR_SUCCESS;
+        default:
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        return CWGL_QR_GLERROR;
+    }
 }
 
 CWGL_API cwgl_query_result_t 
 cwgl_getParameter_Renderbuffer(cwgl_ctx_t* ctx, cwgl_enum_t pname, 
                                cwgl_Renderbuffer_t** renderbuffer){
+    switch(pname){
+        case RENDERBUFFER_BINDING:
+            *renderbuffer = ctx->state.bin.RENDERBUFFER_BINDING;
+            return CWGL_QR_SUCCESS;
+        default:
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        return CWGL_QR_GLERROR;
+    }
 }
 
 CWGL_API cwgl_query_result_t 
 cwgl_getParameter_Texture(cwgl_ctx_t* ctx, cwgl_enum_t pname, 
                           cwgl_Texture_t** texture){
+    switch(pname){
+        case TEXTURE_BINDING_2D:
+            *texture = ctx->state.bin.TEXTURE_BINDING_2D;
+            return CWGL_QR_SUCCESS;
+        case TEXTURE_BINDING_CUBE_MAP:
+            *texture = ctx->state.bin.TEXTURE_BINDING_CUBE_MAP;
+            return CWGL_QR_SUCCESS;
+        default:
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        return CWGL_QR_GLERROR;
+    }
 }
 
 CWGL_API int 

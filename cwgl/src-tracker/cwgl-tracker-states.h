@@ -126,7 +126,7 @@ struct cwgl_ctx_bindings_s {
     cwgl_Buffer_t* ARRAY_BUFFER_BINDING;
     cwgl_Buffer_t* ELEMENT_ARRAY_BUFFER_BINDING;
     /* GLES2 Table 6.15 */
-    cwgl_Program_t* CURRENT_PROGRAM; /* FIXME: ??? */
+    cwgl_Program_t* CURRENT_PROGRAM;
     /* GLES2 Table 6.7 */
     cwgl_Texture_t* TEXTURE_BINDING_2D;
     cwgl_Texture_t* TEXTURE_BINDING_CUBE_MAP;
