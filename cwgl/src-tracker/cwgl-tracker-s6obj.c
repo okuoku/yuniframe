@@ -284,6 +284,7 @@ cwgl_getParameter_Texture(cwgl_ctx_t* ctx, cwgl_enum_t pname,
 
 CWGL_API int 
 cwgl_isEnabled(cwgl_ctx_t* ctx, cwgl_enum_t cap){
+    // FIXME: Should not accept non enable() disable() capable enums
     int32_t r;
     cwgl_query_result_t qr;
     qr = cwgl_getParameter_b1(ctx, cap, &r);

@@ -59,23 +59,23 @@ struct cwgl_ctx_global_state_s {
     float DEPTH_RANGE[2];
     /* GLES2 Table 6.5 */
     float LINE_WIDTH;
-    cwgl_bool_t CULL_FACE;
+    cwgl_bool_t CULL_FACE; /* enable */
     cwgl_enum_t CULL_FACE_MODE;
     cwgl_enum_t FRONT_FACE;
     float POLYGON_OFFSET_FACTOR;
     float POLYGON_OFFSET_UNITS;
-    cwgl_bool_t POLYGON_OFFSET_FILL;
+    cwgl_bool_t POLYGON_OFFSET_FILL; /* enable */
     /* GLES2 Table 6.6 */
-    cwgl_bool_t SAMPLE_ALPHA_TO_COVERAGE;
-    cwgl_bool_t SAMPLE_COVERAGE;
+    cwgl_bool_t SAMPLE_ALPHA_TO_COVERAGE; /* enable */
+    cwgl_bool_t SAMPLE_COVERAGE; /* enable */
     float SAMPLE_COVERAGE_VALUE;
     cwgl_bool_t SAMPLE_COVERAGE_INVERT;
     /* GLES2 Table 6.9 */
     cwgl_enum_t ACTIVE_TEXTURE;
     /* GLES2 Table 6.10 */
-    cwgl_bool_t SCISSOR_TEST;
+    cwgl_bool_t SCISSOR_TEST; /* enable */
     int32_t SCISSOR_BOX[4];
-    cwgl_bool_t STENCIL_TEST;
+    cwgl_bool_t STENCIL_TEST; /* enable */
     cwgl_enum_t STENCIL_FUNC;
     uint32_t STENCIL_VALUE_MASK;
     int32_t STENCIL_REF;
@@ -88,10 +88,10 @@ struct cwgl_ctx_global_state_s {
     cwgl_enum_t STENCIL_BACK_FAIL;
     cwgl_enum_t STENCIL_BACK_PASS_DEPTH_FAIL;
     cwgl_enum_t STENCIL_BACK_PASS_DEPTH_PASS;
-    cwgl_bool_t DEPTH_TEST;
+    cwgl_bool_t DEPTH_TEST; /* enable */
     cwgl_enum_t DEPTH_FUNC;
     /* GLES2 Table 6.11 */
-    cwgl_bool_t BLEND;
+    cwgl_bool_t BLEND; /* enable */
     cwgl_enum_t BLEND_SRC_RGB; /* 1.1 BLEND_SRC */
     cwgl_enum_t BLEND_SRC_ALPHA;
     cwgl_enum_t BLEND_DST_RGB; /* 1.1 BLEND_DST */
@@ -99,7 +99,7 @@ struct cwgl_ctx_global_state_s {
     cwgl_enum_t BLEND_EQUATION_RGB; /* 1.1 BLEND_EQUATION */
     cwgl_enum_t BLEND_EQUATION_ALPHA;
     float BLEND_COLOR[4]; /* Not In the table (WebGL) */
-    cwgl_bool_t DITHER;
+    cwgl_bool_t DITHER; /* enable */
     /* GLES2 Table 6.12 */
     cwgl_bool_t COLOR_WRITEMASK[4];
     cwgl_bool_t DEPTH_WRITEMASK;
