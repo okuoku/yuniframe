@@ -39,7 +39,7 @@ cwgl_getParameter_b1(cwgl_ctx_t* ctx, cwgl_enum_t pname, int32_t* x){
         GLO(UNPACK_FLIP_Y_WEBGL);
         GLO(UNPACK_PREMULTIPLY_ALPHA_WEBGL);
         default:
-        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        CTX_SET_ERROR(ctx, INVALID_ENUM);
         return CWGL_QR_GLERROR;
     }
 #undef GLO
@@ -52,7 +52,7 @@ cwgl_getParameter_b4(cwgl_ctx_t* ctx, cwgl_enum_t pname,
     switch(pname){
         GLO(COLOR_WRITEMASK);
         default:
-        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        CTX_SET_ERROR(ctx, INVALID_ENUM);
         return CWGL_QR_GLERROR;
     }
 #undef GLO
@@ -127,7 +127,7 @@ cwgl_getParameter_i1(cwgl_ctx_t* ctx, cwgl_enum_t pname, int32_t* x){
         /* WebGL1 */
         GLO(UNPACK_COLORSPACE_CONVERSION_WEBGL);
         default:
-        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        CTX_SET_ERROR(ctx, INVALID_ENUM);
         return CWGL_QR_GLERROR;
     }
 #undef CASE
@@ -141,7 +141,7 @@ cwgl_getParameter_i2(cwgl_ctx_t* ctx, cwgl_enum_t pname,
     switch(pname){
         CASE(MAX_VIEWPORT_DIMS);
         default:
-        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        CTX_SET_ERROR(ctx, INVALID_ENUM);
         return CWGL_QR_GLERROR;
     }
 #undef CASE
@@ -155,7 +155,7 @@ cwgl_getParameter_i4(cwgl_ctx_t* ctx, cwgl_enum_t pname,
         GLO(VIEWPORT);
         GLO(SCISSOR_BOX);
         default:
-        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        CTX_SET_ERROR(ctx, INVALID_ENUM);
         return CWGL_QR_GLERROR;
     }
 #undef GLO
@@ -171,7 +171,7 @@ cwgl_getParameter_f1(cwgl_ctx_t* ctx, cwgl_enum_t pname, float* x){
         GLO(SAMPLE_COVERAGE_VALUE);
         GLO(DEPTH_CLEAR_VALUE);
         default:
-        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        CTX_SET_ERROR(ctx, INVALID_ENUM);
         return CWGL_QR_GLERROR;
     }
 #undef GLO
@@ -186,7 +186,7 @@ cwgl_getParameter_f2(cwgl_ctx_t* ctx, cwgl_enum_t pname, float* x, float* y){
         CASE(ALIASED_LINE_WIDTH_RANGE);
         GLO(DEPTH_RANGE);
         default:
-        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        CTX_SET_ERROR(ctx, INVALID_ENUM);
         return CWGL_QR_GLERROR;
     }
 #undef CASE
@@ -201,7 +201,7 @@ cwgl_getParameter_f4(cwgl_ctx_t* ctx, cwgl_enum_t pname,
         GLO(BLEND_COLOR);
         GLO(COLOR_CLEAR_VALUE);
         default:
-        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        CTX_SET_ERROR(ctx, INVALID_ENUM);
         return CWGL_QR_GLERROR;
     }
 #undef GLO
@@ -222,7 +222,7 @@ cwgl_getParameter_Buffer(cwgl_ctx_t* ctx, cwgl_enum_t pname,
             *buffer = ctx->state.bin.ELEMENT_ARRAY_BUFFER_BINDING;
             return CWGL_QR_SUCCESS;
         default:
-        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        CTX_SET_ERROR(ctx, INVALID_ENUM);
         return CWGL_QR_GLERROR;
     }
 }
@@ -235,7 +235,7 @@ cwgl_getParameter_Program(cwgl_ctx_t* ctx, cwgl_enum_t pname,
             *program = ctx->state.bin.CURRENT_PROGRAM;
             return CWGL_QR_SUCCESS;
         default:
-        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        CTX_SET_ERROR(ctx, INVALID_ENUM);
         return CWGL_QR_GLERROR;
     }
 }
@@ -248,7 +248,7 @@ cwgl_getParameter_Framebuffer(cwgl_ctx_t* ctx, cwgl_enum_t pname,
             *framebuffer = ctx->state.bin.FRAMEBUFFER_BINDING;
             return CWGL_QR_SUCCESS;
         default:
-        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        CTX_SET_ERROR(ctx, INVALID_ENUM);
         return CWGL_QR_GLERROR;
     }
 }
@@ -261,7 +261,7 @@ cwgl_getParameter_Renderbuffer(cwgl_ctx_t* ctx, cwgl_enum_t pname,
             *renderbuffer = ctx->state.bin.RENDERBUFFER_BINDING;
             return CWGL_QR_SUCCESS;
         default:
-        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        CTX_SET_ERROR(ctx, INVALID_ENUM);
         return CWGL_QR_GLERROR;
     }
 }
@@ -277,7 +277,7 @@ cwgl_getParameter_Texture(cwgl_ctx_t* ctx, cwgl_enum_t pname,
             *texture = ctx->state.bin.TEXTURE_BINDING_CUBE_MAP;
             return CWGL_QR_SUCCESS;
         default:
-        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        CTX_SET_ERROR(ctx, INVALID_ENUM);
         return CWGL_QR_GLERROR;
     }
 }
