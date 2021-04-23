@@ -70,6 +70,6 @@ struct cwgl_VertexArrayObject_s {
     cwgl_objhdr_t hdr;
 };
 
-#define CTX_SET_ERROR(ctx, err) ctx->state.err = err
+#define CTX_SET_ERROR(ctx, num) ctx->state.err = num
 
 #endif
