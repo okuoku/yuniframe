@@ -17,6 +17,16 @@ cwgl_priv_ctx_init(cwgl_ctx_t* ctx){
     SETB1(STENCIL_TEST,0);
 
     ctx->state.glo.ACTIVE_TEXTURE = TEXTURE0;
-
+    ctx->state.glo.BLEND_COLOR[0] = 0.0f;
+    ctx->state.glo.BLEND_COLOR[1] = 0.0f;
+    ctx->state.glo.BLEND_COLOR[2] = 0.0f;
+    ctx->state.glo.BLEND_COLOR[3] = 0.0f;
+    ctx->state.glo.BLEND_EQUATION_RGB = FUNC_ADD;
+    ctx->state.glo.BLEND_EQUATION_ALPHA = FUNC_ADD;
+    ctx->state.glo.BLEND_SRC_RGB = ONE;
+    ctx->state.glo.BLEND_SRC_ALPHA = ONE;
+    ctx->state.glo.BLEND_DST_RGB = ZERO;
+    ctx->state.glo.BLEND_DST_ALPHA = ZERO;
+    
 }
 

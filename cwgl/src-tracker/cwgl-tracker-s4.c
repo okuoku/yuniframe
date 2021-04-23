@@ -42,24 +42,190 @@ cwgl_depthFunc(cwgl_ctx_t* ctx, cwgl_enum_t func){
 // 4.1.6 Blending
 CWGL_API void 
 cwgl_blendEquation(cwgl_ctx_t* ctx, cwgl_enum_t mode){
+    switch(mode){
+        case FUNC_ADD:
+        case FUNC_SUBTRACT:
+        case FUNC_REVERSE_SUBTRACT:
+            ctx->state.glo.BLEND_EQUATION_RGB = mode;
+            ctx->state.glo.BLEND_EQUATION_ALPHA = mode;
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            break;
+    }
 }
 
 CWGL_API void 
 cwgl_blendEquationSeparate(cwgl_ctx_t* ctx,
                            cwgl_enum_t modeRGB, cwgl_enum_t modeAlpha){
+    switch(modeRGB){
+        case FUNC_ADD:
+        case FUNC_SUBTRACT:
+        case FUNC_REVERSE_SUBTRACT:
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            return;
+    }
+    switch(modeAlpha){
+        case FUNC_ADD:
+        case FUNC_SUBTRACT:
+        case FUNC_REVERSE_SUBTRACT:
+            ctx->state.glo.BLEND_EQUATION_RGB = modeRGB;
+            ctx->state.glo.BLEND_EQUATION_ALPHA = modeAlpha;
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            break;
+    }
 }
 
 CWGL_API void 
 cwgl_blendFuncSeparate(cwgl_ctx_t* ctx, cwgl_enum_t srcRGB, cwgl_enum_t dstRGB, cwgl_enum_t srcAlpha, cwgl_enum_t dstAlpha){
+    switch(srcRGB){
+        case ZERO:
+        case ONE:
+        case SRC_COLOR:
+        case ONE_MINUS_SRC_COLOR:
+        case DST_COLOR:
+        case ONE_MINUS_DST_COLOR:
+        case SRC_ALPHA:
+        case ONE_MINUS_SRC_ALPHA:
+        case DST_ALPHA:
+        case ONE_MINUS_DST_ALPHA:
+        case CONSTANT_COLOR:
+        case ONE_MINUS_CONSTANT_COLOR:
+        case CONSTANT_ALPHA:
+        case ONE_MINUS_CONSTANT_ALPHA:
+        case SRC_ALPHA_SATURATE:
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            return;
+    }
+    switch(srcAlpha){
+        case ZERO:
+        case ONE:
+        case SRC_COLOR:
+        case ONE_MINUS_SRC_COLOR:
+        case DST_COLOR:
+        case ONE_MINUS_DST_COLOR:
+        case SRC_ALPHA:
+        case ONE_MINUS_SRC_ALPHA:
+        case DST_ALPHA:
+        case ONE_MINUS_DST_ALPHA:
+        case CONSTANT_COLOR:
+        case ONE_MINUS_CONSTANT_COLOR:
+        case CONSTANT_ALPHA:
+        case ONE_MINUS_CONSTANT_ALPHA:
+        case SRC_ALPHA_SATURATE:
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            return;
+    }
+    switch(dstRGB){
+        case ZERO:
+        case ONE:
+        case SRC_COLOR:
+        case ONE_MINUS_SRC_COLOR:
+        case DST_COLOR:
+        case ONE_MINUS_DST_COLOR:
+        case SRC_ALPHA:
+        case ONE_MINUS_SRC_ALPHA:
+        case DST_ALPHA:
+        case ONE_MINUS_DST_ALPHA:
+        case CONSTANT_COLOR:
+        case ONE_MINUS_CONSTANT_COLOR:
+        case CONSTANT_ALPHA:
+        case ONE_MINUS_CONSTANT_ALPHA:
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            return;
+    }
+    switch(dstAlpha){
+        case ZERO:
+        case ONE:
+        case SRC_COLOR:
+        case ONE_MINUS_SRC_COLOR:
+        case DST_COLOR:
+        case ONE_MINUS_DST_COLOR:
+        case SRC_ALPHA:
+        case ONE_MINUS_SRC_ALPHA:
+        case DST_ALPHA:
+        case ONE_MINUS_DST_ALPHA:
+        case CONSTANT_COLOR:
+        case ONE_MINUS_CONSTANT_COLOR:
+        case CONSTANT_ALPHA:
+        case ONE_MINUS_CONSTANT_ALPHA:
+            ctx->state.glo.BLEND_SRC_RGB = srcRGB;
+            ctx->state.glo.BLEND_SRC_ALPHA = srcAlpha;
+            ctx->state.glo.BLEND_DST_RGB = dstRGB;
+            ctx->state.glo.BLEND_DST_ALPHA = dstAlpha;
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            return;
+    }
 }
 
 CWGL_API void 
 cwgl_blendFunc(cwgl_ctx_t* ctx, cwgl_enum_t sfactor, cwgl_enum_t dfactor){
+    switch(sfactor){
+        case ZERO:
+        case ONE:
+        case SRC_COLOR:
+        case ONE_MINUS_SRC_COLOR:
+        case DST_COLOR:
+        case ONE_MINUS_DST_COLOR:
+        case SRC_ALPHA:
+        case ONE_MINUS_SRC_ALPHA:
+        case DST_ALPHA:
+        case ONE_MINUS_DST_ALPHA:
+        case CONSTANT_COLOR:
+        case ONE_MINUS_CONSTANT_COLOR:
+        case CONSTANT_ALPHA:
+        case ONE_MINUS_CONSTANT_ALPHA:
+        case SRC_ALPHA_SATURATE:
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            return;
+    }
+    switch(dfactor){
+        case ZERO:
+        case ONE:
+        case SRC_COLOR:
+        case ONE_MINUS_SRC_COLOR:
+        case DST_COLOR:
+        case ONE_MINUS_DST_COLOR:
+        case SRC_ALPHA:
+        case ONE_MINUS_SRC_ALPHA:
+        case DST_ALPHA:
+        case ONE_MINUS_DST_ALPHA:
+        case CONSTANT_COLOR:
+        case ONE_MINUS_CONSTANT_COLOR:
+        case CONSTANT_ALPHA:
+        case ONE_MINUS_CONSTANT_ALPHA:
+            ctx->state.glo.BLEND_SRC_RGB = sfactor;
+            ctx->state.glo.BLEND_SRC_ALPHA = sfactor;
+            ctx->state.glo.BLEND_DST_RGB = dfactor;
+            ctx->state.glo.BLEND_DST_ALPHA = dfactor;
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            return;
+    }
 }
 
 CWGL_API void 
 cwgl_blendColor(cwgl_ctx_t* ctx, 
                 float red, float green, float blue, float alpha){
+    ctx->state.glo.BLEND_COLOR[0] = red;
+    ctx->state.glo.BLEND_COLOR[1] = green;
+    ctx->state.glo.BLEND_COLOR[2] = blue;
+    ctx->state.glo.BLEND_COLOR[3] = alpha;
 }
 
 // 4.2.2 Fine Control of Buffer Updates
