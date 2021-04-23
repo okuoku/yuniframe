@@ -14,53 +14,62 @@ struct cwgl_string_s {
     char* str;
 };
 
-#define CTX_ENTER(ctx) cwgl_priv_check_current(ctx)
-#define CTX_LEAVE(ctx)
+/* Context */
+enum cwgl_objtype_e {
+    CWGL_OBJ_CTX = 0x9857,
+    CWGL_OBJ_BUFFER,
+    CWGL_OBJ_SHADER,
+    CWGL_OBJ_PROGRAM,
+    CWGL_OBJ_UNIFORMLOCATION,
+    CWGL_OBJ_TEXTURE,
+    CWGL_OBJ_RENDERBUFFER,
+    CWGL_OBJ_FRAMEBUFFER,
+    CWGL_OBJ_VAO
+};
+typedef enum cwgl_objtype_e cwgl_objtype_t;
 
+struct cwgl_objhdr_s {
+    cwgl_objtype_t type;
+    uintptr_t refcnt;
+    cwgl_ctx_t* ctx;
+};
+
+typedef struct cwgl_objhdr_s cwgl_objhdr_t;
+
+struct cwgl_ctx_s {
+    cwgl_ctx_tracker_state_t state;
+};
 
 /* Buffer structures */
 struct cwgl_Buffer_s {
-    int name;
+    cwgl_objhdr_t hdr;
 };
 struct cwgl_Shader_s {
-    int name;
+    cwgl_objhdr_t hdr;
 };
 struct cwgl_Program_s {
-    int name;
+    cwgl_objhdr_t hdr;
 };
 struct cwgl_UniformLocation_s {
-    int name;
+    cwgl_objhdr_t hdr;
 };
 
 struct cwgl_Texture_s {
-    int name;
+    cwgl_objhdr_t hdr;
 };
 
 struct cwgl_Renderbuffer_s {
-    int name;
+    cwgl_objhdr_t hdr;
 };
 
 struct cwgl_Framebuffer_s {
-    int name;
+    cwgl_objhdr_t hdr;
 };
 
 struct cwgl_VertexArrayObject_s {
-    int name;
+    cwgl_objhdr_t hdr;
 };
 
-/* Buffer allocation */
-#include <stdlib.h>
-
-#define CTX_ALLOC(ctx, type) \
-    malloc(sizeof(cwgl_ ## type ## _t))
-
-#define CTX_FREE(ctx, type, p) \
-    free(p)
-
-#define CTX_SETNAME(ctx, p, id) \
-    p->name = id
-
-#define CTX_GETNAME(ctx, p) \
-    p->name
+#define CTX_SET_ERROR(ctx, err) ctx->state.err = err
 
 #endif
