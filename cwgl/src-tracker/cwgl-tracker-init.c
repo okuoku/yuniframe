@@ -43,6 +43,17 @@ cwgl_priv_ctx_init(cwgl_ctx_t* ctx){
     ctx->state.glo.DEPTH_RANGE[0] = 0.0f;
     ctx->state.glo.DEPTH_RANGE[1] = 1.0f;
     ctx->state.glo.FRONT_FACE = CCW;
-    
+    ctx->state.glo.GENERATE_MIPMAP_HINT = DONT_CARE;
+    ctx->state.glo.LINE_WIDTH = 1.0f;
+    ctx->state.glo.PACK_ALIGNMENT = 4;
+    ctx->state.glo.UNPACK_ALIGNMENT = 4;
+    ctx->state.glo.UNPACK_FLIP_Y_WEBGL = CWGL_FALSE;
+    ctx->state.glo.UNPACK_PREMULTIPLY_ALPHA_WEBGL = CWGL_FALSE;
+    ctx->state.glo.UNPACK_COLORSPACE_CONVERSION_WEBGL = BROWSER_DEFAULT_WEBGL;
+    ctx->state.glo.POLYGON_OFFSET_FACTOR = 0.0f;
+    ctx->state.glo.POLYGON_OFFSET_UNITS = 0.0f;
+    ctx->state.glo.SAMPLE_COVERAGE_VALUE = 1.0f;
+    ctx->state.glo.SAMPLE_COVERAGE_INVERT = CWGL_FALSE;
+
 }
 

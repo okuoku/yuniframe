@@ -9,6 +9,8 @@ cwgl_scissor(cwgl_ctx_t* ctx,
 // 4.1.3 Multisample Fragment Operations
 CWGL_API void 
 cwgl_sampleCoverage(cwgl_ctx_t* ctx, float value, int invert){
+    ctx->state.glo.SAMPLE_COVERAGE_VALUE = value;
+    ctx->state.glo.SAMPLE_COVERAGE_INVERT = invert ? CWGL_TRUE : CWGL_FALSE;
 }
 
 // 4.1.4 Stencil Test

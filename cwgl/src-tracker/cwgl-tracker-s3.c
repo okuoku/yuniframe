@@ -3,6 +3,17 @@
 // 3.4 Line Segments
 CWGL_API void 
 cwgl_lineWidth(cwgl_ctx_t* ctx, float width){
+    float cwidth;
+    if(width <= 0){
+        CTX_SET_ERROR(ctx, INVALID_VALUE);
+    }
+    if(!(width < ctx->state.cfg.ALIASED_LINE_WIDTH_RANGE[1])){
+        cwidth = ctx->state.cfg.ALIASED_LINE_WIDTH_RANGE[1];
+    }else{
+        cwidth = width;
+    }
+    /* WebGL: Needs to reject NaN as INVALID_VALUE (FIXME) */
+    ctx->state.glo.LINE_WIDTH = cwidth;
 }
 
 // 3.5 Polygons
@@ -35,11 +46,53 @@ cwgl_cullFace(cwgl_ctx_t* ctx, cwgl_enum_t mode){
 // 3.5.2 Depth offset
 CWGL_API void 
 cwgl_polygonOffset(cwgl_ctx_t* ctx, float factor, float units){
+    ctx->state.glo.POLYGON_OFFSET_FACTOR = factor;
+    ctx->state.glo.POLYGON_OFFSET_UNITS = units;
 }
 
 // 3.6.1 Pixel Storage Modes
 CWGL_API void 
 cwgl_pixelStorei(cwgl_ctx_t* ctx, cwgl_enum_t pname, int32_t param){
+    switch(pname){
+        case PACK_ALIGNMENT:
+        case UNPACK_ALIGNMENT:
+            switch(param){
+                case 1:
+                case 2:
+                case 4:
+                case 8:
+                    if(pname == PACK_ALIGNMENT){
+                        ctx->state.glo.PACK_ALIGNMENT = param;
+                    }else{
+                        ctx->state.glo.UNPACK_ALIGNMENT = param;
+                    }
+                    break;
+                default:
+                    CTX_SET_ERROR(ctx, INVALID_VALUE);
+                    break;
+            }
+            break;
+        case UNPACK_FLIP_Y_WEBGL:
+            ctx->state.glo.UNPACK_FLIP_Y_WEBGL = param ? CWGL_TRUE : CWGL_FALSE;
+            break;
+        case UNPACK_PREMULTIPLY_ALPHA_WEBGL:
+            ctx->state.glo.UNPACK_PREMULTIPLY_ALPHA_WEBGL = param ? CWGL_TRUE : CWGL_FALSE;
+            break;
+        case UNPACK_COLORSPACE_CONVERSION_WEBGL:
+            switch((cwgl_enum_t)param){
+                case BROWSER_DEFAULT_WEBGL:
+                case NONE:
+                    ctx->state.glo.UNPACK_COLORSPACE_CONVERSION_WEBGL = param;
+                    break;
+                default:
+                    CTX_SET_ERROR(ctx, INVALID_VALUE);
+                    break;
+            }
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            break;
+    }
 }
 
 // 3.7 Texturing
