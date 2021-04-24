@@ -33,6 +33,16 @@ cwgl_priv_ctx_init(cwgl_ctx_t* ctx){
     ctx->state.glo.COLOR_CLEAR_VALUE[3] = 0.0f;
     ctx->state.glo.DEPTH_CLEAR_VALUE = 1.0f;
     ctx->state.glo.STENCIL_CLEAR_VALUE = 0;
+    ctx->state.glo.COLOR_WRITEMASK[0] = CWGL_TRUE;
+    ctx->state.glo.COLOR_WRITEMASK[1] = CWGL_TRUE;
+    ctx->state.glo.COLOR_WRITEMASK[2] = CWGL_TRUE;
+    ctx->state.glo.COLOR_WRITEMASK[3] = CWGL_TRUE;
+    ctx->state.glo.CULL_FACE_MODE = BACK;
+    ctx->state.glo.DEPTH_FUNC = LESS;
+    ctx->state.glo.DEPTH_WRITEMASK = CWGL_TRUE;
+    ctx->state.glo.DEPTH_RANGE[0] = 0.0f;
+    ctx->state.glo.DEPTH_RANGE[1] = 1.0f;
+    ctx->state.glo.FRONT_FACE = CCW;
     
 }
 

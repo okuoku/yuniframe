@@ -37,6 +37,21 @@ cwgl_stencilOpSeparate(cwgl_ctx_t* ctx,
 // 4.1.5 Depth Buffer Test
 CWGL_API void 
 cwgl_depthFunc(cwgl_ctx_t* ctx, cwgl_enum_t func){
+    switch(func){
+        case NEVER:
+        case LESS:
+        case EQUAL:
+        case LEQUAL:
+        case GREATER:
+        case NOTEQUAL:
+        case GEQUAL:
+        case ALWAYS:
+            ctx->state.glo.DEPTH_FUNC = func;
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            break;
+    }
 }
 
 // 4.1.6 Blending
@@ -231,10 +246,15 @@ cwgl_blendColor(cwgl_ctx_t* ctx,
 // 4.2.2 Fine Control of Buffer Updates
 CWGL_API void 
 cwgl_colorMask(cwgl_ctx_t* ctx, int red, int green, int blue, int alpha){
+    ctx->state.glo.COLOR_WRITEMASK[0] = red ? CWGL_TRUE : CWGL_FALSE;
+    ctx->state.glo.COLOR_WRITEMASK[1] = green ? CWGL_TRUE : CWGL_FALSE;
+    ctx->state.glo.COLOR_WRITEMASK[2] = blue ? CWGL_TRUE : CWGL_FALSE;
+    ctx->state.glo.COLOR_WRITEMASK[3] = alpha ? CWGL_TRUE : CWGL_FALSE;
 }
 
 CWGL_API void 
 cwgl_depthMask(cwgl_ctx_t* ctx, int flag){
+    ctx->state.glo.DEPTH_WRITEMASK = flag ? CWGL_TRUE : CWGL_FALSE;
 }
 
 CWGL_API void 

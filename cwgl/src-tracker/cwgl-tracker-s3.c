@@ -8,10 +8,28 @@ cwgl_lineWidth(cwgl_ctx_t* ctx, float width){
 // 3.5 Polygons
 CWGL_API void 
 cwgl_frontFace(cwgl_ctx_t* ctx, cwgl_enum_t mode){
+    switch(mode){
+        case CW:
+        case CCW:
+            ctx->state.glo.FRONT_FACE = mode;
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+    }
 }
 
 CWGL_API void 
 cwgl_cullFace(cwgl_ctx_t* ctx, cwgl_enum_t mode){
+    switch(mode){
+        case FRONT:
+        case BACK:
+        case FRONT_AND_BACK:
+            ctx->state.glo.CULL_FACE_MODE = mode;
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            break;
+    }
 }
 
 // 3.5.2 Depth offset

@@ -265,7 +265,31 @@ cwgl_validateProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
 // 2.12.1 Controlling the Viewport
 CWGL_API void 
 cwgl_depthRange(cwgl_ctx_t* ctx, float zNear, float zFar){
+    float cnear;
+    float cfar;
+    cnear = zNear;
+    cfar = zFar;
+    if(cnear > 1.0f){
+        cnear = 1.0f;
+    }
+    if(cnear < 0.0f){
+        cnear = 0.0f;
+    }
+    if(cfar > 1.0f){
+        cfar = 1.0f;
+    }
+    if(cfar < 0.0f){
+        cfar = 0.0f;
+    }
+    if(cfar < cnear){
+        /* WebGL1 6.14 */
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+    }else{
+        ctx->state.glo.DEPTH_RANGE[0] = cnear;
+        ctx->state.glo.DEPTH_RANGE[1] = cfar;
+    }
 }
+
 
 CWGL_API void 
 cwgl_viewport(cwgl_ctx_t* ctx, 
