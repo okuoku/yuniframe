@@ -117,6 +117,7 @@ CWGL_API void cwgl_Program_release(cwgl_ctx_t* ctx, cwgl_Program_t* program);
 CWGL_API void cwgl_Texture_release(cwgl_ctx_t* ctx, cwgl_Texture_t* texture);
 CWGL_API void cwgl_Framebuffer_release(cwgl_ctx_t* ctx, cwgl_Framebuffer_t* framebuffer);
 CWGL_API void cwgl_Renderbuffer_release(cwgl_ctx_t* ctx, cwgl_Renderbuffer_t* renderbuffer);
+CWGL_API void cwgl_VertexArrayObject_release(cwgl_ctx_t* ctx, cwgl_VertexArrayObject_t* vao);
 
 struct cwgl_UniformLocation_s;
 typedef struct cwgl_UniformLocation_s cwgl_UniformLocation_t;
@@ -333,6 +334,7 @@ CWGL_API cwgl_query_result_t cwgl_getUniform_m4(cwgl_ctx_t* ctx, cwgl_Program_t*
 // OES_vertex_array_object
 CWGL_API cwgl_VertexArrayObject_t* cwgl_createVertexArray(cwgl_ctx_t* ctx);
 CWGL_API void cwgl_bindVertexArray(cwgl_ctx_t* ctx, cwgl_VertexArrayObject_t* obj);
+CWGL_API void cwgl_deleteVertexArray(cwgl_ctx_t* ctx, cwgl_VertexArrayObject_t* obj);
 
 // {
 #ifdef __cplusplus

@@ -1,4 +1,5 @@
 #include "cwgl-tracker-priv.h"
+#include <stdlib.h>
 
 // 2.5 GL Errors
 CWGL_API cwgl_enum_t 
@@ -54,20 +55,100 @@ cwgl_drawElements(cwgl_ctx_t* ctx, cwgl_enum_t mode,
 
 
 // 2.9 Buffer Objects
+static cwgl_VertexArrayObject_t*
+current_vao(cwgl_ctx_t* ctx){
+    if(ctx->state.bin.VERTEX_ARRAY_BINDING){
+        return ctx->state.bin.VERTEX_ARRAY_BINDING;
+    }else{
+        return ctx->state.default_vao;
+    }
+}
+
+static void
+free_buffer(cwgl_Buffer_t* buffer){
+    free(buffer);
+    // FIXME: Teardown backend object here
+}
+
+static void
+unbind_buffer(cwgl_ctx_t* ctx, cwgl_Buffer_t* buffer){
+    int i;
+    cwgl_VertexArrayObject_t* vao;
+    if(buffer){
+        if(ctx->state.bin.ARRAY_BUFFER_BINDING == buffer){
+            cwgl_priv_buffer_release(buffer);
+            ctx->state.bin.ARRAY_BUFFER_BINDING = NULL;
+        }
+        vao = current_vao(ctx);
+        if(vao->state.ELEMENT_ARRAY_BUFFER_BINDING == buffer){
+            cwgl_priv_buffer_release(buffer);
+            vao->state.ELEMENT_ARRAY_BUFFER_BINDING = NULL;
+        }
+        for(i=0;i!=CWGL_MAX_VAO_SIZE;i++){
+            if(vao->attrib[i].VERTEX_ATTRIB_ARRAY_BUFFER_BINDING == buffer){
+                cwgl_priv_buffer_release(buffer);
+                vao->attrib[i].VERTEX_ATTRIB_ARRAY_BUFFER_BINDING = NULL;
+            }
+        }
+    }
+}
+
+void /* exported to cwgl-tracker-vao.c */
+cwgl_priv_buffer_release(cwgl_Buffer_t* buffer){
+    uintptr_t v;
+    if(buffer){
+        v = cwgl_priv_objhdr_release(&buffer->hdr);
+        if(!v){
+            free_buffer(buffer);
+        }
+    }
+}
+
 CWGL_API void 
 cwgl_bindBuffer(cwgl_ctx_t* ctx, cwgl_enum_t target, cwgl_Buffer_t* buffer){
+    uintptr_t v;
+    cwgl_Buffer_t** point;
+    cwgl_VertexArrayObject_t* vao;
+    switch(target){
+        case ARRAY_BUFFER:
+            point = &ctx->state.bin.ARRAY_BUFFER_BINDING;
+            break;
+        case ELEMENT_ARRAY_BUFFER:
+            vao = current_vao(ctx);
+            point = &vao->state.ELEMENT_ARRAY_BUFFER_BINDING;
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            return;
+    }
+    if(*point){
+        cwgl_priv_buffer_release(*point);
+    }
+    *point = buffer;
+    if(buffer){
+        cwgl_priv_objhdr_retain(&buffer->hdr);
+    }
 }
 
 CWGL_API void 
 cwgl_deleteBuffer(cwgl_ctx_t* ctx, cwgl_Buffer_t* buffer){
+    unbind_buffer(ctx, buffer);
 }
 
 CWGL_API cwgl_Buffer_t* 
 cwgl_createBuffer(cwgl_ctx_t* ctx){
+    cwgl_Buffer_t* buf;
+    buf = malloc(sizeof(cwgl_Buffer_t));
+    if(buf){
+        cwgl_priv_objhdr_init(ctx, &buf->hdr, CWGL_OBJ_BUFFER);
+        cwgl_priv_buffer_init(&buf->state);
+    }
+    return buf;
 }
 
 CWGL_API void
 cwgl_Buffer_release(cwgl_ctx_t* ctx, cwgl_Buffer_t* buffer){
+    cwgl_priv_buffer_release(buffer);
 }
 
 CWGL_API void 

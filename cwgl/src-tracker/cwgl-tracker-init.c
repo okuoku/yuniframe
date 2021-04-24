@@ -112,3 +112,46 @@ cwgl_priv_texture_init(cwgl_texture_state_t* state){
     state->TEXTURE_WRAP_S = REPEAT;
     state->TEXTURE_WRAP_T = REPEAT;
 }
+
+void
+cwgl_priv_vao_init(cwgl_vao_state_t* state, 
+                   cwgl_vao_attrib_state_t attrib[CWGL_MAX_VAO_SIZE]){
+    int i;
+    state->ELEMENT_ARRAY_BUFFER_BINDING = NULL;
+    for(i=0;i!=CWGL_MAX_VAO_SIZE;i++){
+        attrib[i].VERTEX_ATTRIB_ARRAY_BUFFER_BINDING = NULL;
+        attrib[i].VERTEX_ATTRIB_ARRAY_ENABLED = CWGL_FALSE;
+        attrib[i].VERTEX_ATTRIB_ARRAY_SIZE = 4;
+        attrib[i].VERTEX_ATTRIB_ARRAY_STRIDE = 0;
+        attrib[i].VERTEX_ATTRIB_ARRAY_TYPE = FLOAT;
+        attrib[i].VERTEX_ATTRIB_ARRAY_NORMALIZED = CWGL_FALSE;
+        attrib[i].CURRENT_VERTEX_ATTRIB[0] = 0.0f;
+        attrib[i].CURRENT_VERTEX_ATTRIB[1] = 0.0f;
+        attrib[i].CURRENT_VERTEX_ATTRIB[2] = 0.0f;
+        attrib[i].CURRENT_VERTEX_ATTRIB[3] = 1.0f;
+    }
+}
+
+/* Object header */
+
+void
+cwgl_priv_objhdr_init(cwgl_ctx_t* ctx, cwgl_objhdr_t* hdr, 
+                      cwgl_objtype_t objtype){
+    hdr->refcnt = 1;
+    hdr->type = objtype;
+    hdr->ctx = ctx;
+}
+
+uintptr_t
+cwgl_priv_objhdr_release(cwgl_objhdr_t* hdr){
+    uintptr_t v;
+    v = hdr->refcnt;
+    v--;
+    hdr->refcnt = v;
+    return v;
+}
+
+void
+cwgl_priv_objhdr_retain(cwgl_objhdr_t* hdr){
+    hdr->refcnt++;
+}

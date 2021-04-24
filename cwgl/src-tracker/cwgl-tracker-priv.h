@@ -16,7 +16,7 @@ struct cwgl_string_s {
 
 /* Context */
 enum cwgl_objtype_e {
-    CWGL_OBJ_CTX = 0x9857,
+    CWGL_OBJ_CTX = 0x299857,
     CWGL_OBJ_BUFFER,
     CWGL_OBJ_SHADER,
     CWGL_OBJ_PROGRAM,
@@ -72,8 +72,11 @@ struct cwgl_Framebuffer_s {
     cwgl_framebuffer_state_t state;
 };
 
+#define CWGL_MAX_VAO_SIZE 32
 struct cwgl_VertexArrayObject_s {
     cwgl_objhdr_t hdr;
+    cwgl_vao_state_t state;
+    cwgl_vao_attrib_state_t attrib[CWGL_MAX_VAO_SIZE];
 };
 
 /* Initializers */
@@ -81,6 +84,14 @@ void cwgl_priv_buffer_init(cwgl_buffer_state_t* state);
 void cwgl_priv_framebuffer_attachment_init(cwgl_framebuffer_attachment_state_t* state);
 void cwgl_priv_renderbuffer_init(cwgl_renderbuffer_state_t* state);
 void cwgl_priv_texture_init(cwgl_texture_state_t* state);
+void cwgl_priv_vao_init(cwgl_vao_state_t* state, cwgl_vao_attrib_state_t attrib[CWGL_MAX_VAO_SIZE]);
+
+void cwgl_priv_objhdr_init(cwgl_ctx_t* ctx, cwgl_objhdr_t* hdr, cwgl_objtype_t objtype);
+uintptr_t cwgl_priv_objhdr_release(cwgl_objhdr_t* hdr);
+void cwgl_priv_objhdr_retain(cwgl_objhdr_t* hdr);
+
+/* xref */
+void cwgl_priv_buffer_release(cwgl_Buffer_t* buffer);
 
 #define CTX_SET_ERROR(ctx, num) ctx->state.err = num
 

@@ -225,15 +225,26 @@ CWGL_API cwgl_query_result_t
 cwgl_getParameter_str(cwgl_ctx_t* ctx, cwgl_enum_t pname, cwgl_string_t** str){
 }
 
+static cwgl_VertexArrayObject_t*
+current_vao(cwgl_ctx_t* ctx){
+    if(ctx->state.bin.VERTEX_ARRAY_BINDING){
+        return ctx->state.bin.VERTEX_ARRAY_BINDING;
+    }else{
+        return ctx->state.default_vao;
+    }
+}
+
 CWGL_API cwgl_query_result_t 
 cwgl_getParameter_Buffer(cwgl_ctx_t* ctx, cwgl_enum_t pname, 
                          cwgl_Buffer_t** buffer){
+    cwgl_VertexArrayObject_t* vao;
     switch(pname){
         case ARRAY_BUFFER_BINDING:
             *buffer = ctx->state.bin.ARRAY_BUFFER_BINDING;
             return CWGL_QR_SUCCESS;
         case ELEMENT_ARRAY_BUFFER_BINDING:
-            *buffer = ctx->state.bin.ELEMENT_ARRAY_BUFFER_BINDING;
+            vao = current_vao;
+            *buffer = vao->state.ELEMENT_ARRAY_BUFFER_BINDING;
             return CWGL_QR_SUCCESS;
         default:
         CTX_SET_ERROR(ctx, INVALID_ENUM);

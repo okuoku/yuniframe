@@ -115,7 +115,7 @@ typedef struct cwgl_ctx_global_state_s cwgl_ctx_global_state_t;
 struct cwgl_ctx_bindings_s {
     /* GLES2 Table 6.2 */
     cwgl_Buffer_t* ARRAY_BUFFER_BINDING;
-    cwgl_Buffer_t* ELEMENT_ARRAY_BUFFER_BINDING;
+    /* ELEMENT_ARRAY_BUFFER_BINDING: gone to VAO */
     /* GLES2 Table 6.15 */
     cwgl_Program_t* CURRENT_PROGRAM;
     /* GLES2 Table 6.7 */
@@ -125,6 +125,8 @@ struct cwgl_ctx_bindings_s {
     cwgl_Framebuffer_t* FRAMEBUFFER_BINDING;
     /* GLES2 Table 6.23 */
     cwgl_Renderbuffer_t* RENDERBUFFER_BINDING;
+    /* OES_vertex_array_object */
+    cwgl_VertexArrayObject_t* VERTEX_ARRAY_BINDING;
 };
 
 typedef struct cwgl_ctx_bindings_s cwgl_ctx_bindings_t;
@@ -137,6 +139,8 @@ struct cwgl_ctx_tracker_state_s {
     cwgl_ctx_config_t cfg;
     cwgl_ctx_global_state_t glo;
     cwgl_ctx_bindings_t bin;
+
+    cwgl_VertexArrayObject_t* default_vao;
 };
 
 typedef struct cwgl_ctx_tracker_state_s cwgl_ctx_tracker_state_t;
@@ -220,6 +224,27 @@ struct cwgl_shader_state_s {
 };
 
 typedef struct cwgl_shader_state_s cwgl_shader_state_t;
+
+struct cwgl_vao_attrib_state_s {
+    /* getVertexAttrib */
+    cwgl_Buffer_t* VERTEX_ATTRIB_ARRAY_BUFFER_BINDING;
+    cwgl_bool_t VERTEX_ATTRIB_ARRAY_ENABLED;
+    uint32_t VERTEX_ATTRIB_ARRAY_SIZE;
+    uint32_t VERTEX_ATTRIB_ARRAY_STRIDE;
+    cwgl_enum_t VERTEX_ATTRIB_ARRAY_TYPE;
+    cwgl_bool_t VERTEX_ATTRIB_ARRAY_NORMALIZED;
+    float CURRENT_VERTEX_ATTRIB[4];
+    /* getVertexAttribOffset */
+    uint32_t VERTEX_ATTRIB_ARRAY_POINTER;
+};
+
+struct cwgl_vao_state_s {
+    /* getParameter */
+    cwgl_Buffer_t* ELEMENT_ARRAY_BUFFER_BINDING;
+};
+
+typedef struct cwgl_vao_state_s cwgl_vao_state_t;
+typedef struct cwgl_vao_attrib_state_s cwgl_vao_attrib_state_t;
 
 // {
 #ifdef __cplusplus
