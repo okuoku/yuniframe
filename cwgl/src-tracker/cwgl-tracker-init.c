@@ -85,7 +85,7 @@ cwgl_priv_buffer_init(cwgl_buffer_state_t* state){
 }
 
 void
-cwgl_framebuffer_attachment_init(cwgl_framebuffer_attachment_state_t* state){
+cwgl_priv_framebuffer_attachment_init(cwgl_framebuffer_attachment_state_t* state){
     state->FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE = NONE;
     state->FRAMEBUFFER_ATTACHMENT_OBJECT_NAME.asVoid = 0;
     state->FRAMEBUFFER_ATTACHMENT_TEXTURE_LEVEL = 0;
@@ -93,7 +93,7 @@ cwgl_framebuffer_attachment_init(cwgl_framebuffer_attachment_state_t* state){
 }
 
 void
-cwgl_renderbuffer_init(cwgl_renderbuffer_state_t* state){
+cwgl_priv_renderbuffer_init(cwgl_renderbuffer_state_t* state){
     state->RENDERBUFFER_WIDTH = 0;
     state->RENDERBUFFER_HEIGHT = 0;
     state->RENDERBUFFER_INTERNAL_FORMAT = RGBA4;
