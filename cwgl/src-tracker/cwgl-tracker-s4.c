@@ -254,14 +254,29 @@ cwgl_clear(cwgl_ctx_t* ctx, uint32_t mask){
 CWGL_API void 
 cwgl_clearColor(cwgl_ctx_t* ctx, 
                 float red, float green, float blue, float alpha){
+    ctx->state.glo.COLOR_CLEAR_VALUE[0] = red;
+    ctx->state.glo.COLOR_CLEAR_VALUE[1] = green;
+    ctx->state.glo.COLOR_CLEAR_VALUE[2] = blue;
+    ctx->state.glo.COLOR_CLEAR_VALUE[3] = alpha;
 }
 
 CWGL_API void 
 cwgl_clearDepth(cwgl_ctx_t* ctx, float depth){
+    if(depth > 1.0f){
+        ctx->state.glo.DEPTH_CLEAR_VALUE = 1.0f;
+    }else if(depth < 0.0f){
+        ctx->state.glo.DEPTH_CLEAR_VALUE = 0;
+    }else{
+        ctx->state.glo.DEPTH_CLEAR_VALUE = depth;
+    }
 }
 
 CWGL_API void 
 cwgl_clearStencil(cwgl_ctx_t* ctx, int32_t s){
+    const unsigned int stencilwidth = ctx->state.cfg.STENCIL_BITS;
+    const uint32_t stencilmask = (1 << stencilwidth) -1;
+
+    ctx->state.glo.STENCIL_CLEAR_VALUE = (s & stencilmask);
 }
 
 

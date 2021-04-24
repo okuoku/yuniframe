@@ -27,6 +27,12 @@ cwgl_priv_ctx_init(cwgl_ctx_t* ctx){
     ctx->state.glo.BLEND_SRC_ALPHA = ONE;
     ctx->state.glo.BLEND_DST_RGB = ZERO;
     ctx->state.glo.BLEND_DST_ALPHA = ZERO;
+    ctx->state.glo.COLOR_CLEAR_VALUE[0] = 0.0f;
+    ctx->state.glo.COLOR_CLEAR_VALUE[1] = 0.0f;
+    ctx->state.glo.COLOR_CLEAR_VALUE[2] = 0.0f;
+    ctx->state.glo.COLOR_CLEAR_VALUE[3] = 0.0f;
+    ctx->state.glo.DEPTH_CLEAR_VALUE = 1.0f;
+    ctx->state.glo.STENCIL_CLEAR_VALUE = 0;
     
 }
 
