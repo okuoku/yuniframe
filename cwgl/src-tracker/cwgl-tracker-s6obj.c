@@ -60,6 +60,31 @@ cwgl_getParameter_b4(cwgl_ctx_t* ctx, cwgl_enum_t pname,
 
 CWGL_API cwgl_query_result_t 
 cwgl_getParameter_i1(cwgl_ctx_t* ctx, cwgl_enum_t pname, int32_t* x){
+#define FB(n) case n: \
+    if(ctx->state.bin.FRAMEBUFFER_BINDING){\
+        /* FIXME: Check framebuffer completion status */ \
+        *x = (int32_t)ctx->state.bin.FRAMEBUFFER_BINDING->state.n; \
+        return CWGL_QR_SUCCESS; \
+    } else { \
+        CTX_SET_ERROR(ctx, INVALID_OPERATION); \
+        return CWGL_QR_GLERROR; \
+    } break
+
+    /* Handle framebuffer status */
+    switch(pname){
+        /* GLES2 Table 6.21 */
+        FB(RED_BITS);
+        FB(GREEN_BITS);
+        FB(BLUE_BITS);
+        FB(ALPHA_BITS);
+        FB(DEPTH_BITS);
+        FB(STENCIL_BITS);
+        FB(IMPLEMENTATION_COLOR_READ_TYPE);
+        FB(IMPLEMENTATION_COLOR_READ_FORMAT);
+        default:
+            break;
+    }
+#undef FB
 #define CASE(x) _CASE1(cfg, x)
 #define GLO(x) _CASE1(glo, x)
     switch(pname){
@@ -78,17 +103,6 @@ cwgl_getParameter_i1(cwgl_ctx_t* ctx, cwgl_enum_t pname, int32_t* x){
         CASE(MAX_TEXTURE_IMAGE_UNITS);
         CASE(MAX_FRAGMENT_UNIFORM_VECTORS);
         CASE(MAX_RENDERBUFFER_SIZE);
-        /* GLES2 Table 6.12 */
-        CASE(RED_BITS);
-        CASE(GREEN_BITS);
-        CASE(BLUE_BITS);
-        CASE(ALPHA_BITS);
-        CASE(DEPTH_BITS);
-        CASE(STENCIL_BITS);
-        /* FIXME: Check framebuffer completion status
-        CASE(IMPLEMENTATION_COLOR_READ_TYPE);
-        CASE(IMPLEMENTATION_COLOR_READ_FORMAT);
-        */
         /* GLES2 Table 6.5 */
         GLO(CULL_FACE_MODE);
         GLO(FRONT_FACE);

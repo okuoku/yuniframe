@@ -80,7 +80,7 @@ struct cwgl_VertexArrayObject_s {
 void cwgl_priv_buffer_init(cwgl_buffer_state_t* state);
 void cwgl_framebuffer_attachment_init(cwgl_framebuffer_attachment_state_t* state);
 void cwgl_renderbuffer_init(cwgl_renderbuffer_state_t* state);
-void cwgl_priv_texture_init(cwgl_texture_state_t* state)
+void cwgl_priv_texture_init(cwgl_texture_state_t* state);
 
 #define CTX_SET_ERROR(ctx, num) ctx->state.err = num
 

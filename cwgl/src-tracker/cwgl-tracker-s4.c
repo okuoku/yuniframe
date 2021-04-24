@@ -488,10 +488,14 @@ cwgl_clearDepth(cwgl_ctx_t* ctx, float depth){
 
 CWGL_API void 
 cwgl_clearStencil(cwgl_ctx_t* ctx, int32_t s){
+    /* FIXME: GLES2 requires implicit AND against with current STENCIL_BITS */
+    /*
     const unsigned int stencilwidth = ctx->state.cfg.STENCIL_BITS;
     const uint32_t stencilmask = (1 << stencilwidth) -1;
 
     ctx->state.glo.STENCIL_CLEAR_VALUE = (s & stencilmask);
+    */
+    ctx->state.glo.STENCIL_CLEAR_VALUE = s;
 }
 
 

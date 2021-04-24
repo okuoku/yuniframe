@@ -40,15 +40,6 @@ struct cwgl_ctx_config_s {
     int32_t MAX_TEXTURE_IMAGE_UNITS;
     int32_t MAX_FRAGMENT_UNIFORM_VECTORS;
     int32_t MAX_RENDERBUFFER_SIZE;
-    /* GLES2 Table 6.21 */
-    int32_t RED_BITS;
-    int32_t GREEN_BITS;
-    int32_t BLUE_BITS;
-    int32_t ALPHA_BITS;
-    int32_t DEPTH_BITS;
-    int32_t STENCIL_BITS;
-    cwgl_enum_t IMPLEMENTATION_COLOR_READ_TYPE;
-    cwgl_enum_t IMPLEMENTATION_COLOR_READ_FORMAT;
 };
 
 typedef struct cwgl_ctx_config_s cwgl_ctx_config_t;
@@ -175,6 +166,15 @@ struct cwgl_framebuffer_state_s {
     cwgl_framebuffer_attachment_state_t COLOR_ATTACHMENT0;
     cwgl_framebuffer_attachment_state_t DEPTH_ATTACHMENT;
     cwgl_framebuffer_attachment_state_t STENCIL_ATTACHMENT;
+    /* GLES2 Table 6.21 */
+    int32_t RED_BITS;
+    int32_t GREEN_BITS;
+    int32_t BLUE_BITS;
+    int32_t ALPHA_BITS;
+    int32_t DEPTH_BITS;
+    int32_t STENCIL_BITS;
+    cwgl_enum_t IMPLEMENTATION_COLOR_READ_TYPE;
+    cwgl_enum_t IMPLEMENTATION_COLOR_READ_FORMAT;
 };
 
 typedef struct cwgl_framebuffer_state_s cwgl_framebuffer_state_t;
