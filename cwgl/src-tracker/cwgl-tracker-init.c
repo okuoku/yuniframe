@@ -78,3 +78,37 @@ cwgl_priv_ctx_init(cwgl_ctx_t* ctx){
     ctx->state.glo.VIEWPORT[3] = 0; // FIXME: Configure at window attach
 }
 
+void
+cwgl_priv_buffer_init(cwgl_buffer_state_t* state){
+    state->BUFFER_SIZE = 0;
+    state->BUFFER_USAGE = STATIC_DRAW;
+}
+
+void
+cwgl_framebuffer_attachment_init(cwgl_framebuffer_attachment_state_t* state){
+    state->FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE = NONE;
+    state->FRAMEBUFFER_ATTACHMENT_OBJECT_NAME.asVoid = 0;
+    state->FRAMEBUFFER_ATTACHMENT_TEXTURE_LEVEL = 0;
+    state->FRAMEBUFFER_ATTACHMENT_TEXTURE_CUBE_MAP_FACE = 0;
+}
+
+void
+cwgl_renderbuffer_init(cwgl_renderbuffer_state_t* state){
+    state->RENDERBUFFER_WIDTH = 0;
+    state->RENDERBUFFER_HEIGHT = 0;
+    state->RENDERBUFFER_INTERNAL_FORMAT = RGBA4;
+    state->RENDERBUFFER_RED_SIZE = 0;
+    state->RENDERBUFFER_GREEN_SIZE = 0;
+    state->RENDERBUFFER_BLUE_SIZE = 0;
+    state->RENDERBUFFER_ALPHA_SIZE = 0;
+    state->RENDERBUFFER_DEPTH_SIZE = 0;
+    state->RENDERBUFFER_STENCIL_SIZE = 0;
+}
+
+void
+cwgl_priv_texture_init(cwgl_texture_state_t* state){
+    state->TEXTURE_MAG_FILTER = LINEAR;
+    state->TEXTURE_MIN_FILTER = NEAREST_MIPMAP_LINEAR;
+    state->TEXTURE_WRAP_S = REPEAT;
+    state->TEXTURE_WRAP_T = REPEAT;
+}

@@ -43,12 +43,15 @@ struct cwgl_ctx_s {
 /* Buffer structures */
 struct cwgl_Buffer_s {
     cwgl_objhdr_t hdr;
+    cwgl_buffer_state_t state;
 };
 struct cwgl_Shader_s {
     cwgl_objhdr_t hdr;
+    cwgl_shader_state_t state;
 };
 struct cwgl_Program_s {
     cwgl_objhdr_t hdr;
+    cwgl_program_state_t state;
 };
 struct cwgl_UniformLocation_s {
     cwgl_objhdr_t hdr;
@@ -56,19 +59,28 @@ struct cwgl_UniformLocation_s {
 
 struct cwgl_Texture_s {
     cwgl_objhdr_t hdr;
+    cwgl_texture_state_t state;
 };
 
 struct cwgl_Renderbuffer_s {
     cwgl_objhdr_t hdr;
+    cwgl_renderbuffer_state_t state;
 };
 
 struct cwgl_Framebuffer_s {
     cwgl_objhdr_t hdr;
+    cwgl_framebuffer_state_t state;
 };
 
 struct cwgl_VertexArrayObject_s {
     cwgl_objhdr_t hdr;
 };
+
+/* Initializers */
+void cwgl_priv_buffer_init(cwgl_buffer_state_t* state);
+void cwgl_framebuffer_attachment_init(cwgl_framebuffer_attachment_state_t* state);
+void cwgl_renderbuffer_init(cwgl_renderbuffer_state_t* state);
+void cwgl_priv_texture_init(cwgl_texture_state_t* state)
 
 #define CTX_SET_ERROR(ctx, num) ctx->state.err = num
 

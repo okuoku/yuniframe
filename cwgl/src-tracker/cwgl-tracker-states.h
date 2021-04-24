@@ -150,6 +150,77 @@ struct cwgl_ctx_tracker_state_s {
 
 typedef struct cwgl_ctx_tracker_state_s cwgl_ctx_tracker_state_t;
 
+struct cwgl_buffer_state_s {
+    uint32_t BUFFER_SIZE;
+    cwgl_enum_t BUFFER_USAGE;
+};
+
+typedef struct cwgl_buffer_state_s cwgl_buffer_state_t;
+
+struct cwgl_framebuffer_attachment_state_s {
+    cwgl_enum_t FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE;
+    union {
+        void* asVoid;
+        cwgl_Texture_t* asTexture;
+        cwgl_Renderbuffer_t* asRenderbuffer;
+    } FRAMEBUFFER_ATTACHMENT_OBJECT_NAME;
+    uint32_t FRAMEBUFFER_ATTACHMENT_TEXTURE_LEVEL;
+    cwgl_enum_t FRAMEBUFFER_ATTACHMENT_TEXTURE_CUBE_MAP_FACE;
+};
+
+typedef struct cwgl_framebuffer_attachment_state_s 
+cwgl_framebuffer_attachment_state_t;
+
+struct cwgl_framebuffer_state_s {
+    cwgl_framebuffer_attachment_state_t COLOR_ATTACHMENT0;
+    cwgl_framebuffer_attachment_state_t DEPTH_ATTACHMENT;
+    cwgl_framebuffer_attachment_state_t STENCIL_ATTACHMENT;
+};
+
+typedef struct cwgl_framebuffer_state_s cwgl_framebuffer_state_t;
+
+struct cwgl_renderbuffer_state_s {
+    int32_t RENDERBUFFER_WIDTH;
+    int32_t RENDERBUFFER_HEIGHT;
+    cwgl_enum_t RENDERBUFFER_INTERNAL_FORMAT;
+    int32_t RENDERBUFFER_RED_SIZE;
+    int32_t RENDERBUFFER_GREEN_SIZE;
+    int32_t RENDERBUFFER_BLUE_SIZE;
+    int32_t RENDERBUFFER_ALPHA_SIZE;
+    int32_t RENDERBUFFER_DEPTH_SIZE;
+    int32_t RENDERBUFFER_STENCIL_SIZE;
+};
+
+typedef struct cwgl_renderbuffer_state_s cwgl_renderbuffer_state_t;
+
+struct cwgl_texture_state_s {
+    cwgl_enum_t TEXTURE_MAG_FILTER;
+    cwgl_enum_t TEXTURE_MIN_FILTER;
+    cwgl_enum_t TEXTURE_WRAP_S;
+    cwgl_enum_t TEXTURE_WRAP_T;
+};
+
+typedef struct cwgl_texture_state_s cwgl_texture_state_t;
+
+struct cwgl_program_state_s {
+    cwgl_bool_t DELETE_STATUS;
+    cwgl_bool_t LINK_STATUS;
+    cwgl_bool_t VALIDATE_STATUS;
+    uint32_t ATTACHED_SHADERS;
+    uint32_t ACTIVE_ATTRIBUTES;
+    uint32_t ACTIVE_UNIFORMS;
+};
+
+typedef struct cwgl_program_state_s cwgl_program_state_t;
+
+struct cwgl_shader_state_s {
+    cwgl_enum_t SHADER_TYPE;
+    cwgl_bool_t DELETE_STATUS;
+    cwgl_bool_t COMPILE_STATUS;
+};
+
+typedef struct cwgl_shader_state_s cwgl_shader_state_t;
+
 // {
 #ifdef __cplusplus
 };
