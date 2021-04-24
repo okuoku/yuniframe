@@ -284,19 +284,40 @@ cwgl_getParameter_Texture(cwgl_ctx_t* ctx, cwgl_enum_t pname,
 
 CWGL_API int 
 cwgl_isEnabled(cwgl_ctx_t* ctx, cwgl_enum_t cap){
-    // FIXME: Should not accept non enable() disable() capable enums
-    int32_t r;
-    cwgl_query_result_t qr;
-    qr = cwgl_getParameter_b1(ctx, cap, &r);
-    if(qr == CWGL_QR_SUCCESS){
-        if(r){
-            return 1;
-        }else{
-            return 0;
-        }
-    }else{
-        return 0;
+    int r = 0;
+    switch(cap){
+        case BLEND:
+            r = ctx->state.glo.BLEND ? 1 : 0;
+            break;
+        case CULL_FACE:
+            r = ctx->state.glo.CULL_FACE ? 1 : 0;
+            break;
+        case DEPTH_TEST:
+            r = ctx->state.glo.DEPTH_TEST ? 1 : 0;
+            break;
+        case DITHER:
+            r = ctx->state.glo.DITHER ? 1 : 0;
+            break;
+        case POLYGON_OFFSET_FILL:
+            r = ctx->state.glo.POLYGON_OFFSET_FILL ? 1 : 0;
+            break;
+        case SAMPLE_ALPHA_TO_COVERAGE:
+            r = ctx->state.glo.SAMPLE_ALPHA_TO_COVERAGE ? 1 : 0;
+            break;
+        case SAMPLE_COVERAGE:
+            r = ctx->state.glo.SAMPLE_COVERAGE ? 1 : 0;
+            break;
+        case SCISSOR_TEST:
+            r = ctx->state.glo.SCISSOR_TEST ? 1 : 0;
+            break;
+        case STENCIL_TEST:
+            r = ctx->state.glo.STENCIL_TEST ? 1 : 0;
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            break;
     }
+    return r;
 }
 
 // 6.1.3 Enumerated Queries
