@@ -17,23 +17,194 @@ cwgl_sampleCoverage(cwgl_ctx_t* ctx, float value, int invert){
 CWGL_API void 
 cwgl_stencilFunc(cwgl_ctx_t* ctx, 
                  cwgl_enum_t func, int32_t ref, uint32_t mask){
+    switch(func){
+        case NEVER:
+        case LESS:
+        case EQUAL:
+        case LEQUAL:
+        case GREATER:
+        case NOTEQUAL:
+        case GEQUAL:
+        case ALWAYS:
+            ctx->state.glo.STENCIL_FUNC = func;
+            ctx->state.glo.STENCIL_VALUE_MASK = mask;
+            ctx->state.glo.STENCIL_REF = ref;
+            ctx->state.glo.STENCIL_BACK_FUNC = func;
+            ctx->state.glo.STENCIL_BACK_VALUE_MASK = mask;
+            ctx->state.glo.STENCIL_BACK_REF = ref;
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            break;
+    }
+
 }
 
 CWGL_API void 
 cwgl_stencilFuncSeparate(cwgl_ctx_t* ctx, 
                          cwgl_enum_t face, cwgl_enum_t func, 
                          int32_t ref, uint32_t mask){
+    switch(func){
+        case NEVER:
+        case LESS:
+        case EQUAL:
+        case LEQUAL:
+        case GREATER:
+        case NOTEQUAL:
+        case GEQUAL:
+        case ALWAYS:
+            switch(face){
+                case FRONT:
+                    ctx->state.glo.STENCIL_FUNC = func;
+                    ctx->state.glo.STENCIL_VALUE_MASK = mask;
+                    ctx->state.glo.STENCIL_REF = ref;
+                    break;
+                case BACK:
+                    ctx->state.glo.STENCIL_BACK_FUNC = func;
+                    ctx->state.glo.STENCIL_BACK_VALUE_MASK = mask;
+                    ctx->state.glo.STENCIL_BACK_REF = ref;
+                    break;
+                case FRONT_AND_BACK:
+                    ctx->state.glo.STENCIL_FUNC = func;
+                    ctx->state.glo.STENCIL_VALUE_MASK = mask;
+                    ctx->state.glo.STENCIL_REF = ref;
+                    ctx->state.glo.STENCIL_BACK_FUNC = func;
+                    ctx->state.glo.STENCIL_BACK_VALUE_MASK = mask;
+                    ctx->state.glo.STENCIL_BACK_REF = ref;
+                    break;
+                default:
+                    CTX_SET_ERROR(ctx, INVALID_ENUM);
+                    break;
+            }
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            break;
+    }
 }
 
 CWGL_API void 
 cwgl_stencilOp(cwgl_ctx_t* ctx, 
                cwgl_enum_t fail, cwgl_enum_t zfail, cwgl_enum_t zpass){
+    switch(fail){
+        case KEEP:
+        case ZERO:
+        case REPLACE:
+        case INCR:
+        case INCR_WRAP:
+        case DECR:
+        case DECR_WRAP:
+        case INVERT:
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            return;
+    }
+    switch(zfail){
+        case KEEP:
+        case ZERO:
+        case REPLACE:
+        case INCR:
+        case INCR_WRAP:
+        case DECR:
+        case DECR_WRAP:
+        case INVERT:
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            return;
+    }
+    switch(zpass){
+        case KEEP:
+        case ZERO:
+        case REPLACE:
+        case INCR:
+        case INCR_WRAP:
+        case DECR:
+        case DECR_WRAP:
+        case INVERT:
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            return;
+    }
+
+    ctx->state.glo.STENCIL_FAIL = fail;
+    ctx->state.glo.STENCIL_PASS_DEPTH_FAIL = zfail;
+    ctx->state.glo.STENCIL_PASS_DEPTH_PASS = zpass;
+
+    ctx->state.glo.STENCIL_BACK_FAIL = fail;
+    ctx->state.glo.STENCIL_BACK_PASS_DEPTH_FAIL = zfail;
+    ctx->state.glo.STENCIL_BACK_PASS_DEPTH_PASS = zpass;
+
 }
 
 CWGL_API void 
 cwgl_stencilOpSeparate(cwgl_ctx_t* ctx,
                        cwgl_enum_t face, cwgl_enum_t fail, 
                        cwgl_enum_t zfail, cwgl_enum_t zpass){
+    switch(fail){
+        case KEEP:
+        case ZERO:
+        case REPLACE:
+        case INCR:
+        case INCR_WRAP:
+        case DECR:
+        case DECR_WRAP:
+        case INVERT:
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            return;
+    }
+    switch(zfail){
+        case KEEP:
+        case ZERO:
+        case REPLACE:
+        case INCR:
+        case INCR_WRAP:
+        case DECR:
+        case DECR_WRAP:
+        case INVERT:
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            return;
+    }
+    switch(zpass){
+        case KEEP:
+        case ZERO:
+        case REPLACE:
+        case INCR:
+        case INCR_WRAP:
+        case DECR:
+        case DECR_WRAP:
+        case INVERT:
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            return;
+    }
+    switch(face){
+        case FRONT:
+            ctx->state.glo.STENCIL_FAIL = fail;
+            ctx->state.glo.STENCIL_PASS_DEPTH_FAIL = zfail;
+            ctx->state.glo.STENCIL_PASS_DEPTH_PASS = zpass;
+            break;
+        case BACK:
+            ctx->state.glo.STENCIL_BACK_FAIL = fail;
+            ctx->state.glo.STENCIL_BACK_PASS_DEPTH_FAIL = zfail;
+            ctx->state.glo.STENCIL_BACK_PASS_DEPTH_PASS = zpass;
+            break;
+        case FRONT_AND_BACK:
+            ctx->state.glo.STENCIL_FAIL = fail;
+            ctx->state.glo.STENCIL_PASS_DEPTH_FAIL = zfail;
+            ctx->state.glo.STENCIL_PASS_DEPTH_PASS = zpass;
+            ctx->state.glo.STENCIL_BACK_FAIL = fail;
+            ctx->state.glo.STENCIL_BACK_PASS_DEPTH_FAIL = zfail;
+            ctx->state.glo.STENCIL_BACK_PASS_DEPTH_PASS = zpass;
+            break;
+    }
 }
 
 // 4.1.5 Depth Buffer Test
@@ -261,10 +432,27 @@ cwgl_depthMask(cwgl_ctx_t* ctx, int flag){
 
 CWGL_API void 
 cwgl_stencilMask(cwgl_ctx_t* ctx, uint32_t mask){
+    ctx->state.glo.STENCIL_WRITEMASK = mask;
+    ctx->state.glo.STENCIL_BACK_WRITEMASK = mask;
 }
 
 CWGL_API void 
 cwgl_stencilMaskSeparate(cwgl_ctx_t* ctx, cwgl_enum_t face, uint32_t mask){
+    switch(mask){
+        case FRONT:
+            ctx->state.glo.STENCIL_WRITEMASK = mask;
+            break;
+        case BACK:
+            ctx->state.glo.STENCIL_BACK_WRITEMASK = mask;
+            break;
+        case FRONT_AND_BACK:
+            ctx->state.glo.STENCIL_WRITEMASK = mask;
+            ctx->state.glo.STENCIL_BACK_WRITEMASK = mask;
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            break;
+    }
 }
 
 

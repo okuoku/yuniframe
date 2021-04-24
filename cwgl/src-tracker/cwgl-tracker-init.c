@@ -54,6 +54,20 @@ cwgl_priv_ctx_init(cwgl_ctx_t* ctx){
     ctx->state.glo.POLYGON_OFFSET_UNITS = 0.0f;
     ctx->state.glo.SAMPLE_COVERAGE_VALUE = 1.0f;
     ctx->state.glo.SAMPLE_COVERAGE_INVERT = CWGL_FALSE;
+    ctx->state.glo.STENCIL_FUNC = ALWAYS;
+    ctx->state.glo.STENCIL_REF = 0;
+    ctx->state.glo.STENCIL_VALUE_MASK = -1;
+    ctx->state.glo.STENCIL_BACK_FUNC = ALWAYS;
+    ctx->state.glo.STENCIL_BACK_REF = 0;
+    ctx->state.glo.STENCIL_BACK_VALUE_MASK = -1;
+    ctx->state.glo.STENCIL_WRITEMASK = -1;
+    ctx->state.glo.STENCIL_BACK_WRITEMASK = -1;
+    ctx->state.glo.STENCIL_FAIL = KEEP;
+    ctx->state.glo.STENCIL_PASS_DEPTH_FAIL = KEEP;
+    ctx->state.glo.STENCIL_PASS_DEPTH_PASS = KEEP;
+    ctx->state.glo.STENCIL_BACK_FAIL = KEEP;
+    ctx->state.glo.STENCIL_BACK_PASS_DEPTH_FAIL = KEEP;
+    ctx->state.glo.STENCIL_BACK_PASS_DEPTH_PASS = KEEP;
 
 }
 
