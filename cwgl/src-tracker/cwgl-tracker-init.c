@@ -68,6 +68,13 @@ cwgl_priv_ctx_init(cwgl_ctx_t* ctx){
     ctx->state.glo.STENCIL_BACK_FAIL = KEEP;
     ctx->state.glo.STENCIL_BACK_PASS_DEPTH_FAIL = KEEP;
     ctx->state.glo.STENCIL_BACK_PASS_DEPTH_PASS = KEEP;
-
+    ctx->state.glo.SCISSOR_BOX[0] = 0;
+    ctx->state.glo.SCISSOR_BOX[1] = 0;
+    ctx->state.glo.SCISSOR_BOX[2] = 0; // FIXME: Configure at window attach
+    ctx->state.glo.SCISSOR_BOX[3] = 0; // FIXME: Configure at window attach
+    ctx->state.glo.VIEWPORT[0] = 0;
+    ctx->state.glo.VIEWPORT[1] = 0;
+    ctx->state.glo.VIEWPORT[2] = 0; // FIXME: Configure at window attach
+    ctx->state.glo.VIEWPORT[3] = 0; // FIXME: Configure at window attach
 }
 

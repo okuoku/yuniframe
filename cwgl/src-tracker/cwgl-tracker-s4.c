@@ -4,6 +4,11 @@
 CWGL_API void
 cwgl_scissor(cwgl_ctx_t* ctx, 
              int32_t x, int32_t y, uint32_t width, uint32_t height){
+    /* GLES2: CWGL never return INVALID_VALUE */
+    ctx->state.glo.SCISSOR_BOX[0] = x;
+    ctx->state.glo.SCISSOR_BOX[1] = y;
+    ctx->state.glo.SCISSOR_BOX[2] = width;
+    ctx->state.glo.SCISSOR_BOX[3] = height;
 }
 
 // 4.1.3 Multisample Fragment Operations

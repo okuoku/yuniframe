@@ -298,5 +298,30 @@ cwgl_depthRange(cwgl_ctx_t* ctx, float zNear, float zFar){
 CWGL_API void 
 cwgl_viewport(cwgl_ctx_t* ctx, 
               int32_t x, int32_t y, int32_t width, int32_t height){
+    // FIXME: width/height Signedness do not match with scissor
+    int32_t cwidth;
+    int32_t cheight;
+    if(width < 0){
+        CTX_SET_ERROR(ctx, INVALID_VALUE);
+        return;
+    }
+    if(height < 0){
+        CTX_SET_ERROR(ctx, INVALID_VALUE);
+        return;
+    }
+    if(width > ctx->state.cfg.MAX_VIEWPORT_DIMS[0]){
+        cwidth = ctx->state.cfg.MAX_VIEWPORT_DIMS[0];
+    }else{
+        cwidth = width;
+    }
+    if(height > ctx->state.cfg.MAX_VIEWPORT_DIMS[1]){
+        cheight = ctx->state.cfg.MAX_VIEWPORT_DIMS[1];
+    }else{
+        cheight = height;
+    }
+    ctx->state.glo.VIEWPORT[0] = x;
+    ctx->state.glo.VIEWPORT[1] = y;
+    ctx->state.glo.VIEWPORT[2] = cwidth;
+    ctx->state.glo.VIEWPORT[3] = cheight;
 }
 
