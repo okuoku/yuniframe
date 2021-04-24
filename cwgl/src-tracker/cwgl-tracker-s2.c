@@ -3,6 +3,10 @@
 // 2.5 GL Errors
 CWGL_API cwgl_enum_t 
 cwgl_getError(cwgl_ctx_t* ctx){
+    cwgl_enum_t current_error;
+    current_error = ctx->state.err;
+    CTX_SET_ERROR(ctx, NO_ERROR);
+    return current_error;
 }
 
 // 2.7 Current Vertex State
