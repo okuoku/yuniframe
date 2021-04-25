@@ -349,16 +349,24 @@ cwgl_bindAttribLocation(cwgl_ctx_t* ctx, cwgl_Program_t* program,
 CWGL_API cwgl_UniformLocation_t* 
 cwgl_getUniformLocation(cwgl_ctx_t* ctx, cwgl_Program_t* program, 
                         const char* name){
+    // FIXME: Link with backend UniformLocation
+    cwgl_UniformLocation_t* u;
+    u = malloc(sizeof(cwgl_UniformLocation_t));
+    return u;
 }
 
 CWGL_API void
 cwgl_UniformLocation_release(cwgl_ctx_t* ctx, cwgl_UniformLocation_t* u){
+    // FIXME: Teardown backend UniformLocation here
+    free(u);
 }
 
 CWGL_API cwgl_query_result_t 
 cwgl_getActiveUniform(cwgl_ctx_t* ctx, cwgl_Program_t* program, 
                       int32_t index, int32_t* out_size, int32_t* out_type, 
                       cwgl_string_t** name){
+    // FIXME: Implement this
+    return CWGL_QR_UNIMPLEMENTED;
 }
 
 CWGL_API void 
