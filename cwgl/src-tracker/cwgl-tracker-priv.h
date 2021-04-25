@@ -92,6 +92,7 @@ void cwgl_priv_objhdr_retain(cwgl_objhdr_t* hdr);
 
 /* xref */
 void cwgl_priv_buffer_release(cwgl_Buffer_t* buffer);
+void cwgl_priv_texture_release(cwgl_Texture_t* texture);
 
 #define CTX_SET_ERROR(ctx, num) ctx->state.err = num
 

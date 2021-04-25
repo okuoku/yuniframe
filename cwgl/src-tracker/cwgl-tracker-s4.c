@@ -1,4 +1,5 @@
 #include "cwgl-tracker-priv.h"
+#include <stdlib.h>
 
 // 4.1.2 Scissor Test
 CWGL_API void
@@ -505,45 +506,148 @@ cwgl_readPixels(cwgl_ctx_t* ctx, int32_t x, int32_t y, uint32_t width, uint32_t 
 }
 
 // 4.4.1 Binding and Managing Framebuffer Objects
+static void release_renderbuffer(cwgl_Renderbuffer_t* rb);
+static void
+release_framebuffer_attachment(cwgl_framebuffer_attachment_state_t* a){
+    uintptr_t v;
+    switch(a->FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE){
+        case RENDERBUFFER:
+            release_renderbuffer(a->FRAMEBUFFER_ATTACHMENT_OBJECT_NAME.asRenderbuffer);
+            break;
+        case TEXTURE:
+            cwgl_priv_texture_release(a->FRAMEBUFFER_ATTACHMENT_OBJECT_NAME.asTexture);
+            break;
+        default:
+            /* Do nothing */
+            break;
+    }
+}
+
+static void
+release_framebuffer(cwgl_Framebuffer_t* fb){
+    uintptr_t v;
+    if(fb){
+        v = cwgl_priv_objhdr_release(&fb->hdr);
+        if(!v){
+            release_framebuffer_attachment(&fb->state.COLOR_ATTACHMENT0);
+            release_framebuffer_attachment(&fb->state.DEPTH_ATTACHMENT);
+            release_framebuffer_attachment(&fb->state.STENCIL_ATTACHMENT);
+            free(fb);
+        }
+    }
+}
+static void
+unbind_framebuffer(cwgl_ctx_t* ctx, cwgl_Framebuffer_t* fb){
+    if(fb){
+        if(ctx->state.bin.FRAMEBUFFER_BINDING == fb){
+            release_framebuffer(fb);
+            ctx->state.bin.FRAMEBUFFER_BINDING = NULL;
+        }
+    }
+}
 CWGL_API void 
 cwgl_bindFramebuffer(cwgl_ctx_t* ctx, 
                      cwgl_enum_t target, cwgl_Framebuffer_t* framebuffer){
+    switch(target){
+        case FRAMEBUFFER:
+            unbind_framebuffer(ctx, ctx->state.bin.FRAMEBUFFER_BINDING);
+            if(framebuffer){
+                cwgl_priv_objhdr_retain(ctx, &framebuffer->hdr);
+            }
+            ctx->state.bin.FRAMEBUFFER_BINDING = framebuffer;
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            break;
+    }
 }
 
 CWGL_API void 
 cwgl_deleteFramebuffer(cwgl_ctx_t* ctx, cwgl_Framebuffer_t* framebuffer){
+    unbind_framebuffer(ctx, framebuffer);
 }
 
 CWGL_API cwgl_Framebuffer_t* 
 cwgl_createFramebuffer(cwgl_ctx_t* ctx){
+    cwgl_Framebuffer_t* fb;
+    fb = malloc(sizeof(cwgl_Framebuffer_t));
+    if(fb){
+        cwgl_priv_objhdr_init(ctx, &fb->hdr, CWGL_OBJ_FRAMEBUFFER);
+        cwgl_priv_framebuffer_attachment_init(&fb->state.COLOR_ATTACHMENT0);
+        cwgl_priv_framebuffer_attachment_init(&fb->state.DEPTH_ATTACHMENT);
+        cwgl_priv_framebuffer_attachment_init(&fb->state.STENCIL_ATTACHMENT);
+    }
+    return fb;
 }
 
 CWGL_API void
 cwgl_Framebuffer_release(cwgl_ctx_t* ctx, cwgl_Framebuffer_t* framebuffer){
+    release_framebuffer(framebuffer);
 }
 
 // 4.4.3 Renderbuffer Objects
+static void
+release_renderbuffer(cwgl_Renderbuffer_t* rb){
+    uintptr_t v;
+    if(rb){
+        v = cwgl_priv_objhdr_release(&rb->hdr);
+        if(! v){
+            // FIXME: Teardown backend renderbuffer here
+            free(v);
+        }
+    }
+}
+static void
+unbind_renderbuffer(cwgl_ctx_t* ctx, cwgl_Renderbuffer_t* rb){
+    if(rb){
+        if(ctx->state.bin.RENDERBUFFER_BINDING == rb){
+            release_renderbuffer(rb);
+            ctx->state.bin.RENDERBUFFER_BINDING = NULL;
+        }
+    }
+}
+
 CWGL_API void 
 cwgl_bindRenderbuffer(cwgl_ctx_t* ctx, cwgl_enum_t target, 
                       cwgl_Renderbuffer_t* renderbuffer){
+    switch(target){
+        case RENDERBUFFER:
+            unbind_renderbuffer(ctx, ctx->state.bin.RENDERBUFFER_BINDING);
+            cwgl_priv_objhdr_retain(&renderbuffer->hdr);
+            ctx->state.bin.RENDERBUFFER_BINDING = renderbuffer;
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            break;
+    }
 }
 
 CWGL_API void 
 cwgl_deleteRenderbuffer(cwgl_ctx_t* ctx, cwgl_Renderbuffer_t* renderbuffer){
+    release_renderbuffer(renderbuffer);
 }
 
 CWGL_API cwgl_Renderbuffer_t* 
 cwgl_createRenderbuffer(cwgl_ctx_t* ctx){
+    cwgl_Renderbuffer_t* rb;
+    rb = malloc(sizeof(cwgl_Renderbuffer_t));
+    if(rb){
+        cwgl_priv_objhdr_init(ctx, &rb->hdr, CWGL_OBJ_RENDERBUFFER);
+        cwgl_priv_renderbuffer_init(&rb->state);
+    }
+    return rb;
 }
 
 CWGL_API void
 cwgl_Renderbuffer_release(cwgl_ctx_t* ctx, cwgl_Renderbuffer_t* renderbuffer){
+    release_renderbuffer(renderbuffer);
 }
 
 CWGL_API void 
 cwgl_renderbufferStorage(cwgl_ctx_t* ctx, 
                          cwgl_enum_t target, cwgl_enum_t internalformat, 
                          uint32_t width, uint32_t height){
+    // FIXME: Allocate backend objects and adjust states here
 }
 
 CWGL_API void 
@@ -551,12 +655,101 @@ cwgl_framebufferRenderbuffer(cwgl_ctx_t* ctx, cwgl_enum_t target,
                              cwgl_enum_t attachment, 
                              cwgl_enum_t renderbuffertarget, 
                              cwgl_Renderbuffer_t* renderbuffer){
+    cwgl_Framebuffer_t* fb;
+    cwgl_framebuffer_attachment_state_t* point;
+    if(renderbuffertarget != RENDERBUFFER){
+        CTX_SET_ERROR(ctx, INVALID_ENUM);
+        return;
+    }
+    if(target != FRAMEBUFFER){
+        CTX_SET_ERROR(ctx, INVALID_ENUM);
+        return;
+    }
+    fb = ctx->state.bin.FRAMEBUFFER_BINDING;
+    if(! fb){
+        /* WebGL: No default framebuffer */
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        return;
+    }
+    switch(attachment){
+        case COLOR_ATTACHMENT0:
+            point = &fb->state.COLOR_ATTACHMENT0;
+            break;
+        case DEPTH_ATTACHMENT:
+            point = &fb->state.DEPTH_ATTACHMENT;
+            break;
+        case STENCIL_ATTACHMENT:
+            point = &fb->state.STENCIL_ATTACHMENT;
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            return;
+    }
+    release_framebuffer_attachment(point);
+    if(renderbuffer){
+        cwgl_priv_objhdr_retain(&renderbuffer->hdr);
+        point->FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE = RENDERBUFFER;
+    }else{
+        point->FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE = NONE;
+    }
+    point->FRAMEBUFFER_ATTACHMENT_OBJECT_NAME.asRenderbuffer = renderbuffer;
+
+    // FIXME: Update backend framebuffer status here
 }
 
 CWGL_API void 
 cwgl_framebufferTexture2D(cwgl_ctx_t* ctx, cwgl_enum_t target, 
                           cwgl_enum_t attachment, cwgl_enum_t textarget, 
                           cwgl_Texture_t* texture, int32_t level){
+    cwgl_Framebuffer_t* fb;
+    cwgl_framebuffer_attachment_state_t* point;
+    switch(textarget){
+        case TEXTURE_2D:
+        case TEXTURE_CUBE_MAP_POSITIVE_X:
+        case TEXTURE_CUBE_MAP_NEGATIVE_X:
+        case TEXTURE_CUBE_MAP_POSITIVE_Y:
+        case TEXTURE_CUBE_MAP_NEGATIVE_Y:
+        case TEXTURE_CUBE_MAP_POSITIVE_Z:
+        case TEXTURE_CUBE_MAP_NEGATIVE_Z:
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            return;
+    }
+    if(target != FRAMEBUFFER){
+        CTX_SET_ERROR(ctx, INVALID_ENUM);
+        return;
+    }
+    fb = ctx->state.bin.FRAMEBUFFER_BINDING;
+    if(! fb){
+        /* WebGL: No default framebuffer */
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        return;
+    }
+    switch(attachment){
+        case COLOR_ATTACHMENT0:
+            point = &fb->state.COLOR_ATTACHMENT0;
+            break;
+        case DEPTH_ATTACHMENT:
+            point = &fb->state.DEPTH_ATTACHMENT;
+            break;
+        case STENCIL_ATTACHMENT:
+            point = &fb->state.STENCIL_ATTACHMENT;
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            return;
+    }
+    release_framebuffer_attachment(point);
+    if(texture){
+        cwgl_priv_objhdr_retain(&texture->hdr);
+        point->FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE = TEXTURE;
+    }else{
+        point->FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE = NONE;
+    }
+    point->FRAMEBUFFER_ATTACHMENT_OBJECT_NAME.asTexture = texture;
+
+    // FIXME: Update backend framebuffer status here
 }
 
 
