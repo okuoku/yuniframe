@@ -112,6 +112,14 @@ struct cwgl_ctx_global_state_s {
 
 typedef struct cwgl_ctx_global_state_s cwgl_ctx_global_state_t;
 
+struct cwgl_texture_unit_state_s {
+    cwgl_Texture_t* TEXTURE_BINDING_2D;
+    cwgl_Texture_t* TEXTURE_BINDING_CUBE_MAP;
+};
+
+typedef struct cwgl_texture_unit_state_s cwgl_texture_unit_state_t;
+
+#define CWGL_MAX_TEXTURE_UNITS 32
 struct cwgl_ctx_bindings_s {
     /* GLES2 Table 6.2 */
     cwgl_Buffer_t* ARRAY_BUFFER_BINDING;
@@ -119,8 +127,7 @@ struct cwgl_ctx_bindings_s {
     /* GLES2 Table 6.15 */
     cwgl_Program_t* CURRENT_PROGRAM;
     /* GLES2 Table 6.7 */
-    cwgl_Texture_t* TEXTURE_BINDING_2D;
-    cwgl_Texture_t* TEXTURE_BINDING_CUBE_MAP;
+    cwgl_texture_unit_state_t texture_unit[CWGL_MAX_TEXTURE_UNITS];
     /* GLES2 Table 6.24 */
     cwgl_Framebuffer_t* FRAMEBUFFER_BINDING;
     /* GLES2 Table 6.23 */

@@ -294,12 +294,21 @@ cwgl_getParameter_Renderbuffer(cwgl_ctx_t* ctx, cwgl_enum_t pname,
 CWGL_API cwgl_query_result_t 
 cwgl_getParameter_Texture(cwgl_ctx_t* ctx, cwgl_enum_t pname, 
                           cwgl_Texture_t** texture){
+    int id = (ctx->state.glo.ACTIVE_TEXTURE - TEXTURE0);
+    if(id < 0){
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        return CWGL_QR_GLERROR;
+    }
+    if(id >= CWGL_MAX_TEXTURE_UNITS){
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        return CWGL_QR_GLERROR;
+    }
     switch(pname){
         case TEXTURE_BINDING_2D:
-            *texture = ctx->state.bin.TEXTURE_BINDING_2D;
+            *texture = ctx->state.bin.texture_unit[id].TEXTURE_BINDING_2D;
             return CWGL_QR_SUCCESS;
         case TEXTURE_BINDING_CUBE_MAP:
-            *texture = ctx->state.bin.TEXTURE_BINDING_CUBE_MAP;
+            *texture = ctx->state.bin.texture_unit[id].TEXTURE_BINDING_CUBE_MAP;
             return CWGL_QR_SUCCESS;
         default:
         CTX_SET_ERROR(ctx, INVALID_ENUM);
