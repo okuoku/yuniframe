@@ -1,6 +1,17 @@
 #include "cwgl-tracker-priv.h"
 #include <stdlib.h>
 
+/* Current VAO for attrib ops */
+static cwgl_VertexArrayObject_t*
+current_vao(cwgl_ctx_t* ctx){
+    if(ctx->state.bin.VERTEX_ARRAY_BINDING){
+        return ctx->state.bin.VERTEX_ARRAY_BINDING;
+    }else{
+        return ctx->state.default_vao;
+    }
+}
+
+
 // 2.5 GL Errors
 CWGL_API cwgl_enum_t 
 cwgl_getError(cwgl_ctx_t* ctx){
@@ -11,21 +22,64 @@ cwgl_getError(cwgl_ctx_t* ctx){
 }
 
 // 2.7 Current Vertex State
+static int
+valid_attrib_index_p(uint32_t i){
+    // FIXME: Should also check against MAX_VERTEX_ATTRIBS
+    if(i < CWGL_MAX_VAO_SIZE){
+        return 1;
+    }
+    return 0;
+}
+
 CWGL_API void 
 cwgl_vertexAttrib1f(cwgl_ctx_t* ctx, uint32_t indx, float x){
+    cwgl_VertexArrayObject_t* vao;
+    vao = current_vao(ctx);
+    if(! valid_attrib_index_p(indx)){
+        CTX_SET_ERROR(ctx, INVALID_VALUE);
+        return;
+    }
+    vao->attrib[indx].CURRENT_VERTEX_ATTRIB[0] = x;
 }
 
 CWGL_API void 
 cwgl_vertexAttrib2f(cwgl_ctx_t* ctx, uint32_t indx, float x, float y){
+    cwgl_VertexArrayObject_t* vao;
+    vao = current_vao(ctx);
+    if(! valid_attrib_index_p(indx)){
+        CTX_SET_ERROR(ctx, INVALID_VALUE);
+        return;
+    }
+    vao->attrib[indx].CURRENT_VERTEX_ATTRIB[0] = x;
+    vao->attrib[indx].CURRENT_VERTEX_ATTRIB[1] = y;
 }
 
 CWGL_API void 
 cwgl_vertexAttrib3f(cwgl_ctx_t* ctx, uint32_t indx, float x, float y, float z){
+    cwgl_VertexArrayObject_t* vao;
+    vao = current_vao(ctx);
+    if(! valid_attrib_index_p(indx)){
+        CTX_SET_ERROR(ctx, INVALID_VALUE);
+        return;
+    }
+    vao->attrib[indx].CURRENT_VERTEX_ATTRIB[0] = x;
+    vao->attrib[indx].CURRENT_VERTEX_ATTRIB[1] = y;
+    vao->attrib[indx].CURRENT_VERTEX_ATTRIB[2] = z;
 }
 
 CWGL_API void 
 cwgl_vertexAttrib4f(cwgl_ctx_t* ctx, uint32_t indx, 
                     float x, float y, float z, float w){
+    cwgl_VertexArrayObject_t* vao;
+    vao = current_vao(ctx);
+    if(! valid_attrib_index_p(indx)){
+        CTX_SET_ERROR(ctx, INVALID_VALUE);
+        return;
+    }
+    vao->attrib[indx].CURRENT_VERTEX_ATTRIB[0] = x;
+    vao->attrib[indx].CURRENT_VERTEX_ATTRIB[1] = y;
+    vao->attrib[indx].CURRENT_VERTEX_ATTRIB[2] = z;
+    vao->attrib[indx].CURRENT_VERTEX_ATTRIB[3] = w;
 }
 
 // 2.8 Vertex Arrays
@@ -33,14 +87,83 @@ CWGL_API void
 cwgl_vertexAttribPointer(cwgl_ctx_t* ctx, uint32_t indx, 
                          int32_t size, cwgl_enum_t type, int normalized, 
                          uint32_t stride, uint32_t offset){
+    cwgl_Buffer_t* buf;
+    cwgl_VertexArrayObject_t* vao;
+    vao = current_vao(ctx);
+    if(! valid_attrib_index_p(indx)){
+        CTX_SET_ERROR(ctx, INVALID_VALUE);
+        return;
+    }
+    switch(type){
+        case BYTE:
+        case UNSIGNED_BYTE:
+        case SHORT:
+        case UNSIGNED_SHORT:
+        case FLOAT:
+            /* WebGL: FIXED is not accepted here. */
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            return;
+    }
+    switch(size){
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_VALUE);
+            return;
+    }
+    if(stride > 255){
+        /* WebGL: Don't support large stride */
+        CTX_SET_ERROR(ctx, INVALID_VALUE);
+        return;
+    }
+    buf = ctx->state.bin.ARRAY_BUFFER_BINDING;
+    if(! buf){
+        /* WebGL: Require buffer bound. */
+        /* FIXME: Do we really need to check offset here..? */
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        return;
+
+    }
+    vao->attrib[indx].VERTEX_ATTRIB_ARRAY_SIZE = size;
+    vao->attrib[indx].VERTEX_ATTRIB_ARRAY_TYPE = type;
+    vao->attrib[indx].VERTEX_ATTRIB_ARRAY_NORMALIZED = normalized ? 
+        CWGL_TRUE : CWGL_FALSE;
+    vao->attrib[indx].VERTEX_ATTRIB_ARRAY_STRIDE = stride;
+    vao->attrib[indx].VERTEX_ATTRIB_ARRAY_POINTER = offset;
+
+    if(vao->attrib[indx].VERTEX_ATTRIB_ARRAY_BUFFER_BINDING){
+        cwgl_priv_buffer_release(buf);
+        vao->attrib[indx].VERTEX_ATTRIB_ARRAY_BUFFER_BINDING = NULL;
+    }
+    cwgl_priv_objhdr_retain(&buf->hdr);
+    vao->attrib[indx].VERTEX_ATTRIB_ARRAY_BUFFER_BINDING = buf;
 }
 
 CWGL_API void 
 cwgl_enableVertexAttribArray(cwgl_ctx_t* ctx, uint32_t index){
+    cwgl_VertexArrayObject_t* vao;
+    vao = current_vao(ctx);
+    if(! valid_attrib_index_p(index)){
+        CTX_SET_ERROR(ctx, INVALID_VALUE);
+        return;
+    }
+    vao->attrib[index].VERTEX_ATTRIB_ARRAY_ENABLED = CWGL_TRUE;
 }
 
 CWGL_API void 
 cwgl_disableVertexAttribArray(cwgl_ctx_t* ctx, uint32_t index){
+    cwgl_VertexArrayObject_t* vao;
+    vao = current_vao(ctx);
+    if(! valid_attrib_index_p(index)){
+        CTX_SET_ERROR(ctx, INVALID_VALUE);
+        return;
+    }
+    vao->attrib[index].VERTEX_ATTRIB_ARRAY_ENABLED = CWGL_FALSE;
 }
 
 CWGL_API void 
@@ -55,15 +178,6 @@ cwgl_drawElements(cwgl_ctx_t* ctx, cwgl_enum_t mode,
 
 
 // 2.9 Buffer Objects
-static cwgl_VertexArrayObject_t*
-current_vao(cwgl_ctx_t* ctx){
-    if(ctx->state.bin.VERTEX_ARRAY_BINDING){
-        return ctx->state.bin.VERTEX_ARRAY_BINDING;
-    }else{
-        return ctx->state.default_vao;
-    }
-}
-
 static void
 free_buffer(cwgl_Buffer_t* buffer){
     free(buffer);
@@ -106,7 +220,6 @@ cwgl_priv_buffer_release(cwgl_Buffer_t* buffer){
 
 CWGL_API void 
 cwgl_bindBuffer(cwgl_ctx_t* ctx, cwgl_enum_t target, cwgl_Buffer_t* buffer){
-    uintptr_t v;
     cwgl_Buffer_t** point;
     cwgl_VertexArrayObject_t* vao;
     switch(target){
