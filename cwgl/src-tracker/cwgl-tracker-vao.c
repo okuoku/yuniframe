@@ -35,7 +35,6 @@ release_vao(cwgl_VertexArrayObject_t* vao){
 
 static void
 unbind_vao(cwgl_ctx_t* ctx, cwgl_VertexArrayObject_t* vao){
-    int i;
     if(ctx->state.bin.VERTEX_ARRAY_BINDING == vao){
         ctx->state.bin.VERTEX_ARRAY_BINDING = NULL;
         release_vao(vao);

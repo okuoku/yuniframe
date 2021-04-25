@@ -243,7 +243,7 @@ cwgl_getParameter_Buffer(cwgl_ctx_t* ctx, cwgl_enum_t pname,
             *buffer = ctx->state.bin.ARRAY_BUFFER_BINDING;
             return CWGL_QR_SUCCESS;
         case ELEMENT_ARRAY_BUFFER_BINDING:
-            vao = current_vao;
+            vao = current_vao(ctx);
             *buffer = vao->state.ELEMENT_ARRAY_BUFFER_BINDING;
             return CWGL_QR_SUCCESS;
         default:

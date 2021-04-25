@@ -1,5 +1,6 @@
 #include "cwgl-tracker-priv.h"
 #include <string.h>
+#include <stdlib.h>
 
 cwgl_string_t* 
 cwgl_priv_alloc_string(cwgl_ctx_t* ctx, const char* str, size_t buflen){
