@@ -1,4 +1,5 @@
 #include "cwgl-tracker-priv.h"
+#include <stdlib.h>
 
 // 3.4 Line Segments
 CWGL_API void 
@@ -158,20 +159,106 @@ cwgl_generateMipmap(cwgl_ctx_t* ctx, cwgl_enum_t target){
 }
 
 // 3.7.13 Texture Objects
+void
+cwgl_priv_texture_release(cwgl_Texture_t* texture){
+    uintptr_t v;
+    if(texture){
+        v = cwgl_priv_objhdr_release(&texture->hdr);
+        if(! v){
+            // FIXME: Release backend resource here.
+            free(texture);
+        }
+    }
+}
+
+static cwgl_texture_unit_state_t*
+current_texture_unit(cwgl_ctx_t* ctx){
+    int id = (ctx->state.glo.ACTIVE_TEXTURE - TEXTURE0);
+    if(id < 0){
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        return NULL;
+    }
+    if(id >= CWGL_MAX_TEXTURE_UNITS){
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        return NULL;
+    }
+    return &ctx->state.bin.texture_unit[id];
+}
+
 CWGL_API void 
 cwgl_bindTexture(cwgl_ctx_t* ctx, cwgl_enum_t target, cwgl_Texture_t* texture){
+    cwgl_texture_unit_state_t* state;
+    cwgl_Texture_t** point;
+    state = current_texture_unit(ctx);
+    if(! state){
+        return;
+    }
+    switch(target){
+        case TEXTURE_2D:
+            point = &state->TEXTURE_BINDING_2D;
+            if(texture->state.texture_type == TEXTURE_CUBE_MAP){
+                CTX_SET_ERROR(ctx, INVALID_OPERATION);
+                return;
+            }
+            texture->state.texture_type = TEXTURE_2D;
+            break;
+        case TEXTURE_CUBE_MAP:
+            point = &state->TEXTURE_BINDING_CUBE_MAP;
+            if(texture->state.texture_type == TEXTURE_2D){
+                CTX_SET_ERROR(ctx, INVALID_OPERATION);
+                return;
+            }
+            texture->state.texture_type = TEXTURE_CUBE_MAP;
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            return;
+    }
+    if(*point){
+        cwgl_priv_texture_release(*point);
+    }
+    if(texture){
+        cwgl_priv_objhdr_retain(&texture->hdr);
+    }
+    *point = texture;
+}
+
+static void
+unbind_texture(cwgl_ctx_t* ctx, cwgl_Texture_t* texture){
+    int i;
+    if(texture){
+        for(i=0;i!=CWGL_MAX_TEXTURE_UNITS;i++){
+            if(ctx->state.bin.texture_unit[i].TEXTURE_BINDING_2D == texture){
+                cwgl_priv_texture_release(texture);
+                ctx->state.bin.texture_unit[i].TEXTURE_BINDING_2D = NULL;
+            }
+            if(ctx->state.bin.texture_unit[i].TEXTURE_BINDING_CUBE_MAP == texture){
+                cwgl_priv_texture_release(texture);
+                ctx->state.bin.texture_unit[i].TEXTURE_BINDING_CUBE_MAP = NULL;
+            }
+        }
+    }
 }
 
 CWGL_API void 
 cwgl_deleteTexture(cwgl_ctx_t* ctx, cwgl_Texture_t* texture){
+    unbind_texture(ctx, texture);
 }
 
 CWGL_API cwgl_Texture_t* 
 cwgl_createTexture(cwgl_ctx_t* ctx){
+    cwgl_Texture_t* t;
+    t = malloc(sizeof(cwgl_Texture_t));
+    if(t){
+        cwgl_priv_objhdr_init(ctx, &t->hdr, CWGL_OBJ_TEXTURE);
+        cwgl_priv_texture_init(&t->state);
+    }
+    return t;
 }
 
 CWGL_API void
 cwgl_Texture_release(cwgl_ctx_t* ctx, cwgl_Texture_t* texture){
+    cwgl_priv_texture_release(texture);
 }
 
 

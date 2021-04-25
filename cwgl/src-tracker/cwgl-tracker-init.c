@@ -111,6 +111,7 @@ cwgl_priv_texture_init(cwgl_texture_state_t* state){
     state->TEXTURE_MIN_FILTER = NEAREST_MIPMAP_LINEAR;
     state->TEXTURE_WRAP_S = REPEAT;
     state->TEXTURE_WRAP_T = REPEAT;
+    state->texture_type = NONE;
 }
 
 void

@@ -209,6 +209,8 @@ struct cwgl_texture_state_s {
     cwgl_enum_t TEXTURE_MIN_FILTER;
     cwgl_enum_t TEXTURE_WRAP_S;
     cwgl_enum_t TEXTURE_WRAP_T;
+    /* Maintained by tracker, not in the spec */
+    cwgl_enum_t texture_type;
 };
 
 typedef struct cwgl_texture_state_s cwgl_texture_state_t;
