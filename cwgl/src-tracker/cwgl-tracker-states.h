@@ -222,6 +222,9 @@ struct cwgl_program_state_s {
     uint32_t ATTACHED_SHADERS;
     uint32_t ACTIVE_ATTRIBUTES;
     uint32_t ACTIVE_UNIFORMS;
+    /* Maintained by tracker, not in the spec */
+    cwgl_Shader_t* vertex_shader;
+    cwgl_Shader_t* fragment_shader;
 };
 
 typedef struct cwgl_program_state_s cwgl_program_state_t;

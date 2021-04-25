@@ -275,12 +275,43 @@ cwgl_bufferSubData(cwgl_ctx_t* ctx, cwgl_enum_t target,
 }
 
 // 2.10.1 Loading and Creating Shader Source
+static void
+release_shader(cwgl_Shader_t* shader){
+    uintptr_t v;
+    if(shader){
+        v = cwgl_priv_objhdr_release(&shader->hdr);
+        if(! v){
+            // FIXME: Release source here
+            // FIXME: Release backend object here
+            free(shader);
+        }
+    }
+}
+
 CWGL_API cwgl_Shader_t* 
 cwgl_createShader(cwgl_ctx_t* ctx, cwgl_enum_t type){
+    cwgl_Shader_t* shader;
+    switch(type){
+        case VERTEX_SHADER:
+        case FRAGMENT_SHADER:
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            return NULL;
+    }
+    shader = malloc(sizeof(cwgl_Shader_t));
+    if(shader){
+        cwgl_priv_objhdr_init(ctx, &shader->hdr, CWGL_OBJ_SHADER);
+        shader->state.SHADER_TYPE = type;
+        shader->state.DELETE_STATUS = CWGL_FALSE;
+        shader->state.COMPILE_STATUS = CWGL_FALSE;
+    }
+    return shader;
 }
 
 CWGL_API void
 cwgl_Shader_release(cwgl_ctx_t* ctx, cwgl_Shader_t* shader){
+    release_shader(shader);
 }
 
 CWGL_API void 
@@ -294,26 +325,121 @@ cwgl_compileShader(cwgl_ctx_t* ctx, cwgl_Shader_t* shader){
 
 CWGL_API void 
 cwgl_deleteShader(cwgl_ctx_t* ctx, cwgl_Shader_t* shader){
+    if(shader){
+        shader->state.DELETE_STATUS = CWGL_TRUE;
+    }
 }
 
 // 2.10.3 Program Objects
+static void
+release_program(cwgl_Program_t* program){
+    uintptr_t v;
+    if(program){
+        v = cwgl_priv_objhdr_release(&program->hdr);
+        if(! v){
+            // FIXME: Release backend objects here
+            release_shader(program->state.vertex_shader);
+            release_shader(program->state.fragment_shader);
+            free(program);
+        }
+    }
+}
+
 CWGL_API cwgl_Program_t* 
 cwgl_createProgram(cwgl_ctx_t* ctx){
+    cwgl_Program_t* program;
+    program = malloc(sizeof(cwgl_Program_t));
+    if(program){
+        cwgl_priv_objhdr_init(ctx, &program->hdr, CWGL_OBJ_PROGRAM);
+        program->state.DELETE_STATUS = CWGL_FALSE;
+        program->state.LINK_STATUS = CWGL_FALSE;
+        program->state.VALIDATE_STATUS = CWGL_FALSE;
+        program->state.ATTACHED_SHADERS = 0;
+        program->state.ACTIVE_ATTRIBUTES = 0;
+        program->state.ACTIVE_UNIFORMS = 0;
+        program->state.vertex_shader = NULL;
+        program->state.fragment_shader = NULL;
+    }
+    return program;
 }
 
 CWGL_API void
 cwgl_Program_release(cwgl_ctx_t* ctx, cwgl_Program_t* program){
+    release_program(program);
 }
 
 
 CWGL_API void 
 cwgl_attachShader(cwgl_ctx_t* ctx, cwgl_Program_t* program, 
                   cwgl_Shader_t* shader){
+    int i;
+    cwgl_enum_t type;
+    if(program){
+        type = shader->state.SHADER_TYPE;
+        switch(type){
+            case VERTEX_SHADER:
+                release_shader(program->state.vertex_shader);
+                cwgl_priv_objhdr_retain(&shader->hdr);
+                program->state.vertex_shader = shader;
+                break;
+            case FRAGMENT_SHADER:
+                release_shader(program->state.fragment_shader);
+                cwgl_priv_objhdr_retain(&shader->hdr);
+                program->state.fragment_shader = shader;
+                break;
+            default:
+                CTX_SET_ERROR(ctx, INVALID_OPERATION);
+                return;
+        }
+    }
+    i = 0;
+    if(program->state.vertex_shader){
+        i++;
+    }
+    if(program->state.fragment_shader){
+        i++;
+    }
+    program->state.ATTACHED_SHADERS = i;
+
 }
 
 CWGL_API void 
 cwgl_detachShader(cwgl_ctx_t* ctx, cwgl_Program_t* program, 
                   cwgl_Shader_t* shader){
+    int i;
+    cwgl_enum_t type;
+    if(program){
+        type = shader->state.SHADER_TYPE;
+        switch(type){
+            case VERTEX_SHADER:
+                if(program->state.vertex_shader != shader){
+                    CTX_SET_ERROR(ctx, INVALID_OPERATION);
+                    return;
+                }
+                release_shader(shader);
+                program->state.vertex_shader = NULL;
+                break;
+            case FRAGMENT_SHADER:
+                if(program->state.fragment_shader != shader){
+                    CTX_SET_ERROR(ctx, INVALID_OPERATION);
+                    return;
+                }
+                release_shader(shader);
+                program->state.fragment_shader = NULL;
+                break;
+            default:
+                CTX_SET_ERROR(ctx, INVALID_OPERATION);
+                return;
+        }
+    }
+    i = 0;
+    if(program->state.vertex_shader){
+        i++;
+    }
+    if(program->state.fragment_shader){
+        i++;
+    }
+    program->state.ATTACHED_SHADERS = i;
 }
 
 CWGL_API void 
@@ -322,10 +448,19 @@ cwgl_linkProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
 
 CWGL_API void 
 cwgl_useProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
+    if(! program){
+        CTX_SET_ERROR(ctx, INVALID_VALUE);
+        return;
+    }
+    release_program(ctx->state.bin.CURRENT_PROGRAM);
+    ctx->state.bin.CURRENT_PROGRAM = program;
 }
 
 CWGL_API void 
 cwgl_deleteProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
+    if(program){
+        program->state.DELETE_STATUS = CWGL_TRUE;
+    }
 }
 
 // 2.10.4 Shader Variables
