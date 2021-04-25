@@ -509,7 +509,6 @@ cwgl_readPixels(cwgl_ctx_t* ctx, int32_t x, int32_t y, uint32_t width, uint32_t 
 static void release_renderbuffer(cwgl_Renderbuffer_t* rb);
 static void
 release_framebuffer_attachment(cwgl_framebuffer_attachment_state_t* a){
-    uintptr_t v;
     switch(a->FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE){
         case RENDERBUFFER:
             release_renderbuffer(a->FRAMEBUFFER_ATTACHMENT_OBJECT_NAME.asRenderbuffer);
@@ -552,7 +551,7 @@ cwgl_bindFramebuffer(cwgl_ctx_t* ctx,
         case FRAMEBUFFER:
             unbind_framebuffer(ctx, ctx->state.bin.FRAMEBUFFER_BINDING);
             if(framebuffer){
-                cwgl_priv_objhdr_retain(ctx, &framebuffer->hdr);
+                cwgl_priv_objhdr_retain(&framebuffer->hdr);
             }
             ctx->state.bin.FRAMEBUFFER_BINDING = framebuffer;
             break;
@@ -593,7 +592,7 @@ release_renderbuffer(cwgl_Renderbuffer_t* rb){
         v = cwgl_priv_objhdr_release(&rb->hdr);
         if(! v){
             // FIXME: Teardown backend renderbuffer here
-            free(v);
+            free(rb);
         }
     }
 }
@@ -690,7 +689,7 @@ cwgl_framebufferRenderbuffer(cwgl_ctx_t* ctx, cwgl_enum_t target,
         cwgl_priv_objhdr_retain(&renderbuffer->hdr);
         point->FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE = RENDERBUFFER;
     }else{
-        point->FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE = NONE;
+        cwgl_priv_framebuffer_attachment_init(point);
     }
     point->FRAMEBUFFER_ATTACHMENT_OBJECT_NAME.asRenderbuffer = renderbuffer;
 
@@ -745,7 +744,7 @@ cwgl_framebufferTexture2D(cwgl_ctx_t* ctx, cwgl_enum_t target,
         cwgl_priv_objhdr_retain(&texture->hdr);
         point->FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE = TEXTURE;
     }else{
-        point->FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE = NONE;
+        cwgl_priv_framebuffer_attachment_init(point);
     }
     point->FRAMEBUFFER_ATTACHMENT_OBJECT_NAME.asTexture = texture;
 
