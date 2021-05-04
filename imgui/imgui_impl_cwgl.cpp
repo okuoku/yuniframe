@@ -15,6 +15,7 @@ cwgl_UniformLocation_t* g_AttribLocationProjMtx;
 int32_t g_AttribLocationVtxPos;
 int32_t g_AttribLocationVtxUV;
 int32_t g_AttribLocationVtxColor;
+int32_t g_AttribLocationBogus;
 cwgl_Buffer_t* g_VboHandle;
 cwgl_Buffer_t* g_ElementsHandle;
 
@@ -25,13 +26,14 @@ static const char shader_vert[] =
 "attribute vec2 Position;\n"
 "attribute vec2 UV;\n"
 "attribute vec4 Color;\n"
+"attribute vec4 bogus;\n"
 "varying vec2 Frag_UV;\n"
 "varying vec4 Frag_Color;\n"
 "void main()\n"
 "{\n"
 "    Frag_UV = UV;\n"
 "    Frag_Color = Color;\n"
-"    gl_Position = ProjMtx * vec4(Position.xy,0,1);\n"
+"    gl_Position = bogus + ProjMtx * vec4(Position.xy,0,1);\n"
 "}\n";
 
 static const char shader_frag[] =
@@ -76,6 +78,9 @@ ImGui_ImplCwgl_Init(cwgl_ctx_t* ctx){
                                                    "UV");
     g_AttribLocationVtxColor = cwgl_getAttribLocation(g_ctx, g_ShaderHandle,
                                                       "Color");
+
+    g_AttribLocationBogus = cwgl_getAttribLocation(g_ctx, g_ShaderHandle,
+                                                   "bogus");
 
     // Buffers
     g_VboHandle = cwgl_createBuffer(g_ctx);
@@ -152,6 +157,8 @@ SetupRenderState(ImDrawData* draw_data, int fb_width, int fb_height){
     cwgl_vertexAttribPointer(g_ctx, g_AttribLocationVtxColor,
                              4, UNSIGNED_BYTE, 1, sizeof(ImDrawVert),
                              IM_OFFSETOF(ImDrawVert, col));
+    cwgl_vertexAttrib4f(g_ctx, g_AttribLocationBogus,
+                        0, 0, 0, 0);
 }
 
 void
