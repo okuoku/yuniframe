@@ -33,6 +33,9 @@ shxm_private_read_spirv(uint32_t* ir, int len){
         return NULL;
     }
 
+    printf("debug:\n");
+    shxm_private_discomp_spirv(ir, len);
+
     magic = ir[0];
     version = ir[1];
     bound = ir[3];
