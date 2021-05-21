@@ -12,7 +12,7 @@ shxm_ctx_t global_ctx;
 /* Glslang interface */
 void shxm_glslang_init(void);
 void shxm_glslang_deinit(void);
-int shxm_glslang_build(int mode, const char* source,
+int shxm_glslang_build(int mode, const char* source, int len,
                    int** out_spv, int* out_spvlen);
 
 SHXM_API shxm_ctx_t* 
@@ -95,7 +95,7 @@ shxm_shader_compile(shxm_ctx_t* ctx, shxm_shader_t* sh){
     int r;
     int mode;
     mode = (sh->type == SHXM_SHADER_STAGE_FRAGMENT) ? 0 : 1;
-    r = shxm_glslang_build(mode, sh->source, &irptr, &irlen);
+    r = shxm_glslang_build(mode, sh->source, sh->source_len, &irptr, &irlen);
     if(!r){
         // FIXME: Assume int == int32_t
         sh->ir = irptr;

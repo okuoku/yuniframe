@@ -20,7 +20,7 @@ shxm_glslang_deinit(void){
 }
 
 extern "C" int
-shxm_glslang_build(int mode, const char* source, 
+shxm_glslang_build(int mode, const char* source, int len,
                    int** out_spv, int* out_spvlen){
     int ret;
     glslang::TShader::ForbidIncluder includer;
@@ -36,7 +36,7 @@ shxm_glslang_build(int mode, const char* source,
             return 1;
     }
 
-    ts->setStrings(&source, 1);
+    ts->setStringsWithLengths(&source, &len, 1);
     //ts->setAutoMapBindings(true);
     ts->setAutoMapLocations(true);
     // ts->setInvertY(true);
