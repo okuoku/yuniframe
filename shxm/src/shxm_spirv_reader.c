@@ -54,6 +54,7 @@ shxm_private_read_spirv(uint32_t* ir, int len){
         return NULL;
     }
     ent = malloc(sizeof(shxm_spirv_ent_t)*bound);
+    intr->entrypoint = 0;
     if(ent){
         intr->ent = ent;
         intr->ent_count = bound;
@@ -132,6 +133,14 @@ shxm_private_read_spirv(uint32_t* ir, int len){
                 case 72: /* OpMemberDecorate */
                     printf("!!! FIXME !!! OpMemberDecorate.!\n");
                     break;
+                /* Misc */
+                case 15: /* OpEntryPoint */
+                    if(intr->entrypoint){
+                        printf("ERROR: Too many entry points.!\n");
+                        failed = 1;
+                    }
+                    intr->entrypoint = ir[i+2];
+                    break;
                 default:
                     /* Do nothing, skip insn */
                     break;
@@ -143,7 +152,12 @@ shxm_private_read_spirv(uint32_t* ir, int len){
         free(intr->chain);
         free(intr);
     }
+    if(intr->entrypoint == 0 && !failed){
+        printf("ERROR: Entrypoint not found!\n");
+        failed = 1;
+    }
     if(failed){
+        // FIXME: Free intr here
         intr = NULL;
     }
     return intr;

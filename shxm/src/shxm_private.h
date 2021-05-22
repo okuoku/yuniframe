@@ -109,6 +109,7 @@ struct shxm_spirv_intr_s {
     shxm_spirv_ent_t* ent;
     unsigned int ent_count;
     unsigned int chain_count;
+    int entrypoint;
 };
 
 typedef struct shxm_spirv_intr_s shxm_spirv_intr_t;
