@@ -31,6 +31,13 @@ struct shxm_uniform_s {
 
 typedef struct shxm_uniform_s shxm_uniform_t;
 
+struct shxm_opaque_s {
+    shxm_slot_t* slot;
+    unsigned int binding;
+    int phase;
+};
+typedef struct shxm_opaque_s shxm_opaque_t;
+
 #define SHXM_LOCATION_BUILTIN -1
 struct shxm_attribute_s {
     shxm_slot_t* slot;
@@ -73,6 +80,8 @@ struct shxm_program_s {
     unsigned int varying_count;
     shxm_attribute_t unused[SHXM_MAX_UNUSED];
     unsigned int unused_count;
+    shxm_opaque_t opaque[SHXM_MAX_UNIFORMS];
+    unsigned int opaque_count;
 
     uint32_t* vertex_ir;
     unsigned int vertex_ir_len;

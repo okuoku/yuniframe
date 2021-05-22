@@ -242,6 +242,7 @@ fill_slots(shxm_program_t* prog, shxm_spirv_intr_t* intr, int phase){
         prog->output_count = 0;
         prog->varying_count = 0;
         prog->unused_count = 0;
+        prog->opaque_count = 0;
     }
     for(id=0;id!=intr->ent_count;id++){
         if(intr->ent[id].op == 59 /* OpVariable */){
@@ -331,6 +332,18 @@ is_builtin(shxm_slot_t* slot){
 #undef CHECK
 }
 
+static int
+is_opaque_type(cwgl_var_type_t type){
+    switch(type){
+        case CWGL_VAR_SAMPLER_2D:
+        case CWGL_VAR_SAMPLER_CUBE:
+            return 1;
+        default:
+            break;
+    }
+    return 0;
+}
+
 static void
 add_input(shxm_program_t* prog, shxm_slot_t* slot){
     prog->input[prog->input_count].slot = slot;
@@ -355,6 +368,12 @@ static void
 add_unused(shxm_program_t* prog, shxm_slot_t* slot){
     prog->unused[prog->unused_count].slot = slot;
     prog->unused_count++;
+}
+static void
+add_opaque(shxm_program_t* prog, shxm_slot_t* slot, int phase){
+    prog->opaque[prog->opaque_count].slot = slot;
+    prog->opaque[prog->opaque_count].phase = phase;
+    prog->opaque_count++;
 }
 
 static int
@@ -386,8 +405,12 @@ linkup_slots(shxm_program_t* prog, shxm_spirv_intr_t* vintr,
                                slot->name, fintr->ent[fid].varusage);
                         return 1;
                     }
-                    // FIXME: Check type here.
-                    add_uniform(prog, slot);
+                    if(is_opaque_type(slot->type)){
+                        add_opaque(prog, slot, 0);
+                        add_opaque(prog, slot, 1);
+                    }else{
+                        add_uniform(prog, slot);
+                    }
                     break;
                 default:
                 case INPUT:
@@ -408,7 +431,11 @@ linkup_slots(shxm_program_t* prog, shxm_spirv_intr_t* vintr,
                     }
                     break;
                 case UNIFORM_CONSTANT:
-                    add_uniform(prog, slot);
+                    if(is_opaque_type(slot->type)){
+                        add_opaque(prog, slot, 0);
+                    }else{
+                        add_uniform(prog, slot);
+                    }
                     break;
                 case INPUT:
                     add_input(prog, slot);
@@ -430,7 +457,11 @@ linkup_slots(shxm_program_t* prog, shxm_spirv_intr_t* vintr,
                     add_output(prog,slot);
                     break;
                 case UNIFORM_CONSTANT:
-                    add_uniform(prog, slot);
+                    if(is_opaque_type(slot->type)){
+                        add_opaque(prog, slot, 1);
+                    }else{
+                        add_uniform(prog, slot);
+                    }
                     break;
                 default:
                 case UNKNOWN:
@@ -628,6 +659,28 @@ layout_uniforms(shxm_program_t* prog){
     return 0;
 }
 
+static int
+bind_uniforms(shxm_program_t* prog){
+    int i;
+    int idx[2];
+    int phase;
+    idx[0] = idx[1] = 0;
+    for(i=0;i!=prog->opaque_count;i++){
+        phase = prog->opaque[i].phase;
+        switch(phase){
+            case 0:
+            case 1:
+                prog->opaque[i].binding = idx[phase];
+                idx[phase]++;
+                break;
+            default:
+                printf("ERROR: Invalid phase %d\n",phase);
+                return 1;
+        }
+    }
+    return 0;
+}
+
 SHXM_API int
 shxm_program_link(shxm_ctx_t* ctx, shxm_program_t* prog){
     int i;
@@ -681,6 +734,11 @@ shxm_program_link(shxm_ctx_t* ctx, shxm_program_t* prog){
         return 1;
     }
 
+    if(bind_uniforms(prog)){
+        // FIXME: Release vintr, fintr
+        return 1;
+    }
+
     printf("== PostLink ==\n");
     for(i=0;i!=prog->uniform_count;i++){
         printf("Uniform:%s:%d:%d (off: %d, size: %d)\n",
@@ -688,6 +746,13 @@ shxm_program_link(shxm_ctx_t* ctx, shxm_program_t* prog){
                prog->uniform[i].slot->id[0],
                prog->uniform[i].slot->id[1],
                prog->uniform[i].offset, prog->uniform[i].size);
+    }
+    for(i=0;i!=prog->opaque_count;i++){
+        printf("Opaque_:%s:%d:%d (phase %d, bind %d)\n",
+               prog->opaque[i].slot->name,
+               prog->opaque[i].slot->id[0],
+               prog->opaque[i].slot->id[1], prog->opaque[i].phase,
+               prog->opaque[i].binding);
     }
     for(i=0;i!=prog->input_count;i++){
         printf("Input__:%s:%d:%d (loc %d)\n",prog->input[i].slot->name,
