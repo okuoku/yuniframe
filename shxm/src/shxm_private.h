@@ -125,7 +125,7 @@ typedef struct shxm_spirv_intr_s shxm_spirv_intr_t;
 
 shxm_spirv_intr_t* shxm_private_read_spirv(uint32_t* ir, int len);
 
-void shxm_private_discomp_spirv(uint32_t* spirv, int len);
+void shxm_private_decomp_spirv(uint32_t* spirv, int len);
 
 // {
 #ifdef __cplusplus

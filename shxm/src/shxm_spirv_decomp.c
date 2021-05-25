@@ -7,7 +7,7 @@
 #include "spirv_cross_c.h"
 
 void
-shxm_private_discomp_spirv(uint32_t* spirv, int len){
+shxm_private_decomp_spirv(uint32_t* spirv, int len){
     spvc_context ctx = NULL;
     spvc_compiler compiler = NULL;
     spvc_compiler_options options = NULL;
