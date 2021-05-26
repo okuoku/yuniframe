@@ -775,6 +775,18 @@ shxm_program_link(shxm_ctx_t* ctx, shxm_program_t* prog){
                prog->unused[i].slot->id[1]);
     }
 
+    if(shxm_private_patch_spirv(ctx, prog, vintr, 0)){
+        // FIXME: Release vintr, fintr
+        return 1;
+    }
+    shxm_private_decomp_spirv(prog->vertex_ir, prog->vertex_ir_len);
+
+    if(shxm_private_patch_spirv(ctx, prog, fintr, 1)){
+        // FIXME: Release vintr, fintr
+        return 1;
+    }
+    shxm_private_decomp_spirv(prog->fragment_ir, prog->fragment_ir_len);
+
     // FIXME: Implement this.
     return 1;
 }

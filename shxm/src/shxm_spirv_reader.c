@@ -33,9 +33,6 @@ shxm_private_read_spirv(uint32_t* ir, int len){
         return NULL;
     }
 
-    printf("debug:\n");
-    shxm_private_decomp_spirv(ir, len);
-
     magic = ir[0];
     version = ir[1];
     bound = ir[3];
@@ -55,6 +52,8 @@ shxm_private_read_spirv(uint32_t* ir, int len){
     }
     ent = malloc(sizeof(shxm_spirv_ent_t)*bound);
     intr->entrypoint = 0;
+    intr->defs_start = 0;
+    intr->defs_end = 0;
     if(ent){
         intr->ent = ent;
         intr->ent_count = bound;
@@ -104,6 +103,9 @@ shxm_private_read_spirv(uint32_t* ir, int len){
                         ment->offs = i;
                         ment->op = op;
                     }
+                    if(! intr->defs_start){
+                        intr->defs_start = i;
+                    }
                     break;
                 case 43: /* OpConstant */
                 case 54: /* OpFunction */
@@ -115,6 +117,9 @@ shxm_private_read_spirv(uint32_t* ir, int len){
                     }else{
                         ment->offs = i;
                         ment->op = op;
+                    }
+                    if(op == 54 /* OpFunction */ && (intr->defs_end == 0)){
+                        intr->defs_end = i-1;
                     }
                     break;
 

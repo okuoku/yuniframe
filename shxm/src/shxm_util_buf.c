@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 struct shxm_util_buf_s {
     uint32_t* buf;
@@ -37,13 +38,30 @@ shxm_private_util_buf_release(shxm_util_buf_t* buf){
     }
 }
 
+int
+shxm_private_util_buf_dup(shxm_util_buf_t* buf, uint32_t** out_buf,
+                          int* out_count){
+    uint32_t* r;
+    int len;
+    len = shxm_private_util_buf_size(buf);
+    r = malloc(sizeof(uint32_t)*len);
+    if(r){
+        *out_buf = r;
+        *out_count = len;
+        memcpy(r, buf->buf, sizeof(uint32_t)*len);
+        return 0;
+    }else{
+        return 1;
+    }
+}
+
 static int
 checksize(shxm_util_buf_t* buf, int cnt){
     if(cnt < 0){
         printf("ERROR: Negative cnt %d\n",cnt);
         return 1;
     }
-    if(buf->len <= (buf->ptr + cnt)){
+    if(buf->len < (buf->ptr + cnt)){
         printf("ERROR: Insufficient buffer size %d+%d > %d\n", cnt,
                buf->ptr, buf->len);
         return 1;
@@ -63,7 +81,7 @@ shxm_private_util_buf_write_raw(shxm_util_buf_t* buf, uint32_t* obj,
     for(i=0;i!=len;i++){
         buf->buf[s+i] = obj[i];
     }
-    buf->ptr = s + len;
+    buf->ptr += len;
     return 0;
 }
 
@@ -85,7 +103,7 @@ shxm_private_util_buf_write_op(shxm_util_buf_t* buf, uint32_t* obj,
             buf->buf[s+i] = obj[i];
         }
     }
-    buf->ptr = s + len;
+    buf->ptr += len;
     return 0;
 }
 
@@ -100,16 +118,18 @@ shxm_private_util_buf_ptr(shxm_util_buf_t* buf){
 }
 
 int 
-shxm_private_util_buf_merge(shxm_util_buf_t* dest, int ptr,
-                                shxm_util_buf_t* src){
+shxm_private_util_buf_merge(shxm_util_buf_t* dest, shxm_util_buf_t* src){
     int i;
     int len;
+    int ptr;
+    ptr = shxm_private_util_buf_size(dest);
     len = shxm_private_util_buf_size(src);
-    if(checksize(dest, ptr + len)){
+    if(checksize(dest, len)){
         return 1;
     }
     for(i=0;i!=len;i++){
         dest->buf[ptr+i] = src->buf[i];
     }
+    dest->ptr += len;
     return 0;
 }

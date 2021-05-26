@@ -84,6 +84,7 @@ struct shxm_program_s {
     shxm_opaque_t opaque[SHXM_MAX_UNIFORMS];
     unsigned int opaque_count;
 
+    /* Patched IR */
     uint32_t* vertex_ir;
     unsigned int vertex_ir_len;
     uint32_t* fragment_ir;
@@ -119,13 +120,20 @@ struct shxm_spirv_intr_s {
     shxm_spirv_ent_t* ent;
     unsigned int ent_count;
     unsigned int chain_count;
-    int entrypoint;
+    int entrypoint; /* ID for entrypoint */
+    int defs_start;
+    int defs_end;
 };
 
 typedef struct shxm_spirv_intr_s shxm_spirv_intr_t;
 
 struct shxm_util_buf_s;
 typedef struct shxm_util_buf_s shxm_util_buf_t;
+
+/* Private: Patcher */
+int
+shxm_private_patch_spirv(shxm_ctx_t* ctx, shxm_program_t* prog,
+                         shxm_spirv_intr_t* intr, int phase);
 
 /* Private: SPIR-V parser */
 shxm_spirv_intr_t* shxm_private_read_spirv(uint32_t* ir, int len);
@@ -143,8 +151,11 @@ int shxm_private_util_buf_write_op(shxm_util_buf_t* buf, uint32_t* obj,
                                    int count);
 int shxm_private_util_buf_size(shxm_util_buf_t* buf);
 uint32_t* shxm_private_util_buf_ptr(shxm_util_buf_t* buf);
-int shxm_private_util_buf_merge(shxm_util_buf_t* dest, int offs,
+int shxm_private_util_buf_merge(shxm_util_buf_t* dest, 
                                 shxm_util_buf_t* src);
+int shxm_private_util_buf_dup(shxm_util_buf_t* buf,
+                              uint32_t** out_obj,
+                              int* out_count);
 
 // {
 #ifdef __cplusplus
