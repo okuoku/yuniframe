@@ -69,19 +69,12 @@ struct shxm_program_s {
     shxm_shader_t* fragment_shader;
 
     /* Post-link fields */
-    shxm_slot_t slot[SHXM_MAX_SLOTS];
     unsigned int slot_count;
-    shxm_uniform_t uniform[SHXM_MAX_UNIFORMS];
     unsigned int uniform_count;
-    shxm_attribute_t input[SHXM_MAX_INPUTS];
     unsigned int input_count;
-    shxm_attribute_t output[SHXM_MAX_OUTPUTS];
     unsigned int output_count;
-    shxm_attribute_t varying[SHXM_MAX_VARYINGS];
     unsigned int varying_count;
-    shxm_attribute_t unused[SHXM_MAX_UNUSED];
     unsigned int unused_count;
-    shxm_opaque_t opaque[SHXM_MAX_UNIFORMS];
     unsigned int opaque_count;
 
     /* Patched IR */
@@ -89,6 +82,15 @@ struct shxm_program_s {
     unsigned int vertex_ir_len;
     uint32_t* fragment_ir;
     unsigned int fragment_ir_len;
+
+    /* Field data */
+    shxm_slot_t slot[SHXM_MAX_SLOTS];
+    shxm_uniform_t uniform[SHXM_MAX_UNIFORMS];
+    shxm_attribute_t input[SHXM_MAX_INPUTS];
+    shxm_attribute_t output[SHXM_MAX_OUTPUTS];
+    shxm_attribute_t varying[SHXM_MAX_VARYINGS];
+    shxm_attribute_t unused[SHXM_MAX_UNUSED];
+    shxm_opaque_t opaque[SHXM_MAX_UNIFORMS];
 };
 
 enum shxm_varusage_e {
