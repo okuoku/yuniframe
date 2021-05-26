@@ -2,6 +2,7 @@
 #define __YUNI_SHXM_PRIVATE_H
 
 #include <stdint.h>
+#include "shxm.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -123,9 +124,27 @@ struct shxm_spirv_intr_s {
 
 typedef struct shxm_spirv_intr_s shxm_spirv_intr_t;
 
+struct shxm_util_buf_s;
+typedef struct shxm_util_buf_s shxm_util_buf_t;
+
+/* Private: SPIR-V parser */
 shxm_spirv_intr_t* shxm_private_read_spirv(uint32_t* ir, int len);
 
+/* Private: Decompiler */
 void shxm_private_decomp_spirv(uint32_t* spirv, int len);
+
+
+/* Private: Buf */
+shxm_util_buf_t* shxm_private_util_buf_new(int siz);
+void shxm_private_util_buf_release(shxm_util_buf_t* buf);
+int shxm_private_util_buf_write_raw(shxm_util_buf_t* buf, uint32_t* obj,
+                                    int count);
+int shxm_private_util_buf_write_op(shxm_util_buf_t* buf, uint32_t* obj,
+                                   int count);
+int shxm_private_util_buf_size(shxm_util_buf_t* buf);
+uint32_t* shxm_private_util_buf_ptr(shxm_util_buf_t* buf);
+int shxm_private_util_buf_merge(shxm_util_buf_t* dest, int offs,
+                                shxm_util_buf_t* src);
 
 // {
 #ifdef __cplusplus
