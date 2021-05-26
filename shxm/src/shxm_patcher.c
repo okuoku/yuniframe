@@ -51,7 +51,7 @@ shxm_private_patch_spirv(shxm_ctx_t* ctx,
                          shxm_program_t* prog,
                          shxm_spirv_intr_t* intr,
                          int phase){
-    int failed = 0;
+    int failed = 1;
     int defs_start;
     int defs_end;
     int entrypoint_start;
@@ -91,23 +91,19 @@ shxm_private_patch_spirv(shxm_ctx_t* ctx,
 
     patch_decoration = shxm_private_util_buf_new(PATCH_MAX_LEN);
     if(!patch_decoration){
-        failed = 1;
         goto fail_decoration;
     }
     patch_defs = shxm_private_util_buf_new(PATCH_MAX_LEN);
     if(!patch_defs){
-        failed = 1;
         goto fail_defs;
     }
     patch_main = shxm_private_util_buf_new(PATCH_MAX_LEN);
     if(!patch_main){
-        failed = 1;
         goto fail_main;
     }
 
     /* Generate patches */
     if(patch_binding_numbers(&cur, patch_decoration)){
-        failed = 1;
         goto done;
     }
 
@@ -128,41 +124,33 @@ shxm_private_patch_spirv(shxm_ctx_t* ctx,
     final_output = shxm_private_util_buf_new(total_len);
 
     if(! final_output){
-        failed = 1;
         goto fail_final;
     }
 
     /* Merge into final output */
     if(shxm_private_util_buf_write_raw(final_output, temp_ir,
                                        defs_start)){
-        failed = 1;
         goto done;
     }
     if(shxm_private_util_buf_merge(final_output, patch_decoration)){
-        failed = 1;
         goto done;
     }
     if(shxm_private_util_buf_write_raw(final_output, &temp_ir[defs_start],
                                        defs_end - defs_start)){
-        failed = 1;
         goto done;
     }
     if(shxm_private_util_buf_merge(final_output, patch_defs)){
-        failed = 1;
         goto done;
     }
     if(shxm_private_util_buf_write_raw(final_output, &temp_ir[defs_end],
                                        entrypoint_start - defs_end)){
-        failed = 1;
         goto done;
     }
     if(shxm_private_util_buf_merge(final_output, patch_main)){
-        failed = 1;
         goto done;
     }
     if(shxm_private_util_buf_write_raw(final_output, &temp_ir[entrypoint_start],
                                        temp_ir_len - entrypoint_start)){
-        failed = 1;
         goto done;
     }
 
