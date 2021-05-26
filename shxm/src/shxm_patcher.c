@@ -13,8 +13,7 @@ struct patchctx_s {
 };
 
 static int
-patch_binding_numbers(struct patchctx_s* cur,
-                     shxm_util_buf_t* decorations){
+patch_binding_numbers(struct patchctx_s* cur, shxm_util_buf_t* decorations){
     int i;
     int id;
     shxm_opaque_t* o;
@@ -44,7 +43,62 @@ patch_binding_numbers(struct patchctx_s* cur,
     return 0;
 }
 
-
+static int
+patch_locations(struct patchctx_s* cur, shxm_util_buf_t* decorations){
+    int i;
+    int id;
+    uint32_t op[4];
+    shxm_attribute_t* a;
+    for(i=0;i!=cur->prog->input_count;i++){
+        // FIXME: Search existing location 
+        a = &cur->prog->input[i];
+        if(a->location >= 0){ /* Not Built-in */
+            id = a->slot->id[cur->phase];
+            if(id > 0){
+                op[0] = 71; /* OpDecorate */
+                op[1] = id;
+                op[2] = 30; /* Location */
+                op[3] = a->location;
+                if(shxm_private_util_buf_write_op(decorations, op, 4)){
+                    return 1;
+                }
+            }
+        }
+    }
+    for(i=0;i!=cur->prog->output_count;i++){
+        // FIXME: Search existing location 
+        a = &cur->prog->output[i];
+        if(a->location >= 0){ /* Not Built-in */
+            id = a->slot->id[cur->phase];
+            if(id > 0){
+                op[0] = 71; /* OpDecorate */
+                op[1] = id;
+                op[2] = 30; /* Location */
+                op[3] = a->location;
+                if(shxm_private_util_buf_write_op(decorations, op, 4)){
+                    return 1;
+                }
+            }
+        }
+    }
+    for(i=0;i!=cur->prog->varying_count;i++){
+        // FIXME: Search existing location 
+        a = &cur->prog->varying[i];
+        if(a->location >= 0){ /* Not Built-in */
+            id = a->slot->id[cur->phase];
+            if(id > 0){
+                op[0] = 71; /* OpDecorate */
+                op[1] = id;
+                op[2] = 30; /* Location */
+                op[3] = a->location;
+                if(shxm_private_util_buf_write_op(decorations, op, 4)){
+                    return 1;
+                }
+            }
+        }
+    }
+    return 0;
+}
 
 int
 shxm_private_patch_spirv(shxm_ctx_t* ctx,
@@ -104,6 +158,9 @@ shxm_private_patch_spirv(shxm_ctx_t* ctx,
 
     /* Generate patches */
     if(patch_binding_numbers(&cur, patch_decoration)){
+        goto done;
+    }
+    if(patch_locations(&cur, patch_decoration)){
         goto done;
     }
 
