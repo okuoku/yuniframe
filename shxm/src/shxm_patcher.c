@@ -5,6 +5,47 @@
 
 #define PATCH_MAX_LEN 16000
 
+struct patchctx_s {
+    int phase;
+    uint32_t* ir;
+    shxm_program_t* prog;
+    shxm_spirv_intr_t* intr;
+};
+
+static int
+patch_binding_numbers(struct patchctx_s* cur,
+                     shxm_util_buf_t* decorations){
+    int i;
+    int id;
+    shxm_opaque_t* o;
+    uint32_t op[4];
+    // FIXME: Bind UBO to 0 here
+    for(i=0;i!=cur->prog->opaque_count;i++){
+        o = &cur->prog->opaque[i];
+        if(o->phase == cur->phase){
+            // FIXME: Check existing decoration here
+            id = o->slot->id[cur->phase];
+            op[0] = 71; /* OpDecorate */
+            op[1] = id;
+            op[2] = 33; /* Binding */
+            op[3] = o->binding;
+            if(shxm_private_util_buf_write_op(decorations, op, 4)){
+                return 1;
+            }
+            op[0] = 71; /* OpDecorate */
+            op[1] = id;
+            op[2] = 34; /* DescriptorSet */
+            op[3] = 0;
+            if(shxm_private_util_buf_write_op(decorations, op, 4)){
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+
+
 int
 shxm_private_patch_spirv(shxm_ctx_t* ctx,
                          shxm_program_t* prog,
@@ -17,6 +58,7 @@ shxm_private_patch_spirv(shxm_ctx_t* ctx,
     int curid;
     int total_len;
 
+    struct patchctx_s cur;
     shxm_util_buf_t* patch_decoration;
     shxm_util_buf_t* patch_defs;
     shxm_util_buf_t* patch_main;
@@ -42,6 +84,11 @@ shxm_private_patch_spirv(shxm_ctx_t* ctx,
     memcpy(temp_ir, source_ir, sizeof(uint32_t)*source_ir_len);
     temp_ir_len = source_ir_len;
 
+    cur.phase = phase;
+    cur.prog = prog;
+    cur.ir = temp_ir;
+    cur.intr = intr;
+
     patch_decoration = shxm_private_util_buf_new(PATCH_MAX_LEN);
     if(!patch_decoration){
         failed = 1;
@@ -56,6 +103,12 @@ shxm_private_patch_spirv(shxm_ctx_t* ctx,
     if(!patch_main){
         failed = 1;
         goto fail_main;
+    }
+
+    /* Generate patches */
+    if(patch_binding_numbers(&cur, patch_decoration)){
+        failed = 1;
+        goto done;
     }
 
     defs_start = intr->defs_start;
