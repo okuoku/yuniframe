@@ -17,6 +17,7 @@ struct idpatchparam_s {
     int ubo_private_pointer_type; /* Generate */
     int access_chain; /* Generate (Base) */
     int access_load; /* Generate (Base) */
+    int legalized; /* has Stride decorations */
 };
 
 struct patchctx_s {
@@ -370,8 +371,6 @@ inject_ubo_def(struct patchctx_s* cur, shxm_util_buf_t* decorations,
                     return 1;
                 }
             }
-
-
         }
     }
 
@@ -385,8 +384,26 @@ inject_ubo_def(struct patchctx_s* cur, shxm_util_buf_t* decorations,
         id = uniform->slot->id[cur->phase];
         if(id){
             param = &cur->idpatch[id];
-            opa[2+membercount] = param->ubo_type;
+            if(uniform->slot->type == CWGL_VAR_BOOL){
+                /* Promote boolean type to int32 */
+                opa[2+membercount] = cur->int32_type_id;
+            }else{
+                opa[2+membercount] = param->ubo_type;
+            }
             membercount++;
+
+            if(uniform->slot->array_length){
+                if(! cur->idpatch[param->ubo_type].legalized){
+                    op[0] = 71; /* OpDecorate */
+                    op[1] = param->ubo_type;
+                    op[2] = 6; /* ArrayStride */
+                    op[3] = uniform->size / uniform->slot->array_length;
+                    if(shxm_private_util_buf_write_op(decorations, op, 4)){
+                        return 1;
+                    }
+                    cur->idpatch[param->ubo_type].legalized = 1;
+                }
+            }
         }
     }
     if(shxm_private_util_buf_write_op(defs, opa, 2+membercount)){
