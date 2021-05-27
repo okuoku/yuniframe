@@ -297,14 +297,19 @@ fill_slots(shxm_program_t* prog, shxm_spirv_intr_t* intr, int phase){
                 varslot->id[phase] = id;
                 intr->ent[id].varusage = varusage;
                 varslot->name = varname;
-                varslot->array_length = intr->ent[id].array_length;
                 r = resolve_type(intr->ent, ir, typeid);
                 if(r){
                     return r;
                 }
+                varslot->array_length = intr->ent[typeid].array_length;
                 varslot->type = intr->ent[typeid].type;
-                printf("var:%d:%s:%d (type %d)\n",phase, varname, (int)varusage,
-                       varslot->type);
+                if(varslot->array_length){
+                    printf("var:%d:%s:%d (type %d[%d])\n",phase, varname, (int)varusage,
+                           varslot->type,varslot->array_length);
+                }else{
+                    printf("var:%d:%s:%d (type %d)\n",phase, varname, (int)varusage,
+                           varslot->type);
+                }
             }else{
                 printf("(ignored) var:%d:%s:%d\n",phase, varname, (int)varusage);
             }
