@@ -2,15 +2,380 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef _MSC_VER
+#include <malloc.h>
+#else
+#include <alloca.h>
+#endif
 
 #define PATCH_MAX_LEN 16000
 
+struct idpatchparam_s {
+    int ubo_index;
+    int ubo_type; /* Took from source */
+    int ubo_uniform_constant_pointer_type; /* Took from source */
+    int ubo_private_pointer_type; /* Generate */
+    int access_chain; /* Generate (Base) */
+    int access_load; /* Generate (Base) */
+};
+
 struct patchctx_s {
+    int curid;
     int phase;
+    int integers;
+    int int32_type_id;
+    int ubo_variable_id;
+    int ubo_pointer_id;
+    int ubo_structure_id;
+
+    int integers_id_base;
     uint32_t* ir;
     shxm_program_t* prog;
     shxm_spirv_intr_t* intr;
+    struct idpatchparam_s* idpatch; /* Indexed by ID */
 };
+
+static int
+patch_main_load(struct patchctx_s* cur, shxm_util_buf_t* target){
+    int u;
+    int id;
+    int curid;
+    int i;
+    uint32_t op[6];
+    struct idpatchparam_s* param;
+    shxm_uniform_t* uniform;
+    for(u=0;u!=cur->prog->uniform_count;u++){
+        uniform = &cur->prog->uniform[u];
+        id = uniform->slot->id[cur->phase];
+        if(id){
+            param = &cur->idpatch[id];
+            if(uniform->slot->array_length){
+                for(i=0;i!=uniform->slot->array_length;i++){
+                    /* Generate 2 OpAccessChains for load and store */
+                    op[0] = 65; /* OpAccessChain */
+                    op[1] = param->ubo_private_pointer_type;
+                    op[2] = param->access_chain + (i*2);
+                    op[3] = cur->ubo_variable_id;
+                    op[4] = cur->integers_id_base + param->ubo_index;
+                    op[5] = cur->integers_id_base + i;
+                    if(shxm_private_util_buf_write_op(target, op, 6)){
+                        return 1;
+                    }
+                    op[0] = 65; /* OpAccessChain */
+                    op[1] = param->ubo_private_pointer_type;
+                    op[2] = param->access_chain + (i*2) + 1;
+                    op[3] = id;
+                    op[4] = cur->integers_id_base + i;
+                    if(shxm_private_util_buf_write_op(target, op, 5)){
+                        return 1;
+                    }
+                    op[0] = 61; /* OpLoad */
+                    op[1] = param->ubo_type;
+                    op[2] = param->access_load + i;
+                    op[3] = param->access_chain + (i*2);
+                    if(shxm_private_util_buf_write_op(target, op, 4)){
+                        return 1;
+                    }
+                    op[0] = 62; /* OpStore */
+                    op[1] = param->access_chain + (i*2) + 1;
+                    op[2] = param->access_load + i;
+                    if(shxm_private_util_buf_write_op(target, op, 3)){
+                        return 1;
+                    }
+                }
+            }else{
+                op[0] = 65; /* OpAccessChain */
+                op[1] = param->ubo_private_pointer_type;
+                op[2] = param->access_chain;
+                op[3] = cur->ubo_variable_id;
+                op[4] = cur->integers_id_base + param->ubo_index;
+                if(shxm_private_util_buf_write_op(target, op, 5)){
+                    return 1;
+                }
+                op[0] = 61; /* OpLoad */
+                op[1] = param->ubo_type;
+                op[2] = param->access_load;
+                op[3] = param->access_chain;
+                if(shxm_private_util_buf_write_op(target, op, 4)){
+                    return 1;
+                }
+                op[0] = 62; /* OpStore */
+                op[1] = id;
+                op[2] = param->access_load;
+                if(shxm_private_util_buf_write_op(target, op, 3)){
+                    return 1;
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
+static int
+inject_integers(struct patchctx_s* cur, shxm_util_buf_t* defs){
+    uint32_t op[4];
+    int i;
+
+    op[0] = 21; /* OpTypeInt */
+    op[1] = cur->int32_type_id;
+    op[2] = 32; /* 32bits */
+    op[3] = 0; /* unsigned */
+    if(shxm_private_util_buf_write_op(defs, op, 4)){
+        return 1;
+    }
+
+    for(i=0;i<=cur->integers;i++){
+        op[0] = 43; /* OpConstant */
+        op[1] = cur->int32_type_id;
+        op[2] = cur->integers_id_base + i;
+        op[3] = i;
+        if(shxm_private_util_buf_write_op(defs, op, 4)){
+            return 1;
+        }
+    }
+    return 0;
+}
+
+static int
+fill_ubo_info(struct patchctx_s* cur){
+    int u;
+    int id;
+    int curid;
+    int uboindex;
+    uint32_t* op;
+    shxm_uniform_t* uniform;
+    curid = cur->curid;
+    /* at least, we need intergers for uniform entries */
+    cur->integers = cur->prog->uniform_count;
+
+    uboindex = 0;
+    /* Pass1: Fetch/Generate IDs for types and variables */
+    for(u=0;u!=cur->prog->uniform_count;u++){
+        uniform = &cur->prog->uniform[u];
+        id = uniform->slot->id[cur->phase];
+        if(id){
+            op = &cur->ir[cur->intr->ent[id].offs];
+            cur->idpatch[id].ubo_uniform_constant_pointer_type = op[1];
+            cur->idpatch[id].ubo_private_pointer_type = curid;
+            curid++;
+            cur->idpatch[id].ubo_index = uboindex;
+            uboindex++;
+            /* Fetch original type information */
+            op = &cur->ir[cur->intr->ent[cur->idpatch[id].ubo_uniform_constant_pointer_type].offs];
+            cur->idpatch[id].ubo_type = op[3];
+        }
+    }
+
+    /* Pass2: Generate access chain */
+    for(u=0;u!=cur->prog->uniform_count;u++){
+        uniform = &cur->prog->uniform[u];
+        id = uniform->slot->id[cur->phase];
+        if(id){
+            if(uniform->slot->array_length){
+                if(uniform->slot->array_length > cur->integers){
+                    cur->integers = uniform->slot->array_length;
+                }
+                cur->idpatch[id].access_chain = curid;
+                curid += (uniform->slot->array_length * 2);
+                cur->idpatch[id].access_load = curid;
+                curid += uniform->slot->array_length;
+            }else{
+                cur->idpatch[id].access_chain = curid;
+                curid++;
+                cur->idpatch[id].access_load = curid;
+                curid++;
+            }
+        }
+    }
+    cur->integers_id_base = curid;
+    curid += (cur->integers + 1);
+    cur->ubo_variable_id = curid;
+    curid++;
+    cur->ubo_pointer_id = curid;
+    curid++;
+    cur->ubo_structure_id = curid;
+    curid++;
+    cur->int32_type_id = curid;
+    curid++;
+    cur->curid = curid;
+
+    return 0;
+}
+
+static void
+nopout(uint32_t* ir){
+    int i;
+    int len;
+    len = ir[0] >> 16;
+    for(i=0;i!=len;i++){
+        ir[i] = (1 << 16); /* OpNop */
+    }
+}
+
+static int
+patch_uniform_to_private(struct patchctx_s* cur, shxm_util_buf_t* defs){
+    int u;
+    int id;
+    int curid;
+    uint32_t op[4];
+    struct idpatchparam_s* param;
+    shxm_uniform_t* uniform;
+    for(u=0;u!=cur->prog->uniform_count;u++){
+        uniform = &cur->prog->uniform[u];
+        id = uniform->slot->id[cur->phase];
+        if(id){
+            param = &cur->idpatch[id];
+            nopout(&cur->ir[cur->intr->ent[id].offs]);
+            op[0] = 32; /* OpTypePointer */
+            op[1] = param->ubo_private_pointer_type;
+            op[2] = 6; /* Private */
+            op[3] = param->ubo_type;
+            if(shxm_private_util_buf_write_op(defs, op, 4)){
+                return 1;
+            }
+            op[0] = 59; /* OpVariable */
+            op[1] = param->ubo_private_pointer_type;
+            op[2] = id;
+            op[3] = 6; /* Private */
+            if(shxm_private_util_buf_write_op(defs, op, 4)){
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+static int
+inject_opname(shxm_util_buf_t* out, int id, const char* name){
+    size_t namelen;
+    int namewords;
+    uint32_t* op;
+    if(!name){
+        /* Ignore empty name */
+        return 0;
+    }
+    namelen = strnlen(name, 255);
+    namelen++; /* NUL */
+    namewords = ((namelen + 3) & (0xffff - 3)) >> 2;
+    op = alloca(sizeof(uint32_t)*(namewords+2));
+    memset(op, 0, sizeof(uint32_t)*(namewords+2));
+    op[0] = 5; /* OpName */
+    op[1] = id;
+    memcpy(&op[2], name, namelen);
+    return shxm_private_util_buf_write_op(out, op, namewords + 2);
+}
+
+static int
+inject_opmembername(shxm_util_buf_t* out, int id, int idx, const char* name){
+    size_t namelen;
+    int namewords;
+    uint32_t* op;
+    if(!name){
+        /* Ignore empty name */
+        return 0;
+    }
+    namelen = strnlen(name, 255);
+    namelen++; /* NUL */
+    namewords = ((namelen + 3) & (0xffff - 3)) >> 2;
+    op = alloca(sizeof(uint32_t)*(namewords+3));
+    memset(op, 0, sizeof(uint32_t)*(namewords+3));
+    op[0] = 6; /* OpName */
+    op[1] = id;
+    op[2] = idx;
+    memcpy(&op[3], name, namelen);
+    return shxm_private_util_buf_write_op(out, op, namewords + 3);
+}
+
+static int
+inject_ubo_def(struct patchctx_s* cur, shxm_util_buf_t* decorations,
+               shxm_util_buf_t* defs){
+    int u;
+    int id;
+    int membercount;
+    uint32_t* opa;
+    uint32_t op[5];
+    struct idpatchparam_s* param;
+    shxm_uniform_t* uniform;
+    if(inject_opname(decorations, cur->ubo_variable_id, "__ubo")){
+        return 1;
+    }
+    op[0] = 71; /* OpDecorate */
+    op[1] = cur->ubo_variable_id;
+    op[2] = 33; /* Binding */
+    op[3] = 0; /* UBO always bound at zero */
+    if(shxm_private_util_buf_write_op(decorations, op, 4)){
+        return 1;
+    }
+    op[0] = 71; /* OpDecorate */
+    op[1] = cur->ubo_variable_id;
+    op[2] = 34; /* DescriptorSet */
+    op[3] = 0;
+    if(shxm_private_util_buf_write_op(decorations, op, 4)){
+        return 1;
+    }
+
+    membercount = 0;
+    for(u=0;u!=cur->prog->uniform_count;u++){
+        uniform = &cur->prog->uniform[u];
+        id = uniform->slot->id[cur->phase];
+        if(id){
+            membercount++;
+            param = &cur->idpatch[id];
+            nopout(&cur->ir[cur->intr->ent[id].offs]);
+
+            if(inject_opmembername(decorations,
+                                   cur->ubo_structure_id,
+                                   param->ubo_index,
+                                   uniform->slot->name)){
+                return 1;
+            }
+
+            op[0] = 72; /* OpMemberDecorate */
+            op[1] = cur->ubo_structure_id;
+            op[2] = param->ubo_index;
+            op[3] = 35; /* Offset */
+            op[4] = uniform->offset;
+            if(shxm_private_util_buf_write_op(decorations, op, 5)){
+                return 1;
+            }
+        }
+    }
+
+    /* Define structure */
+    opa = alloca(sizeof(uint32_t)*(membercount+2));
+    opa[0] = 30; /* OpTypeStruct */
+    opa[1] = cur->ubo_structure_id;
+    membercount = 0;
+    for(u=0;u!=cur->prog->uniform_count;u++){
+        uniform = &cur->prog->uniform[u];
+        id = uniform->slot->id[cur->phase];
+        if(id){
+            param = &cur->idpatch[id];
+            opa[2+membercount] = param->ubo_type;
+            membercount++;
+        }
+    }
+    if(shxm_private_util_buf_write_op(defs, opa, 2+membercount)){
+        return 1;
+    }
+    op[0] = 32; /* OpTypePointer */
+    op[1] = cur->ubo_pointer_id;
+    op[2] = 2; /* Uniform */
+    op[3] = cur->ubo_structure_id;
+    if(shxm_private_util_buf_write_op(defs, op, 4)){
+        return 1;
+    }
+    op[0] = 59; /* OpVariable */
+    op[1] = cur->ubo_pointer_id;
+    op[2] = cur->ubo_variable_id;
+    op[3] = 2; /* Uniform */
+    if(shxm_private_util_buf_write_op(defs, op, 4)){
+        return 1;
+    }
+
+    return 0;
+}
 
 static int
 patch_binding_numbers(struct patchctx_s* cur, shxm_util_buf_t* decorations){
@@ -142,6 +507,13 @@ shxm_private_patch_spirv(shxm_ctx_t* ctx,
     cur.prog = prog;
     cur.ir = temp_ir;
     cur.intr = intr;
+    cur.curid = intr->ent_count;
+
+    cur.idpatch = malloc(sizeof(struct idpatchparam_s)*cur.curid);
+    if(! cur.idpatch){
+        goto fail_idpatch;
+    }
+    memset(cur.idpatch, 0, sizeof(struct idpatchparam_s)*cur.curid);
 
     patch_decoration = shxm_private_util_buf_new(PATCH_MAX_LEN);
     if(!patch_decoration){
@@ -163,11 +535,28 @@ shxm_private_patch_spirv(shxm_ctx_t* ctx,
     if(patch_locations(&cur, patch_decoration)){
         goto done;
     }
+    if(fill_ubo_info(&cur)){
+        goto done;
+    }
+    cur.ir[3] = cur.curid; /* Patch Bounds */
+    if(patch_uniform_to_private(&cur, patch_defs)){
+        goto done;
+    }
+    if(inject_ubo_def(&cur, patch_decoration, patch_defs)){
+        goto done;
+    }
+    if(inject_integers(&cur, patch_defs)){
+        goto done;
+    }
+    if(patch_main_load(&cur, patch_main)){
+        goto done;
+    }
 
     defs_start = intr->defs_start;
     defs_end = intr->defs_end;
     entrypoint_start = 
-        intr->ent[intr->entrypoint].offs + 5 /* OpFunction len */;
+        intr->ent[intr->entrypoint].offs + 5 /* OpFunction len */
+        + 2 /* OpLabel len */;
 
     printf("Patch points: %d - %d - %d\n",
            defs_start, defs_end, entrypoint_start);
@@ -232,6 +621,8 @@ fail_main:
 fail_defs:
     shxm_private_util_buf_release(patch_decoration);
 fail_decoration:
+    free(cur.idpatch);
+fail_idpatch:
     free(temp_ir);
 
     if(failed){

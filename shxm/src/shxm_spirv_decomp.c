@@ -17,13 +17,15 @@ shxm_private_decomp_spirv(uint32_t* spirv, int len){
     spvc_context_create(&ctx);
     spvc_context_parse_spirv(ctx, spirv, len, &ir);
     spvc_context_create_compiler(ctx, SPVC_BACKEND_GLSL, ir, 
-                                 SPVC_CAPTURE_MODE_TAKE_OWNERSHIP,
+                                 SPVC_CAPTURE_MODE_COPY,
                                  &compiler);
     spvc_compiler_create_compiler_options(compiler, &options);
     spvc_compiler_options_set_uint(options, SPVC_COMPILER_OPTION_GLSL_VERSION, 
-                                   330);
+                                   450);
     spvc_compiler_options_set_bool(options, SPVC_COMPILER_OPTION_GLSL_ES, 
                                    SPVC_FALSE);
+    spvc_compiler_options_set_bool(options, SPVC_COMPILER_OPTION_GLSL_VULKAN_SEMANTICS, 
+                                   SPVC_TRUE);
     spvc_compiler_install_compiler_options(compiler, options);
     spvc_compiler_compile(compiler, &result);
     printf("%s\n", result);
