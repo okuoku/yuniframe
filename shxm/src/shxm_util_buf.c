@@ -128,6 +128,7 @@ shxm_private_util_buf_merge(shxm_util_buf_t* dest, shxm_util_buf_t* src){
         return 1;
     }
     for(i=0;i!=len;i++){
+        //printf("Merge: %04d: %08x <= %04d\n",ptr+i,src->buf[i],i);
         dest->buf[ptr+i] = src->buf[i];
     }
     dest->ptr += len;

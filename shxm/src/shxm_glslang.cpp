@@ -21,6 +21,12 @@ shxm_glslang_deinit(void){
 
 extern "C" void
 shxm_private_spirv_dis(int* spv, int len){
+#if 0
+    int i;
+    for(i=0;i!=len;i++){
+        printf("%04d: %08x\n",i,spv[i]);
+    }
+#endif
     std::vector<unsigned int> spirv(spv, &spv[len-1]);
     spv::Disassemble(std::cout, spirv);
 }
