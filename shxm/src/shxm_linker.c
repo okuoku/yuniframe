@@ -779,12 +779,14 @@ shxm_program_link(shxm_ctx_t* ctx, shxm_program_t* prog){
         // FIXME: Release vintr, fintr
         return 1;
     }
+    shxm_private_spirv_dis(prog->vertex_ir, prog->vertex_ir_len);
     shxm_private_decomp_spirv(prog->vertex_ir, prog->vertex_ir_len);
 
     if(shxm_private_patch_spirv(ctx, prog, fintr, 1)){
         // FIXME: Release vintr, fintr
         return 1;
     }
+    shxm_private_spirv_dis(prog->fragment_ir, prog->fragment_ir_len);
     shxm_private_decomp_spirv(prog->fragment_ir, prog->fragment_ir_len);
 
     // FIXME: Implement this.

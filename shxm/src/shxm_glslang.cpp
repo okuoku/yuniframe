@@ -19,6 +19,12 @@ shxm_glslang_deinit(void){
     (void)glslang::FinalizeProcess();
 }
 
+extern "C" void
+shxm_private_spirv_dis(int* spv, int len){
+    std::vector<unsigned int> spirv(spv, &spv[len-1]);
+    spv::Disassemble(std::cout, spirv);
+}
+
 extern "C" int
 shxm_glslang_build(int mode, const char* source, int len,
                    int** out_spv, int* out_spvlen){
