@@ -288,6 +288,18 @@ inject_opmembername(shxm_util_buf_t* out, int id, int idx, const char* name){
 }
 
 static int
+is_matrix(cwgl_var_type_t type){
+    switch(type){
+        case CWGL_VAR_FLOAT_MAT2:
+        case CWGL_VAR_FLOAT_MAT3:
+        case CWGL_VAR_FLOAT_MAT4:
+            return 1;
+        default:
+            return 0;
+    }
+}
+
+static int
 inject_ubo_def(struct patchctx_s* cur, shxm_util_buf_t* decorations,
                shxm_util_buf_t* defs){
     int u;
@@ -297,7 +309,16 @@ inject_ubo_def(struct patchctx_s* cur, shxm_util_buf_t* decorations,
     uint32_t op[5];
     struct idpatchparam_s* param;
     shxm_uniform_t* uniform;
-    if(inject_opname(decorations, cur->ubo_variable_id, "__ubo")){
+    if(inject_opname(decorations, cur->ubo_structure_id, "cwgl_ubo_s")){
+        return 1;
+    }
+    if(inject_opname(decorations, cur->ubo_variable_id, "cwgl_ubo")){
+        return 1;
+    }
+    op[0] = 71; /* OpDecorate */
+    op[1] = cur->ubo_structure_id;
+    op[2] = 2; /* Block */
+    if(shxm_private_util_buf_write_op(decorations, op, 3)){
         return 1;
     }
     op[0] = 71; /* OpDecorate */
@@ -339,6 +360,18 @@ inject_ubo_def(struct patchctx_s* cur, shxm_util_buf_t* decorations,
             if(shxm_private_util_buf_write_op(decorations, op, 5)){
                 return 1;
             }
+
+            if(is_matrix(uniform->slot->type)){
+                op[0] = 72; /* OpMemberDecorate */
+                op[1] = cur->ubo_structure_id;
+                op[2] = param->ubo_index;
+                op[3] = 5; /* ColMajor */
+                if(shxm_private_util_buf_write_op(decorations, op, 4)){
+                    return 1;
+                }
+            }
+
+
         }
     }
 
