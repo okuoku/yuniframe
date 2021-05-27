@@ -119,7 +119,7 @@ shxm_private_read_spirv(uint32_t* ir, int len){
                         ment->op = op;
                     }
                     if(op == 54 /* OpFunction */ && (intr->defs_end == 0)){
-                        intr->defs_end = i-1;
+                        intr->defs_end = i;
                     }
                     break;
 
