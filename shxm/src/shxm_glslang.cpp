@@ -73,6 +73,7 @@ shxm_glslang_build(int mode, const char* source, int len,
         printf("Success.\n%s\n%s\n",
                ts->getInfoLog(),
                ts->getInfoDebugLog());
+        ts->getIntermediate()->setOriginUpperLeft();
         glslang::GlslangToSpv(*ts->getIntermediate(),
                               spirv,
                               &logger,
