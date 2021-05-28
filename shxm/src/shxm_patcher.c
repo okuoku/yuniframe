@@ -13,6 +13,7 @@
 struct idpatchparam_s {
     int ubo_index;
     int ubo_type; /* Took from source */
+    int ubo_orig_type; /* Took from source */
     int ubo_element_type; /* Took from source */
     int ubo_uniform_constant_pointer_type; /* Took from source */
     int ubo_private_pointer_type; /* Generate */
@@ -20,6 +21,7 @@ struct idpatchparam_s {
     int ubo_uniform_pointer_type; /* Generate */
     int access_chain; /* Generate (Base) */
     int access_load; /* Generate (Base) */
+    int access_conv; /* Generate (Base) */
     int legalized; /* has Stride decorations */
 };
 
@@ -96,12 +98,30 @@ patch_main_load(struct patchctx_s* cur, shxm_util_buf_t* target){
                 if(shxm_private_util_buf_write_op(target, op, 5)){
                     return 1;
                 }
-                op[0] = 61; /* OpLoad */
-                op[1] = param->ubo_type;
-                op[2] = param->access_load;
-                op[3] = param->access_chain;
-                if(shxm_private_util_buf_write_op(target, op, 4)){
-                    return 1;
+                if(uniform->slot->type == CWGL_VAR_BOOL){
+                    op[0] = 61; /* OpLoad */
+                    op[1] = cur->int32_type_id;
+                    op[2] = param->access_conv;
+                    op[3] = param->access_chain;
+                    if(shxm_private_util_buf_write_op(target, op, 4)){
+                        return 1;
+                    }
+                    op[0] = 171; /* OpINotEqual */
+                    op[1] = param->ubo_orig_type;
+                    op[2] = param->access_load;
+                    op[3] = param->access_conv;
+                    op[4] = cur->integers_id_base; /* Zero */
+                    if(shxm_private_util_buf_write_op(target, op, 5)){
+                        return 1;
+                    }
+                }else{
+                    op[0] = 61; /* OpLoad */
+                    op[1] = param->ubo_type;
+                    op[2] = param->access_load;
+                    op[3] = param->access_chain;
+                    if(shxm_private_util_buf_write_op(target, op, 4)){
+                        return 1;
+                    }
                 }
                 op[0] = 62; /* OpStore */
                 op[1] = id;
@@ -190,6 +210,7 @@ fill_ubo_info(struct patchctx_s* cur){
             if(uniform->slot->type == CWGL_VAR_BOOL){
                 /* Promote boolean type to int32 */
                 cur->idpatch[id].ubo_type = cur->int32_type_id;
+                cur->idpatch[id].ubo_orig_type = id_type;
             }else{
                 cur->idpatch[id].ubo_type = id_type;
             }
@@ -209,10 +230,14 @@ fill_ubo_info(struct patchctx_s* cur){
                 curid += (uniform->slot->array_length * 2);
                 cur->idpatch[id].access_load = curid;
                 curid += uniform->slot->array_length;
+                cur->idpatch[id].access_conv = curid;
+                curid += uniform->slot->array_length;
             }else{
                 cur->idpatch[id].access_chain = curid;
                 curid++;
                 cur->idpatch[id].access_load = curid;
+                curid++;
+                cur->idpatch[id].access_conv = curid;
                 curid++;
             }
         }
@@ -268,7 +293,8 @@ patch_uniform_to_private(struct patchctx_s* cur, shxm_util_buf_t* defs){
             op[0] = 32; /* OpTypePointer */
             op[1] = param->ubo_private_pointer_type;
             op[2] = 6; /* Private */
-            op[3] = param->ubo_type;
+            op[3] = param->ubo_orig_type ? 
+                param->ubo_orig_type : param->ubo_type;
             if(shxm_private_util_buf_write_op(defs, op, 4)){
                 return 1;
             }
