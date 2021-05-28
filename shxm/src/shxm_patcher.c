@@ -149,9 +149,17 @@ fill_ubo_info(struct patchctx_s* cur){
     int uboindex;
     uint32_t* op;
     shxm_uniform_t* uniform;
-    curid = cur->curid;
     /* at least, we need intergers for uniform entries */
     cur->integers = cur->prog->uniform_count;
+
+    /* Assign int32_type_id early */
+    curid = cur->curid;
+    if(cur->intr->int32_type_id){
+        cur->int32_type_id = cur->intr->int32_type_id;
+    }else{
+        cur->int32_type_id = curid;
+        curid++;
+    }
 
     uboindex = 0;
     /* Pass1: Fetch/Generate IDs for types and variables */
@@ -169,7 +177,12 @@ fill_ubo_info(struct patchctx_s* cur){
             uboindex++;
             /* Fetch original type information */
             op = &cur->ir[cur->intr->ent[cur->idpatch[id].ubo_uniform_constant_pointer_type].offs];
-            cur->idpatch[id].ubo_type = op[3];
+            if(uniform->slot->type == CWGL_VAR_BOOL){
+                /* Promote boolean type to int32 */
+                cur->idpatch[id].ubo_type = cur->int32_type_id;
+            }else{
+                cur->idpatch[id].ubo_type = op[3];
+            }
         }
     }
 
@@ -202,12 +215,6 @@ fill_ubo_info(struct patchctx_s* cur){
     curid++;
     cur->ubo_structure_id = curid;
     curid++;
-    if(cur->intr->int32_type_id){
-        cur->int32_type_id = cur->intr->int32_type_id;
-    }else{
-        cur->int32_type_id = curid;
-        curid++;
-    }
     cur->curid = curid;
 
     return 0;
@@ -423,12 +430,7 @@ inject_ubo_def(struct patchctx_s* cur,
         id = uniform->slot->id[cur->phase];
         if(id){
             param = &cur->idpatch[id];
-            if(uniform->slot->type == CWGL_VAR_BOOL){
-                /* Promote boolean type to int32 */
-                opa[2+membercount] = cur->int32_type_id;
-            }else{
-                opa[2+membercount] = param->ubo_type;
-            }
+            opa[2+membercount] = param->ubo_type;
             membercount++;
 
             if(uniform->slot->array_length){
