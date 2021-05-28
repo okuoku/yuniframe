@@ -163,6 +163,7 @@ int shxm_private_util_buf_merge(shxm_util_buf_t* dest,
 int shxm_private_util_buf_dup(shxm_util_buf_t* buf,
                               uint32_t** out_obj,
                               int* out_count);
+void shxm_private_util_buf_clearnop(shxm_util_buf_t* buf);
 
 // {
 #ifdef __cplusplus

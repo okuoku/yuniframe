@@ -668,6 +668,8 @@ shxm_private_patch_spirv(shxm_ctx_t* ctx,
         goto done;
     }
 
+    shxm_private_util_buf_clearnop(final_output);
+
     /* Allocate and copy final output */
     if(phase == 0){
         failed = shxm_private_util_buf_dup(final_output,

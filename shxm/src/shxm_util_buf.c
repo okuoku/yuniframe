@@ -134,3 +134,34 @@ shxm_private_util_buf_merge(shxm_util_buf_t* dest, shxm_util_buf_t* src){
     dest->ptr += len;
     return 0;
 }
+
+void
+shxm_private_util_buf_clearnop(shxm_util_buf_t* buf){
+    int i;
+    int w;
+    int len;
+    int oplen;
+    int dif;
+    dif = 0;
+    len = shxm_private_util_buf_size(buf);
+    i = 5; /* SPIR-V has 5 words header */
+    w = 5;
+    while(i!=len){
+        if(i>len){
+            printf("WARNING: Something wrong!\n");
+            break;
+        }
+        if(buf->buf[i] == 0x10000 /* OpNop */){
+            i++;
+        }else{
+            oplen = (buf->buf[i]) >> 16;
+            if(w != i){
+                /* Copy this instruction to w */
+                memmove(&buf->buf[w], &buf->buf[i], sizeof(uint32_t)*oplen);
+            }
+            w+=oplen;
+            i+=oplen;
+        }
+    }
+    buf->ptr = w;
+}
