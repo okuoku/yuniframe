@@ -175,6 +175,7 @@ resolve_type(shxm_spirv_ent_t* ent, int32_t* ir, int id){
                 ent[id].width = ent[tgt].width;
                 ent[id].is_signed = ent[tgt].is_signed;
                 ent[id].type = ent[tgt].type;
+                ent[id].element_type_id = tgt;
 
                 /* 3: length */
                 arrlen = ir[offs+3];

@@ -111,6 +111,7 @@ struct shxm_spirv_ent_s {
     int width;
     int is_signed;
     int array_length; /* zero for non arrays */
+    int element_type_id;
     shxm_varusage_t varusage;
     cwgl_var_type_t type;
 };

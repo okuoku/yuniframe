@@ -13,8 +13,10 @@
 struct idpatchparam_s {
     int ubo_index;
     int ubo_type; /* Took from source */
+    int ubo_element_type; /* Took from source */
     int ubo_uniform_constant_pointer_type; /* Took from source */
     int ubo_private_pointer_type; /* Generate */
+    int ubo_private_element_pointer_type; /* Generate */
     int ubo_uniform_pointer_type; /* Generate */
     int access_chain; /* Generate (Base) */
     int access_load; /* Generate (Base) */
@@ -64,7 +66,7 @@ patch_main_load(struct patchctx_s* cur, shxm_util_buf_t* target){
                         return 1;
                     }
                     op[0] = 65; /* OpAccessChain */
-                    op[1] = param->ubo_private_pointer_type;
+                    op[1] = param->ubo_private_element_pointer_type;
                     op[2] = param->access_chain + (i*2) + 1;
                     op[3] = id;
                     op[4] = cur->integers_id_base + i;
@@ -72,7 +74,7 @@ patch_main_load(struct patchctx_s* cur, shxm_util_buf_t* target){
                         return 1;
                     }
                     op[0] = 61; /* OpLoad */
-                    op[1] = param->ubo_type;
+                    op[1] = param->ubo_element_type;
                     op[2] = param->access_load + i;
                     op[3] = param->access_chain + (i*2);
                     if(shxm_private_util_buf_write_op(target, op, 4)){
@@ -147,6 +149,7 @@ fill_ubo_info(struct patchctx_s* cur){
     int id;
     int curid;
     int uboindex;
+    int id_type;
     uint32_t* op;
     shxm_uniform_t* uniform;
     /* at least, we need intergers for uniform entries */
@@ -171,17 +174,24 @@ fill_ubo_info(struct patchctx_s* cur){
             cur->idpatch[id].ubo_uniform_constant_pointer_type = op[1];
             cur->idpatch[id].ubo_private_pointer_type = curid;
             curid++;
+            cur->idpatch[id].ubo_private_element_pointer_type = curid;
+            curid++;
             cur->idpatch[id].ubo_uniform_pointer_type = curid;
             curid++;
             cur->idpatch[id].ubo_index = uboindex;
             uboindex++;
             /* Fetch original type information */
             op = &cur->ir[cur->intr->ent[cur->idpatch[id].ubo_uniform_constant_pointer_type].offs];
+            id_type = op[3];
+            if(uniform->slot->array_length){
+                cur->idpatch[id].ubo_element_type = 
+                    cur->intr->ent[id_type].element_type_id;
+            }
             if(uniform->slot->type == CWGL_VAR_BOOL){
                 /* Promote boolean type to int32 */
                 cur->idpatch[id].ubo_type = cur->int32_type_id;
             }else{
-                cur->idpatch[id].ubo_type = op[3];
+                cur->idpatch[id].ubo_type = id_type;
             }
         }
     }
@@ -247,7 +257,11 @@ patch_uniform_to_private(struct patchctx_s* cur, shxm_util_buf_t* defs){
             op[0] = 32; /* OpTypePointer */
             op[1] = param->ubo_uniform_pointer_type;
             op[2] = 2; /* Uniform */
-            op[3] = param->ubo_type;
+            if(uniform->slot->array_length){
+                op[3] = param->ubo_element_type;
+            }else{
+                op[3] = param->ubo_type;
+            }
             if(shxm_private_util_buf_write_op(defs, op, 4)){
                 return 1;
             }
@@ -257,6 +271,15 @@ patch_uniform_to_private(struct patchctx_s* cur, shxm_util_buf_t* defs){
             op[3] = param->ubo_type;
             if(shxm_private_util_buf_write_op(defs, op, 4)){
                 return 1;
+            }
+            if(param->ubo_element_type){
+                op[0] = 32; /* OpTypePointer */
+                op[1] = param->ubo_private_element_pointer_type;
+                op[2] = 6; /* Private */
+                op[3] = param->ubo_element_type;
+                if(shxm_private_util_buf_write_op(defs, op, 4)){
+                    return 1;
+                }
             }
             op[0] = 59; /* OpVariable */
             op[1] = param->ubo_private_pointer_type;
