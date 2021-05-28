@@ -123,6 +123,7 @@ struct shxm_spirv_intr_s {
     unsigned int ent_count;
     unsigned int chain_count;
     int entrypoint; /* ID for entrypoint */
+    int preamble_end; /* First OpName location */
     int defs_start;
     int defs_end;
 };

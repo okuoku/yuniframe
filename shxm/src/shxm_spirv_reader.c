@@ -54,6 +54,7 @@ shxm_private_read_spirv(uint32_t* ir, int len){
     intr->entrypoint = 0;
     intr->defs_start = 0;
     intr->defs_end = 0;
+    intr->preamble_end = 0;
     if(ent){
         intr->ent = ent;
         intr->ent_count = bound;
@@ -70,6 +71,9 @@ shxm_private_read_spirv(uint32_t* ir, int len){
             switch(op){
                 /* Names */
                 case 5: /* OpName */
+                    if(! intr->preamble_end){
+                        intr->preamble_end = i;
+                    }
                     ment = calc_ent(intr, ir[i+1]);
                     if(! ment){
                         printf("ERROR: Invalid offset op %d\n", op);
@@ -79,7 +83,9 @@ shxm_private_read_spirv(uint32_t* ir, int len){
                     }
                     break;
                 case 6: /* OpMemberName */
-                    printf("!!! FIXME !!! OpMemberName.!\n");
+                    if(! intr->preamble_end){
+                        intr->preamble_end = i;
+                    }
                     break;
 
                 /* Types */

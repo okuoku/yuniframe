@@ -301,7 +301,9 @@ is_matrix(cwgl_var_type_t type){
 }
 
 static int
-inject_ubo_def(struct patchctx_s* cur, shxm_util_buf_t* decorations,
+inject_ubo_def(struct patchctx_s* cur, 
+               shxm_util_buf_t* names,
+               shxm_util_buf_t* decorations,
                shxm_util_buf_t* defs){
     int u;
     int id;
@@ -310,10 +312,10 @@ inject_ubo_def(struct patchctx_s* cur, shxm_util_buf_t* decorations,
     uint32_t op[5];
     struct idpatchparam_s* param;
     shxm_uniform_t* uniform;
-    if(inject_opname(decorations, cur->ubo_structure_id, "cwgl_ubo_s")){
+    if(inject_opname(names, cur->ubo_structure_id, "cwgl_ubo_s")){
         return 1;
     }
-    if(inject_opname(decorations, cur->ubo_variable_id, "cwgl_ubo")){
+    if(inject_opname(names, cur->ubo_variable_id, "cwgl_ubo")){
         return 1;
     }
     op[0] = 71; /* OpDecorate */
@@ -346,7 +348,7 @@ inject_ubo_def(struct patchctx_s* cur, shxm_util_buf_t* decorations,
             param = &cur->idpatch[id];
             nopout(&cur->ir[cur->intr->ent[id].offs]);
 
-            if(inject_opmembername(decorations,
+            if(inject_opmembername(names,
                                    cur->ubo_structure_id,
                                    param->ubo_index,
                                    uniform->slot->name)){
@@ -523,11 +525,13 @@ shxm_private_patch_spirv(shxm_ctx_t* ctx,
     int failed = 1;
     int defs_start;
     int defs_end;
+    int preamble_end;
     int entrypoint_start;
     int curid;
     int total_len;
 
     struct patchctx_s cur;
+    shxm_util_buf_t* patch_names;
     shxm_util_buf_t* patch_decoration;
     shxm_util_buf_t* patch_defs;
     shxm_util_buf_t* patch_main;
@@ -565,6 +569,10 @@ shxm_private_patch_spirv(shxm_ctx_t* ctx,
     }
     memset(cur.idpatch, 0, sizeof(struct idpatchparam_s)*cur.curid);
 
+    patch_names = shxm_private_util_buf_new(PATCH_MAX_LEN);
+    if(!patch_names){
+        goto fail_names;
+    }
     patch_decoration = shxm_private_util_buf_new(PATCH_MAX_LEN);
     if(!patch_decoration){
         goto fail_decoration;
@@ -592,7 +600,7 @@ shxm_private_patch_spirv(shxm_ctx_t* ctx,
     if(patch_uniform_to_private(&cur, patch_defs)){
         goto done;
     }
-    if(inject_ubo_def(&cur, patch_decoration, patch_defs)){
+    if(inject_ubo_def(&cur, patch_names, patch_decoration, patch_defs)){
         goto done;
     }
     if(inject_integers(&cur, patch_defs)){
@@ -602,16 +610,19 @@ shxm_private_patch_spirv(shxm_ctx_t* ctx,
         goto done;
     }
 
+    preamble_end = intr->preamble_end;
     defs_start = intr->defs_start;
     defs_end = intr->defs_end;
     entrypoint_start = 
         intr->ent[intr->entrypoint].offs + 5 /* OpFunction len */
         + 2 /* OpLabel len */;
 
-    printf("Patch points: %d - %d - %d\n",
+    printf("Patch points: %d - %d - %d - %d\n",
+           preamble_end,
            defs_start, defs_end, entrypoint_start);
 
     total_len = temp_ir_len +
+        shxm_private_util_buf_size(patch_names) +
         shxm_private_util_buf_size(patch_decoration) +
         shxm_private_util_buf_size(patch_defs) +
         shxm_private_util_buf_size(patch_main);
@@ -625,7 +636,14 @@ shxm_private_patch_spirv(shxm_ctx_t* ctx,
 
     /* Merge into final output */
     if(shxm_private_util_buf_write_raw(final_output, temp_ir,
-                                       defs_start)){
+                                       intr->preamble_end)){
+        goto done;
+    }
+    if(shxm_private_util_buf_merge(final_output, patch_names)){
+        goto done;
+    }
+    if(shxm_private_util_buf_write_raw(final_output, &temp_ir[preamble_end],
+                                       defs_start - preamble_end)){
         goto done;
     }
     if(shxm_private_util_buf_merge(final_output, patch_decoration)){
@@ -671,6 +689,8 @@ fail_main:
 fail_defs:
     shxm_private_util_buf_release(patch_decoration);
 fail_decoration:
+    shxm_private_util_buf_release(patch_names);
+fail_names:
     free(cur.idpatch);
 fail_idpatch:
     free(temp_ir);
