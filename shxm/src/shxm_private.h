@@ -144,6 +144,9 @@ shxm_spirv_intr_t* shxm_private_read_spirv(uint32_t* ir, int len);
 void shxm_private_decomp_spirv(uint32_t* spirv, int len);
 void shxm_private_spirv_dis(int* spirv, int len); // shxm_glslang.cpp
 
+/* Private: Optimizer */
+int shxm_private_spvopt_run(uint32_t* ir, int len,
+                            uint32_t** out_ir, int* out_len);
 
 /* Private: Buf */
 shxm_util_buf_t* shxm_private_util_buf_new(int siz);
