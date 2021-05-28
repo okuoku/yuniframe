@@ -631,10 +631,10 @@ shxm_private_patch_spirv(shxm_ctx_t* ctx,
     if(patch_uniform_to_private(&cur, patch_defs)){
         goto done;
     }
-    if(inject_ubo_def(&cur, patch_names, patch_decoration, patch_defs)){
+    if(inject_integers(&cur, patch_defs)){
         goto done;
     }
-    if(inject_integers(&cur, patch_defs)){
+    if(inject_ubo_def(&cur, patch_names, patch_decoration, patch_defs)){
         goto done;
     }
     if(patch_main_load(&cur, patch_main)){
