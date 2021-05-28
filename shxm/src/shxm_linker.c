@@ -794,6 +794,25 @@ shxm_program_link(shxm_ctx_t* ctx, shxm_program_t* prog){
     shxm_private_spirv_dis(prog->fragment_ir, prog->fragment_ir_len);
     shxm_private_decomp_spirv(prog->fragment_ir, prog->fragment_ir_len);
 
+    uint32_t* opt_ir;
+    int opt_ir_len;
+    printf("== Optimized(VTX) ==\n");
+    if(shxm_private_spvopt_run(prog->vertex_ir, prog->vertex_ir_len,
+                               &opt_ir, &opt_ir_len)){
+        printf("Fail.\n");
+    }else{
+        shxm_private_spirv_dis(opt_ir, opt_ir_len);
+        shxm_private_decomp_spirv(opt_ir, opt_ir_len);
+    }
+    printf("== Optimized(FLG) ==\n");
+    if(shxm_private_spvopt_run(prog->fragment_ir, prog->fragment_ir_len,
+                               &opt_ir, &opt_ir_len)){
+        printf("Fail.\n");
+    }else{
+        shxm_private_spirv_dis(opt_ir, opt_ir_len);
+        shxm_private_decomp_spirv(opt_ir, opt_ir_len);
+    }
+
     // FIXME: Implement this.
     return 1;
 }
