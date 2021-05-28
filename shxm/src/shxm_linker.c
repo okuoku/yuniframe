@@ -331,8 +331,9 @@ is_builtin(shxm_slot_t* slot){
     CHECK("gl_PointCood");
     CHECK("gl_FrontFacing");
     CHECK("gl_FragDepth");
-    CHECK("gl_FragColor");
-    CHECK("gl_FragData");
+    // FIXME: Assign legal location to fragment outputs
+    //CHECK("gl_FragColor");
+    //CHECK("gl_FragData");
     return 0;
 #undef CHECK
 }
