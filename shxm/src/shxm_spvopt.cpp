@@ -36,7 +36,7 @@ shxm_private_spvopt_run(uint32_t* ir, int len,
     optimizer.SetMessageConsumer(dummy_consumer);
 
     optimizer.RegisterSizePasses();
-    if(optimizer.Run(ir, len, &out, vopts, true)){
+    if(optimizer.Run(ir, len, &out, vopts, false)){
         size_t siz;
         uint32_t* r;
         siz = out.size();
