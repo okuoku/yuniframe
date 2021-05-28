@@ -556,6 +556,30 @@ patch_locations(struct patchctx_s* cur, shxm_util_buf_t* decorations){
     return 0;
 }
 
+static int
+calc_main_skip(uint32_t* ir, int start){
+    uint32_t idx;
+    uint32_t op;
+    uint32_t len;
+    idx = start;
+    for(;;){
+        op = ir[idx] & 0xffff;
+        len = ir[idx] >> 16;
+        switch(op){
+            case 248: /* OpLabel */
+            case 8: /* OpLine */
+            case 317: /* OpNoLine */
+            case 59: /* OpVariable */
+            case 54: /* OpFunction */
+                idx += len;
+                continue;
+            default:
+                return idx;
+
+        }
+    }
+}
+
 int
 shxm_private_patch_spirv(shxm_ctx_t* ctx,
                          shxm_program_t* prog,
@@ -653,8 +677,7 @@ shxm_private_patch_spirv(shxm_ctx_t* ctx,
     defs_start = intr->defs_start;
     defs_end = intr->defs_end;
     entrypoint_start = 
-        intr->ent[intr->entrypoint].offs + 5 /* OpFunction len */
-        + 2 /* OpLabel len */;
+        calc_main_skip(cur.ir, intr->ent[intr->entrypoint].offs);
 
     printf("Patch points: %d - %d - %d - %d\n",
            preamble_end,
