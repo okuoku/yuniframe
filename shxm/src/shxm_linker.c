@@ -592,7 +592,12 @@ calc_slot_size(shxm_slot_t* slot){
             break;
     }
     if(slot->array_length){
-        return locsize * slot->array_length * 4;
+        if(locsize == 3){
+            // Do not pack 3 elements field
+            return 4 * slot->array_length * 4;
+        }else{
+            return locsize * slot->array_length * 4;
+        }
     }else{
         return locsize * 4;
     }
