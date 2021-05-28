@@ -119,12 +119,14 @@ inject_integers(struct patchctx_s* cur, shxm_util_buf_t* defs){
     uint32_t op[4];
     int i;
 
-    op[0] = 21; /* OpTypeInt */
-    op[1] = cur->int32_type_id;
-    op[2] = 32; /* 32bits */
-    op[3] = 0; /* unsigned */
-    if(shxm_private_util_buf_write_op(defs, op, 4)){
-        return 1;
+    if(! cur->intr->int32_type_id){
+        op[0] = 21; /* OpTypeInt */
+        op[1] = cur->int32_type_id;
+        op[2] = 32; /* 32bits */
+        op[3] = 0; /* unsigned */
+        if(shxm_private_util_buf_write_op(defs, op, 4)){
+            return 1;
+        }
     }
 
     for(i=0;i<=cur->integers;i++){
@@ -200,8 +202,12 @@ fill_ubo_info(struct patchctx_s* cur){
     curid++;
     cur->ubo_structure_id = curid;
     curid++;
-    cur->int32_type_id = curid;
-    curid++;
+    if(cur->intr->int32_type_id){
+        cur->int32_type_id = cur->intr->int32_type_id;
+    }else{
+        cur->int32_type_id = curid;
+        curid++;
+    }
     cur->curid = curid;
 
     return 0;

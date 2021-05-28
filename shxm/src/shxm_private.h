@@ -126,6 +126,7 @@ struct shxm_spirv_intr_s {
     int preamble_end; /* First OpName location */
     int defs_start;
     int defs_end;
+    int int32_type_id;
 };
 
 typedef struct shxm_spirv_intr_s shxm_spirv_intr_t;

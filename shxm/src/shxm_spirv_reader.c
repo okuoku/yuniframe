@@ -55,6 +55,7 @@ shxm_private_read_spirv(uint32_t* ir, int len){
     intr->defs_start = 0;
     intr->defs_end = 0;
     intr->preamble_end = 0;
+    intr->int32_type_id;
     if(ent){
         intr->ent = ent;
         intr->ent_count = bound;
@@ -111,6 +112,11 @@ shxm_private_read_spirv(uint32_t* ir, int len){
                     }
                     if(! intr->defs_start){
                         intr->defs_start = i;
+                    }
+                    if(op == 21 /* OpTypeInt */){
+                        if(ir[i+2] == 32 && ir[i+3] == 0){
+                            intr->int32_type_id = ir[i+1];
+                        }
                     }
                     break;
                 case 43: /* OpConstant */
