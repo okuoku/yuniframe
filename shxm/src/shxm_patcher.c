@@ -15,6 +15,7 @@ struct idpatchparam_s {
     int ubo_type; /* Took from source */
     int ubo_uniform_constant_pointer_type; /* Took from source */
     int ubo_private_pointer_type; /* Generate */
+    int ubo_uniform_pointer_type; /* Generate */
     int access_chain; /* Generate (Base) */
     int access_load; /* Generate (Base) */
     int legalized; /* has Stride decorations */
@@ -54,7 +55,7 @@ patch_main_load(struct patchctx_s* cur, shxm_util_buf_t* target){
                 for(i=0;i!=uniform->slot->array_length;i++){
                     /* Generate 2 OpAccessChains for load and store */
                     op[0] = 65; /* OpAccessChain */
-                    op[1] = param->ubo_private_pointer_type;
+                    op[1] = param->ubo_uniform_pointer_type;
                     op[2] = param->access_chain + (i*2);
                     op[3] = cur->ubo_variable_id;
                     op[4] = cur->integers_id_base + param->ubo_index;
@@ -86,7 +87,7 @@ patch_main_load(struct patchctx_s* cur, shxm_util_buf_t* target){
                 }
             }else{
                 op[0] = 65; /* OpAccessChain */
-                op[1] = param->ubo_private_pointer_type;
+                op[1] = param->ubo_uniform_pointer_type;
                 op[2] = param->access_chain;
                 op[3] = cur->ubo_variable_id;
                 op[4] = cur->integers_id_base + param->ubo_index;
@@ -160,6 +161,8 @@ fill_ubo_info(struct patchctx_s* cur){
             cur->idpatch[id].ubo_uniform_constant_pointer_type = op[1];
             cur->idpatch[id].ubo_private_pointer_type = curid;
             curid++;
+            cur->idpatch[id].ubo_uniform_pointer_type = curid;
+            curid++;
             cur->idpatch[id].ubo_index = uboindex;
             uboindex++;
             /* Fetch original type information */
@@ -228,6 +231,13 @@ patch_uniform_to_private(struct patchctx_s* cur, shxm_util_buf_t* defs){
         if(id){
             param = &cur->idpatch[id];
             nopout(&cur->ir[cur->intr->ent[id].offs]);
+            op[0] = 32; /* OpTypePointer */
+            op[1] = param->ubo_uniform_pointer_type;
+            op[2] = 2; /* Uniform */
+            op[3] = param->ubo_type;
+            if(shxm_private_util_buf_write_op(defs, op, 4)){
+                return 1;
+            }
             op[0] = 32; /* OpTypePointer */
             op[1] = param->ubo_private_pointer_type;
             op[2] = 6; /* Private */
