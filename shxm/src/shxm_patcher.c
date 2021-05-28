@@ -311,6 +311,19 @@ is_matrix(cwgl_var_type_t type){
 }
 
 static int
+calc_matrix_stride(cwgl_var_type_t type){
+    switch(type){
+        case CWGL_VAR_FLOAT_MAT2:
+            return 4*2;
+        case CWGL_VAR_FLOAT_MAT3:
+        case CWGL_VAR_FLOAT_MAT4:
+            return 4*4;
+        default:
+            return 0;
+    }
+}
+
+static int
 inject_ubo_def(struct patchctx_s* cur, 
                shxm_util_buf_t* names,
                shxm_util_buf_t* decorations,
@@ -380,6 +393,14 @@ inject_ubo_def(struct patchctx_s* cur,
                 op[2] = param->ubo_index;
                 op[3] = 5; /* ColMajor */
                 if(shxm_private_util_buf_write_op(decorations, op, 4)){
+                    return 1;
+                }
+                op[0] = 72; /* OpMemberDecorate */
+                op[1] = cur->ubo_structure_id;
+                op[2] = param->ubo_index;
+                op[3] = 7; /* MatrixStride */
+                op[4] = calc_matrix_stride(uniform->slot->type);
+                if(shxm_private_util_buf_write_op(decorations, op, 5)){
                     return 1;
                 }
             }
