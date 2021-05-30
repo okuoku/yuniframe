@@ -144,13 +144,110 @@ CWGL_API void
 cwgl_compressedTexSubImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target, int32_t level, int32_t xoffset, int32_t yoffset, uint32_t width, uint32_t height, cwgl_enum_t format, const void* buf, size_t buflen){
 }
 
+static cwgl_texture_unit_state_t*
+current_texture_unit(cwgl_ctx_t* ctx){
+    int id = (ctx->state.glo.ACTIVE_TEXTURE - TEXTURE0);
+    if(id < 0){
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        return NULL;
+    }
+    if(id >= CWGL_MAX_TEXTURE_UNITS){
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        return NULL;
+    }
+    return &ctx->state.bin.texture_unit[id];
+}
+
+
 // 3.7.4 Texture Parameters
 CWGL_API void 
 cwgl_texParameterf(cwgl_ctx_t* ctx, cwgl_enum_t target, cwgl_enum_t pname, float param){
+    // No floating point param for textures
+    CTX_SET_ERROR(ctx, INVALID_ENUM);
 }
+
 
 CWGL_API void 
 cwgl_texParameteri(cwgl_ctx_t* ctx, cwgl_enum_t target, cwgl_enum_t pname, int32_t param){
+    cwgl_texture_unit_state_t* current;
+    cwgl_Texture_t* tex;
+    cwgl_enum_t in = (cwgl_enum_t)param;
+
+    current = current_texture_unit(ctx);
+    if(! current){
+        CTX_SET_ERROR(ctx, INVALID_ENUM);
+        return;
+    }
+
+    switch(target){
+        case TEXTURE_2D:
+            tex = current->TEXTURE_BINDING_2D;
+            break;
+        case TEXTURE_CUBE_MAP:
+            tex = current->TEXTURE_BINDING_CUBE_MAP;
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            return;
+    }
+    if(! tex){
+        // WebGL specific: No default texture
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        return;
+    }
+
+    switch(pname){
+        case TEXTURE_MIN_FILTER:
+            switch(in){
+                case NEAREST:
+                case LINEAR:
+                case NEAREST_MIPMAP_NEAREST:
+                case LINEAR_MIPMAP_NEAREST:
+                case NEAREST_MIPMAP_LINEAR:
+                case LINEAR_MIPMAP_LINEAR:
+                    tex->state.TEXTURE_MIN_FILTER = in;
+                    break;
+                default:
+                    CTX_SET_ERROR(ctx, INVALID_ENUM);
+                    break;
+            }
+            break;
+        case TEXTURE_MAG_FILTER:
+            switch(in){
+                case NEAREST:
+                case LINEAR:
+                    tex->state.TEXTURE_MAG_FILTER = in;
+                    break;
+                default:
+                    CTX_SET_ERROR(ctx, INVALID_ENUM);
+                    break;
+            }
+            break;
+        case TEXTURE_WRAP_S:
+            switch(in){
+                case CLAMP_TO_EDGE:
+                case MIRRORED_REPEAT:
+                case REPEAT:
+                    tex->state.TEXTURE_WRAP_S = in;
+                    break;
+                default:
+                    CTX_SET_ERROR(ctx, INVALID_ENUM);
+                    break;
+            }
+            break;
+        case TEXTURE_WRAP_T:
+            switch(in){
+                case CLAMP_TO_EDGE:
+                case MIRRORED_REPEAT:
+                case REPEAT:
+                    tex->state.TEXTURE_WRAP_T = in;
+                    break;
+                default:
+                    CTX_SET_ERROR(ctx, INVALID_ENUM);
+                    break;
+            }
+            break;
+    }
 }
 
 // 3.7.11 Mipmap Generation
@@ -169,20 +266,6 @@ cwgl_priv_texture_release(cwgl_Texture_t* texture){
             free(texture);
         }
     }
-}
-
-static cwgl_texture_unit_state_t*
-current_texture_unit(cwgl_ctx_t* ctx){
-    int id = (ctx->state.glo.ACTIVE_TEXTURE - TEXTURE0);
-    if(id < 0){
-        CTX_SET_ERROR(ctx, INVALID_OPERATION);
-        return NULL;
-    }
-    if(id >= CWGL_MAX_TEXTURE_UNITS){
-        CTX_SET_ERROR(ctx, INVALID_OPERATION);
-        return NULL;
-    }
-    return &ctx->state.bin.texture_unit[id];
 }
 
 CWGL_API void 
