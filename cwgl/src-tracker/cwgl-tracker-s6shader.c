@@ -3,6 +3,8 @@
 // 6.1.8 Shader and Program Queries
 CWGL_API int 
 cwgl_isShader(cwgl_ctx_t* ctx, cwgl_Shader_t* shader){
+    // FIXME: Check context lost flag
+    return 1;
 }
 
 CWGL_API cwgl_query_result_t 
@@ -12,6 +14,8 @@ cwgl_getShaderParameter_i1(cwgl_ctx_t* ctx, cwgl_Shader_t* shader,
 
 CWGL_API int 
 cwgl_isProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
+    // FIXME: Check context lost flag
+    return 1;
 }
 
 CWGL_API cwgl_query_result_t 

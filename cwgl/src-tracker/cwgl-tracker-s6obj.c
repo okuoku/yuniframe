@@ -606,18 +606,26 @@ cwgl_getRenderbufferParameter_i1(cwgl_ctx_t* ctx, cwgl_enum_t target,
 // 6.1.4 Texture Queries
 CWGL_API int 
 cwgl_isTexture(cwgl_ctx_t* ctx, cwgl_Texture_t* texture){
+    // FIXME: Check context lost flag
+    return 1;
 }
 
 // 6.1.6 Buffer Object Queries
 CWGL_API int 
 cwgl_isBuffer(cwgl_ctx_t* ctx, cwgl_Buffer_t* buffer){
+    // FIXME: Check context lost flag
+    return 1;
 }
 
 // 6.1.7 Framebuffer Object and Renderbuffer Queries
 CWGL_API int 
 cwgl_isFramebuffer(cwgl_ctx_t* ctx, cwgl_Framebuffer_t* framebuffer){
+    // FIXME: Check context lost flag
+    return 1;
 }
 
 CWGL_API int 
 cwgl_isRenderbuffer(cwgl_ctx_t* ctx, cwgl_Renderbuffer_t* renderbuffer){
+    // FIXME: Check context lost flag
+    return 1;
 }
