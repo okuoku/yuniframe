@@ -355,9 +355,68 @@ cwgl_isEnabled(cwgl_ctx_t* ctx, cwgl_enum_t cap){
 }
 
 // 6.1.3 Enumerated Queries
+// FIXME: Copied from s3
+static cwgl_texture_unit_state_t*
+current_texture_unit(cwgl_ctx_t* ctx){
+    int id = (ctx->state.glo.ACTIVE_TEXTURE - TEXTURE0);
+    if(id < 0){
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        return NULL;
+    }
+    if(id >= CWGL_MAX_TEXTURE_UNITS){
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        return NULL;
+    }
+    return &ctx->state.bin.texture_unit[id];
+}
+
 CWGL_API cwgl_query_result_t 
 cwgl_getTexParameter_i1(cwgl_ctx_t* ctx, cwgl_enum_t target, cwgl_enum_t pname,
                         int32_t* x){
+    cwgl_texture_unit_state_t* current;
+    cwgl_Texture_t* tex;
+
+    current = current_texture_unit(ctx);
+    if(! current){
+        CTX_SET_ERROR(ctx, INVALID_ENUM);
+        return CWGL_QR_GLERROR;
+    }
+
+    switch(target){
+        case TEXTURE_2D:
+            tex = current->TEXTURE_BINDING_2D;
+            break;
+        case TEXTURE_CUBE_MAP:
+            tex = current->TEXTURE_BINDING_CUBE_MAP;
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            return CWGL_QR_GLERROR;
+    }
+    if(! tex){
+        // WebGL specific: No default texture
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        return CWGL_QR_GLERROR;
+    }
+
+    switch(pname){
+        case TEXTURE_MAG_FILTER:
+            *x = tex->state.TEXTURE_MAG_FILTER;
+            break;
+        case TEXTURE_MIN_FILTER:
+            *x = tex->state.TEXTURE_MIN_FILTER;
+            break;
+        case TEXTURE_WRAP_S:
+            *x = tex->state.TEXTURE_WRAP_S;
+            break;
+        case TEXTURE_WRAP_T:
+            *x = tex->state.TEXTURE_WRAP_T;
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            return CWGL_QR_GLERROR;
+    }
+    return CWGL_QR_SUCCESS;
 }
 
 CWGL_API cwgl_query_result_t 
