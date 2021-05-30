@@ -422,6 +422,37 @@ cwgl_getTexParameter_i1(cwgl_ctx_t* ctx, cwgl_enum_t target, cwgl_enum_t pname,
 CWGL_API cwgl_query_result_t 
 cwgl_getBufferParameter_i1(cwgl_ctx_t* ctx, cwgl_enum_t target, 
                            cwgl_enum_t pname, int32_t* x){
+    cwgl_Buffer_t* point;
+    cwgl_VertexArrayObject_t* vao;
+    switch(target){
+        case ARRAY_BUFFER:
+            point = ctx->state.bin.ARRAY_BUFFER_BINDING;
+            break;
+        case ELEMENT_ARRAY_BUFFER:
+            vao = current_vao(ctx);
+            point = vao->state.ELEMENT_ARRAY_BUFFER_BINDING;
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            return CWGL_QR_GLERROR;
+    }
+
+    if(! point){
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        return CWGL_QR_GLERROR;
+    }
+    switch(pname){
+        case BUFFER_SIZE:
+            *x = point->state.BUFFER_SIZE;
+            break;
+        case BUFFER_USAGE:
+            *x = point->state.BUFFER_USAGE;
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            return CWGL_QR_GLERROR;
+    }
+    return CWGL_QR_SUCCESS;
 }
 
 CWGL_API cwgl_query_result_t 
