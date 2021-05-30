@@ -42,8 +42,11 @@ cwgl_getShaderInfoLog(cwgl_ctx_t* ctx, cwgl_Shader_t* shader){
 
 CWGL_API cwgl_string_t* 
 cwgl_getShaderSource(cwgl_ctx_t* ctx, cwgl_Shader_t* shader){
-    // FIXME: Implement this
-    return NULL;
+    if(shader->state.source){
+        return cwgl_priv_string_dup(ctx, shader->state.source);
+    }else{
+        return NULL;
+    }
 }
 
 CWGL_API cwgl_query_result_t 

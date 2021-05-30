@@ -9,6 +9,7 @@
 void cwgl_priv_check_current(cwgl_ctx_t* ctx);
 cwgl_string_t* cwgl_priv_alloc_string(cwgl_ctx_t* ctx, const char* str,
                                       size_t buflen);
+cwgl_string_t* cwgl_priv_string_dup(cwgl_ctx_t* ctx, cwgl_string_t* src);
 struct cwgl_string_s {
     size_t size; /* Includes nul */
     char* str;

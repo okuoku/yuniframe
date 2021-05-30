@@ -14,6 +14,11 @@ cwgl_priv_alloc_string(cwgl_ctx_t* ctx, const char* str, size_t buflen){
     return r;
 }
 
+cwgl_string_t*
+cwgl_priv_string_dup(cwgl_ctx_t* ctx, cwgl_string_t* src){
+    return cwgl_priv_alloc_string(ctx, src->str, src->size);
+}
+
 CWGL_API size_t
 cwgl_string_size(cwgl_ctx_t* ctx, cwgl_string_t* str){
     if(str){

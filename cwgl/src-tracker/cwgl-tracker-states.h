@@ -233,6 +233,7 @@ struct cwgl_shader_state_s {
     cwgl_enum_t SHADER_TYPE;
     cwgl_bool_t DELETE_STATUS;
     cwgl_bool_t COMPILE_STATUS;
+    cwgl_string_t* source;
 };
 
 typedef struct cwgl_shader_state_s cwgl_shader_state_t;

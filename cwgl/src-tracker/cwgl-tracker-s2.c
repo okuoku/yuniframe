@@ -276,12 +276,12 @@ cwgl_bufferSubData(cwgl_ctx_t* ctx, cwgl_enum_t target,
 
 // 2.10.1 Loading and Creating Shader Source
 static void
-release_shader(cwgl_Shader_t* shader){
+release_shader(cwgl_ctx_t* ctx, cwgl_Shader_t* shader){
     uintptr_t v;
     if(shader){
         v = cwgl_priv_objhdr_release(&shader->hdr);
         if(! v){
-            // FIXME: Release source here
+            cwgl_string_release(ctx, shader->state.source);
             // FIXME: Release backend object here
             free(shader);
         }
@@ -311,12 +311,17 @@ cwgl_createShader(cwgl_ctx_t* ctx, cwgl_enum_t type){
 
 CWGL_API void
 cwgl_Shader_release(cwgl_ctx_t* ctx, cwgl_Shader_t* shader){
-    release_shader(shader);
+    release_shader(ctx, shader);
 }
 
 CWGL_API void 
 cwgl_shaderSource(cwgl_ctx_t* ctx, cwgl_Shader_t* shader, const char* source,
                   size_t sourcelen){
+    cwgl_string_t* src;
+    cwgl_string_release(ctx, shader->state.source);
+    src = cwgl_priv_alloc_string(ctx, source, sourcelen);
+    shader->state.source = src;
+    return;
 }
 
 CWGL_API void 
@@ -332,14 +337,14 @@ cwgl_deleteShader(cwgl_ctx_t* ctx, cwgl_Shader_t* shader){
 
 // 2.10.3 Program Objects
 static void
-release_program(cwgl_Program_t* program){
+release_program(cwgl_ctx_t* ctx, cwgl_Program_t* program){
     uintptr_t v;
     if(program){
         v = cwgl_priv_objhdr_release(&program->hdr);
         if(! v){
             // FIXME: Release backend objects here
-            release_shader(program->state.vertex_shader);
-            release_shader(program->state.fragment_shader);
+            release_shader(ctx, program->state.vertex_shader);
+            release_shader(ctx, program->state.fragment_shader);
             free(program);
         }
     }
@@ -365,7 +370,7 @@ cwgl_createProgram(cwgl_ctx_t* ctx){
 
 CWGL_API void
 cwgl_Program_release(cwgl_ctx_t* ctx, cwgl_Program_t* program){
-    release_program(program);
+    release_program(ctx, program);
 }
 
 
@@ -378,12 +383,12 @@ cwgl_attachShader(cwgl_ctx_t* ctx, cwgl_Program_t* program,
         type = shader->state.SHADER_TYPE;
         switch(type){
             case VERTEX_SHADER:
-                release_shader(program->state.vertex_shader);
+                release_shader(ctx, program->state.vertex_shader);
                 cwgl_priv_objhdr_retain(&shader->hdr);
                 program->state.vertex_shader = shader;
                 break;
             case FRAGMENT_SHADER:
-                release_shader(program->state.fragment_shader);
+                release_shader(ctx, program->state.fragment_shader);
                 cwgl_priv_objhdr_retain(&shader->hdr);
                 program->state.fragment_shader = shader;
                 break;
@@ -416,7 +421,7 @@ cwgl_detachShader(cwgl_ctx_t* ctx, cwgl_Program_t* program,
                     CTX_SET_ERROR(ctx, INVALID_OPERATION);
                     return;
                 }
-                release_shader(shader);
+                release_shader(ctx, shader);
                 program->state.vertex_shader = NULL;
                 break;
             case FRAGMENT_SHADER:
@@ -424,7 +429,7 @@ cwgl_detachShader(cwgl_ctx_t* ctx, cwgl_Program_t* program,
                     CTX_SET_ERROR(ctx, INVALID_OPERATION);
                     return;
                 }
-                release_shader(shader);
+                release_shader(ctx, shader);
                 program->state.fragment_shader = NULL;
                 break;
             default:
@@ -452,7 +457,7 @@ cwgl_useProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
         CTX_SET_ERROR(ctx, INVALID_VALUE);
         return;
     }
-    release_program(ctx->state.bin.CURRENT_PROGRAM);
+    release_program(ctx, ctx->state.bin.CURRENT_PROGRAM);
     ctx->state.bin.CURRENT_PROGRAM = program;
 }
 
