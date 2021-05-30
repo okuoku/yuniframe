@@ -25,8 +25,8 @@ cwgl_getProgramParameter_i1(cwgl_ctx_t* ctx, cwgl_Program_t* program,
 
 CWGL_API cwgl_query_result_t 
 cwgl_getAttachedShaders(cwgl_ctx_t* ctx, cwgl_Program_t* program, 
-                        cwgl_Shader_t** shader, 
-                        size_t bufcount, size_t rescount){
+                        cwgl_Shader_t** vertex_shader,
+                        cwgl_Shader_t** fragment_shader){
 }
 
 CWGL_API cwgl_string_t* 
