@@ -24,9 +24,9 @@ cwgl_getProgramParameter_i1(cwgl_ctx_t* ctx, cwgl_Program_t* program,
 }
 
 CWGL_API cwgl_query_result_t 
-cwgl_getAttachedShaders_cwgl(cwgl_ctx_t* ctx, cwgl_Program_t* program, 
-                             cwgl_Shader_t** vertex_shader,
-                             cwgl_Shader_t** fragment_shader){
+cwgl_getAttachedShaders(cwgl_ctx_t* ctx, cwgl_Program_t* program, 
+                        cwgl_Shader_t** vertex_shader,
+                        cwgl_Shader_t** fragment_shader){
     *vertex_shader = program->state.vertex_shader;
     *fragment_shader = program->state.fragment_shader;
     return CWGL_QR_SUCCESS;
