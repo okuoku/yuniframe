@@ -428,6 +428,59 @@ CWGL_API cwgl_query_result_t
 cwgl_getFramebufferAttachmentParameter_i1(cwgl_ctx_t* ctx, cwgl_enum_t target,
                                           cwgl_enum_t attachment, 
                                           cwgl_enum_t pname, int32_t* x){
+    cwgl_Framebuffer_t* fb;
+    cwgl_framebuffer_attachment_state_t* point;
+
+    if(target != FRAMEBUFFER){
+        CTX_SET_ERROR(ctx, INVALID_ENUM);
+        return CWGL_QR_GLERROR;
+    }
+    fb = ctx->state.bin.FRAMEBUFFER_BINDING;
+    if(! fb){
+        /* WebGL: No default framebuffer */
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        return CWGL_QR_GLERROR;
+    }
+    switch(attachment){
+        case COLOR_ATTACHMENT0:
+            point = &fb->state.COLOR_ATTACHMENT0;
+            break;
+        case DEPTH_ATTACHMENT:
+            point = &fb->state.DEPTH_ATTACHMENT;
+            break;
+        case STENCIL_ATTACHMENT:
+            point = &fb->state.STENCIL_ATTACHMENT;
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            return CWGL_QR_GLERROR;
+    }
+
+    switch(pname){
+        case FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE:
+            *x = point->FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE;
+            break;
+        case FRAMEBUFFER_ATTACHMENT_TEXTURE_LEVEL:
+            if(point->FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE == TEXTURE){
+                *x = point->FRAMEBUFFER_ATTACHMENT_TEXTURE_LEVEL;
+            }else{
+                CTX_SET_ERROR(ctx, INVALID_ENUM);
+                return CWGL_QR_GLERROR;
+            }
+            break;
+        case FRAMEBUFFER_ATTACHMENT_TEXTURE_CUBE_MAP_FACE:
+            if(point->FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE == TEXTURE){
+                *x = point->FRAMEBUFFER_ATTACHMENT_TEXTURE_CUBE_MAP_FACE;
+            }else{
+                CTX_SET_ERROR(ctx, INVALID_ENUM);
+                return CWGL_QR_GLERROR;
+            }
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            return CWGL_QR_GLERROR;
+    }
+    return CWGL_QR_SUCCESS;
 }
 
 CWGL_API cwgl_query_result_t 
@@ -436,7 +489,40 @@ cwgl_getFramebufferAttachmentParameter_Renderbuffer(cwgl_ctx_t* ctx,
                                                     cwgl_enum_t attachment, 
                                                     cwgl_enum_t pname, 
                                                     cwgl_Renderbuffer_t** renderbuffer){
+    cwgl_Framebuffer_t* fb;
+    cwgl_framebuffer_attachment_state_t* point;
 
+    if(target != FRAMEBUFFER){
+        CTX_SET_ERROR(ctx, INVALID_ENUM);
+        return CWGL_QR_GLERROR;
+    }
+    fb = ctx->state.bin.FRAMEBUFFER_BINDING;
+    if(! fb){
+        /* WebGL: No default framebuffer */
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        return CWGL_QR_GLERROR;
+    }
+    switch(attachment){
+        case COLOR_ATTACHMENT0:
+            point = &fb->state.COLOR_ATTACHMENT0;
+            break;
+        case DEPTH_ATTACHMENT:
+            point = &fb->state.DEPTH_ATTACHMENT;
+            break;
+        case STENCIL_ATTACHMENT:
+            point = &fb->state.STENCIL_ATTACHMENT;
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            return CWGL_QR_GLERROR;
+    }
+
+    if(point->FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE == RENDERBUFFER){
+        *renderbuffer = point->FRAMEBUFFER_ATTACHMENT_OBJECT_NAME.asRenderbuffer;
+    }else{
+        return CWGL_QR_TYPE_FRAMEBUFFER;
+    }
+    return CWGL_QR_SUCCESS;
 }
 
 CWGL_API cwgl_query_result_t 
@@ -445,6 +531,40 @@ cwgl_getFramebufferAttachmentParameter_Texture(cwgl_ctx_t* ctx,
                                                cwgl_enum_t attachment, 
                                                cwgl_enum_t pname, 
                                                cwgl_Texture_t** texture){
+    cwgl_Framebuffer_t* fb;
+    cwgl_framebuffer_attachment_state_t* point;
+
+    if(target != FRAMEBUFFER){
+        CTX_SET_ERROR(ctx, INVALID_ENUM);
+        return CWGL_QR_GLERROR;
+    }
+    fb = ctx->state.bin.FRAMEBUFFER_BINDING;
+    if(! fb){
+        /* WebGL: No default framebuffer */
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        return CWGL_QR_GLERROR;
+    }
+    switch(attachment){
+        case COLOR_ATTACHMENT0:
+            point = &fb->state.COLOR_ATTACHMENT0;
+            break;
+        case DEPTH_ATTACHMENT:
+            point = &fb->state.DEPTH_ATTACHMENT;
+            break;
+        case STENCIL_ATTACHMENT:
+            point = &fb->state.STENCIL_ATTACHMENT;
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            return CWGL_QR_GLERROR;
+    }
+
+    if(point->FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE == TEXTURE){
+        *texture = point->FRAMEBUFFER_ATTACHMENT_OBJECT_NAME.asTexture;
+    }else{
+        return CWGL_QR_TYPE_RENDERBUFFER;
+    }
+    return CWGL_QR_SUCCESS;
 }
 
 CWGL_API cwgl_query_result_t 

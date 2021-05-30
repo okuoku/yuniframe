@@ -692,8 +692,6 @@ cwgl_framebufferRenderbuffer(cwgl_ctx_t* ctx, cwgl_enum_t target,
         cwgl_priv_framebuffer_attachment_init(point);
     }
     point->FRAMEBUFFER_ATTACHMENT_OBJECT_NAME.asRenderbuffer = renderbuffer;
-
-    // FIXME: Update backend framebuffer status here
 }
 
 CWGL_API void 
@@ -702,6 +700,12 @@ cwgl_framebufferTexture2D(cwgl_ctx_t* ctx, cwgl_enum_t target,
                           cwgl_Texture_t* texture, int32_t level){
     cwgl_Framebuffer_t* fb;
     cwgl_framebuffer_attachment_state_t* point;
+    if(texture){
+        if(level != 0){
+            CTX_SET_ERROR(ctx, INVALID_VALUE);
+            return;
+        }
+    }
     switch(textarget){
         case TEXTURE_2D:
         case TEXTURE_CUBE_MAP_POSITIVE_X:
@@ -743,12 +747,12 @@ cwgl_framebufferTexture2D(cwgl_ctx_t* ctx, cwgl_enum_t target,
     if(texture){
         cwgl_priv_objhdr_retain(&texture->hdr);
         point->FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE = TEXTURE;
+        point->FRAMEBUFFER_ATTACHMENT_TEXTURE_LEVEL = level;
+        point->FRAMEBUFFER_ATTACHMENT_TEXTURE_CUBE_MAP_FACE = textarget;
     }else{
         cwgl_priv_framebuffer_attachment_init(point);
     }
     point->FRAMEBUFFER_ATTACHMENT_OBJECT_NAME.asTexture = texture;
-
-    // FIXME: Update backend framebuffer status here
 }
 
 
