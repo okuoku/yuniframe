@@ -628,6 +628,51 @@ cwgl_getFramebufferAttachmentParameter_Texture(cwgl_ctx_t* ctx,
 CWGL_API cwgl_query_result_t 
 cwgl_getRenderbufferParameter_i1(cwgl_ctx_t* ctx, cwgl_enum_t target, 
                                  cwgl_enum_t pname, int32_t* x){
+    cwgl_Renderbuffer_t* rb;
+    if(target != RENDERBUFFER){
+        CTX_SET_ERROR(ctx, INVALID_ENUM);
+        return CWGL_QR_GLERROR;
+    }
+
+    rb = ctx->state.bin.RENDERBUFFER_BINDING;
+    if(! rb){
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        return CWGL_QR_GLERROR;
+    }
+
+    switch(pname){
+        case RENDERBUFFER_WIDTH:
+            *x = rb->state.RENDERBUFFER_WIDTH;
+            break;
+        case RENDERBUFFER_HEIGHT:
+            *x = rb->state.RENDERBUFFER_HEIGHT;
+            break;
+        case RENDERBUFFER_INTERNAL_FORMAT:
+            *x = rb->state.RENDERBUFFER_INTERNAL_FORMAT;
+            break;
+        case RENDERBUFFER_RED_SIZE:
+            *x = rb->state.RENDERBUFFER_RED_SIZE;
+            break;
+        case RENDERBUFFER_GREEN_SIZE:
+            *x = rb->state.RENDERBUFFER_GREEN_SIZE;
+            break;
+        case RENDERBUFFER_BLUE_SIZE:
+            *x = rb->state.RENDERBUFFER_BLUE_SIZE;
+            break;
+        case RENDERBUFFER_ALPHA_SIZE:
+            *x = rb->state.RENDERBUFFER_ALPHA_SIZE;
+            break;
+        case RENDERBUFFER_DEPTH_SIZE:
+            *x = rb->state.RENDERBUFFER_DEPTH_SIZE;
+            break;
+        case RENDERBUFFER_STENCIL_SIZE:
+            *x = rb->state.RENDERBUFFER_STENCIL_SIZE;
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            return CWGL_QR_GLERROR;
+    }
+    return CWGL_QR_SUCCESS;
 }
 
 // 6.1.4 Texture Queries
