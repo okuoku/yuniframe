@@ -62,6 +62,11 @@ struct cwgl_ctx_config_s {
         cwgl_ctx_config_shaderprecisiontype_t VERTEX_SHADER;
         cwgl_ctx_config_shaderprecisiontype_t FRAGMENT_SHADER;
     } shader_precision_format;
+    /* Strings */
+    const char* RENDERER;
+    const char* SHADING_LANGUAGE_VERSION;
+    const char* VENDOR;
+    const char* VERSION;
 };
 
 typedef struct cwgl_ctx_config_s cwgl_ctx_config_t;

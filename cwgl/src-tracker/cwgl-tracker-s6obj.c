@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdio.h> // FIXME: remove snprintf dependency
 #include "cwgl-tracker-priv.h"
 
 #define _CASE1(slot, name) case name: *x = ctx->state.slot.name; \
@@ -223,6 +224,32 @@ cwgl_getParameter_f4(cwgl_ctx_t* ctx, cwgl_enum_t pname,
 
 CWGL_API cwgl_query_result_t 
 cwgl_getParameter_str(cwgl_ctx_t* ctx, cwgl_enum_t pname, cwgl_string_t** str){
+#define TMPBUFLEN 512
+    int r;
+    cwgl_string_t* out;
+    char buf[TMPBUFLEN];
+    switch(pname){
+        case RENDERER:
+            r = snprintf(buf, TMPBUFLEN, "(cwgl) %s", ctx->state.cfg.RENDERER);
+            break;
+        case SHADING_LANGUAGE_VERSION:
+            r = snprintf(buf, TMPBUFLEN, "%s", 
+                         ctx->state.cfg.SHADING_LANGUAGE_VERSION);
+            break;
+        case VENDOR:
+            r = snprintf(buf, TMPBUFLEN, "(cwgl) %s", ctx->state.cfg.VENDOR);
+            break;
+        case VERSION:
+            r = snprintf(buf, TMPBUFLEN, "%s", ctx->state.cfg.VERSION);
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            return CWGL_QR_GLERROR;
+    }
+
+    out = cwgl_priv_alloc_string(ctx, buf, r);
+    *str = out;
+    return CWGL_QR_SUCCESS;
 }
 
 static cwgl_VertexArrayObject_t*
