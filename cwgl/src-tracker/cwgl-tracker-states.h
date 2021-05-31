@@ -9,6 +9,23 @@ extern "C" {
 #endif
 // }
 
+struct cwgl_ctx_config_shaderprecisionformat_s {
+    int32_t rangeMin;
+    int32_t rangeMax;
+    int32_t precision;
+};
+typedef struct cwgl_ctx_config_shaderprecisionformat_s cwgl_ctx_config_shaderprecisionformat_t;
+
+struct cwgl_ctx_config_shaderprecisiontype_s {
+    cwgl_ctx_config_shaderprecisionformat_t LOW_FLOAT;
+    cwgl_ctx_config_shaderprecisionformat_t MEDIUM_FLOAT;
+    cwgl_ctx_config_shaderprecisionformat_t HIGH_FLOAT;
+    cwgl_ctx_config_shaderprecisionformat_t LOW_INT;
+    cwgl_ctx_config_shaderprecisionformat_t MEDIUM_INT;
+    cwgl_ctx_config_shaderprecisionformat_t HIGH_INT;
+};
+typedef struct cwgl_ctx_config_shaderprecisiontype_s cwgl_ctx_config_shaderprecisiontype_t;
+
 struct cwgl_ctx_config_s {
     /* GLES2 Table 6.18 */
     int32_t SUBPIXEL_BITS;
@@ -40,6 +57,11 @@ struct cwgl_ctx_config_s {
     int32_t MAX_TEXTURE_IMAGE_UNITS;
     int32_t MAX_FRAGMENT_UNIFORM_VECTORS;
     int32_t MAX_RENDERBUFFER_SIZE;
+    /* GLES2 6.1.8, not in table */
+    struct {
+        cwgl_ctx_config_shaderprecisiontype_t VERTEX_SHADER;
+        cwgl_ctx_config_shaderprecisiontype_t FRAGMENT_SHADER;
+    } shader_precision_format;
 };
 
 typedef struct cwgl_ctx_config_s cwgl_ctx_config_t;

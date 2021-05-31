@@ -54,6 +54,49 @@ cwgl_getShaderPrecisionFormat(cwgl_ctx_t* ctx, cwgl_enum_t shadertype,
                               cwgl_enum_t precisiontype, 
                               int32_t* rangeMin, int32_t* rangeMax, 
                               int32_t* precision){
+    cwgl_ctx_config_shaderprecisiontype_t* t;
+    cwgl_ctx_config_shaderprecisionformat_t* p;
+    switch(shadertype){
+        case VERTEX_SHADER:
+            t = &ctx->state.cfg.shader_precision_format.VERTEX_SHADER;
+            break;
+        case FRAGMENT_SHADER:
+            t = &ctx->state.cfg.shader_precision_format.FRAGMENT_SHADER;
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            return CWGL_QR_GLERROR;
+    }
+
+    switch(precisiontype){
+        case LOW_FLOAT:
+            p = &t->LOW_FLOAT;
+            break;
+        case MEDIUM_FLOAT:
+            p = &t->MEDIUM_FLOAT;
+            break;
+        case HIGH_FLOAT:
+            p = &t->HIGH_FLOAT;
+            break;
+        case LOW_INT:
+            p = &t->LOW_INT;
+            break;
+        case MEDIUM_INT:
+            p = &t->MEDIUM_INT;
+            break;
+        case HIGH_INT:
+            p = &t->HIGH_INT;
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            return CWGL_QR_GLERROR;
+    }
+
+    *rangeMin = p->rangeMin;
+    *rangeMax = p->rangeMax;
+    *precision = p->precision;
+
+    return CWGL_QR_SUCCESS;
 }
 
 // FIXME: Copied from s6obj
