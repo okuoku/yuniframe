@@ -168,8 +168,6 @@ typedef struct cwgl_ctx_bindings_s cwgl_ctx_bindings_t;
 struct cwgl_ctx_tracker_state_s {
     /* GLES2 Table 6.22 */
     cwgl_enum_t err;
-    /* FIXME: VENDOR, VERSION strings */
-    /* FIXME: Shader prec. */
     cwgl_ctx_config_t cfg;
     cwgl_ctx_global_state_t glo;
     cwgl_ctx_bindings_t bin;
