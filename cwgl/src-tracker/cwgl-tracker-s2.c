@@ -379,23 +379,21 @@ cwgl_attachShader(cwgl_ctx_t* ctx, cwgl_Program_t* program,
                   cwgl_Shader_t* shader){
     int i;
     cwgl_enum_t type;
-    if(program){
-        type = shader->state.SHADER_TYPE;
-        switch(type){
-            case VERTEX_SHADER:
-                release_shader(ctx, program->state.vertex_shader);
-                cwgl_priv_objhdr_retain(&shader->hdr);
-                program->state.vertex_shader = shader;
-                break;
-            case FRAGMENT_SHADER:
-                release_shader(ctx, program->state.fragment_shader);
-                cwgl_priv_objhdr_retain(&shader->hdr);
-                program->state.fragment_shader = shader;
-                break;
-            default:
-                CTX_SET_ERROR(ctx, INVALID_OPERATION);
-                return;
-        }
+    type = shader->state.SHADER_TYPE;
+    switch(type){
+        case VERTEX_SHADER:
+            release_shader(ctx, program->state.vertex_shader);
+            cwgl_priv_objhdr_retain(&shader->hdr);
+            program->state.vertex_shader = shader;
+            break;
+        case FRAGMENT_SHADER:
+            release_shader(ctx, program->state.fragment_shader);
+            cwgl_priv_objhdr_retain(&shader->hdr);
+            program->state.fragment_shader = shader;
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_OPERATION);
+            return;
     }
     i = 0;
     if(program->state.vertex_shader){
@@ -405,7 +403,6 @@ cwgl_attachShader(cwgl_ctx_t* ctx, cwgl_Program_t* program,
         i++;
     }
     program->state.ATTACHED_SHADERS = i;
-
 }
 
 CWGL_API void 
@@ -413,29 +410,27 @@ cwgl_detachShader(cwgl_ctx_t* ctx, cwgl_Program_t* program,
                   cwgl_Shader_t* shader){
     int i;
     cwgl_enum_t type;
-    if(program){
-        type = shader->state.SHADER_TYPE;
-        switch(type){
-            case VERTEX_SHADER:
-                if(program->state.vertex_shader != shader){
-                    CTX_SET_ERROR(ctx, INVALID_OPERATION);
-                    return;
-                }
-                release_shader(ctx, shader);
-                program->state.vertex_shader = NULL;
-                break;
-            case FRAGMENT_SHADER:
-                if(program->state.fragment_shader != shader){
-                    CTX_SET_ERROR(ctx, INVALID_OPERATION);
-                    return;
-                }
-                release_shader(ctx, shader);
-                program->state.fragment_shader = NULL;
-                break;
-            default:
+    type = shader->state.SHADER_TYPE;
+    switch(type){
+        case VERTEX_SHADER:
+            if(program->state.vertex_shader != shader){
                 CTX_SET_ERROR(ctx, INVALID_OPERATION);
                 return;
-        }
+            }
+            release_shader(ctx, shader);
+            program->state.vertex_shader = NULL;
+            break;
+        case FRAGMENT_SHADER:
+            if(program->state.fragment_shader != shader){
+                CTX_SET_ERROR(ctx, INVALID_OPERATION);
+                return;
+            }
+            release_shader(ctx, shader);
+            program->state.fragment_shader = NULL;
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_OPERATION);
+            return;
     }
     i = 0;
     if(program->state.vertex_shader){
