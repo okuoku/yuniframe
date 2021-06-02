@@ -2,7 +2,7 @@
 
 #define SETB1(name, x) ctx->state.glo.name = x ? CWGL_TRUE : CWGL_FALSE
 void
-cwgl_priv_ctx_init(cwgl_ctx_t* ctx){
+cwgl_integ_ctx_init(cwgl_ctx_t* ctx){
     CTX_SET_ERROR(ctx, NO_ERROR);
 
     /* enable */

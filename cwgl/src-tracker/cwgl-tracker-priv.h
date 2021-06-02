@@ -1,9 +1,12 @@
 #ifndef __YUNI_CWGL_TRACKER_PRIV_H
 #define __YUNI_CWGL_TRACKER_PRIV_H
 
-#define CWGL_DECL_ENUMS
-#include "cwgl.h"
-#include "cwgl-tracker-states.h"
+#include "cwgl-tracker-integ.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+// }
 
 /* Context */
 void cwgl_priv_check_current(cwgl_ctx_t* ctx);
@@ -96,5 +99,10 @@ void cwgl_priv_buffer_release(cwgl_Buffer_t* buffer);
 void cwgl_priv_texture_release(cwgl_Texture_t* texture);
 
 #define CTX_SET_ERROR(ctx, num) ctx->state.err = num
+
+// {
+#ifdef __cplusplus
+};
+#endif
 
 #endif
