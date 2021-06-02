@@ -380,14 +380,22 @@ cwgl_attachShader(cwgl_ctx_t* ctx, cwgl_Program_t* program,
     int i;
     cwgl_enum_t type;
     type = shader->state.SHADER_TYPE;
+    // FIXME: Single shader object should not be attached
+    //        to multiple program
     switch(type){
         case VERTEX_SHADER:
-            release_shader(ctx, program->state.vertex_shader);
+            if(program->state.vertex_shader != NULL){
+                CTX_SET_ERROR(ctx, INVALID_OPERATION);
+                return;
+            }
             cwgl_priv_objhdr_retain(&shader->hdr);
             program->state.vertex_shader = shader;
             break;
         case FRAGMENT_SHADER:
-            release_shader(ctx, program->state.fragment_shader);
+            if(program->state.fragment_shader != NULL){
+                CTX_SET_ERROR(ctx, INVALID_OPERATION);
+                return;
+            }
             cwgl_priv_objhdr_retain(&shader->hdr);
             program->state.fragment_shader = shader;
             break;
