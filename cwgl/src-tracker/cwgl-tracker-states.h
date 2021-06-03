@@ -250,6 +250,7 @@ struct cwgl_program_state_s {
     /* Maintained by tracker, not in the spec */
     cwgl_Shader_t* vertex_shader;
     cwgl_Shader_t* fragment_shader;
+    cwgl_string_t* infolog; /* allocated by backend */
 };
 
 typedef struct cwgl_program_state_s cwgl_program_state_t;
@@ -260,6 +261,7 @@ struct cwgl_shader_state_s {
     cwgl_bool_t COMPILE_STATUS;
     /* Maintained by tracker, not in the spec */
     cwgl_string_t* source;
+    cwgl_string_t* infolog; /* allocated by backend */
 };
 
 typedef struct cwgl_shader_state_s cwgl_shader_state_t;

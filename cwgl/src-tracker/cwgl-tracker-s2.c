@@ -282,6 +282,7 @@ release_shader(cwgl_ctx_t* ctx, cwgl_Shader_t* shader){
         v = cwgl_priv_objhdr_release(&shader->hdr);
         if(! v){
             cwgl_string_release(ctx, shader->state.source);
+            cwgl_string_release(ctx, shader->state.infolog);
             // FIXME: Release backend object here
             free(shader);
         }
@@ -345,6 +346,7 @@ release_program(cwgl_ctx_t* ctx, cwgl_Program_t* program){
             // FIXME: Release backend objects here
             release_shader(ctx, program->state.vertex_shader);
             release_shader(ctx, program->state.fragment_shader);
+            cwgl_string_release(ctx, program->state.infolog);
             free(program);
         }
     }
@@ -452,6 +454,7 @@ cwgl_detachShader(cwgl_ctx_t* ctx, cwgl_Program_t* program,
 
 CWGL_API void 
 cwgl_linkProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
+    // FIXME: Populate uniform/attribs and Fill ACTIVE_* etc here
 }
 
 CWGL_API void 

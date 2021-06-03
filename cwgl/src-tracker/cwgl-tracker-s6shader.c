@@ -10,6 +10,23 @@ cwgl_isShader(cwgl_ctx_t* ctx, cwgl_Shader_t* shader){
 CWGL_API cwgl_query_result_t 
 cwgl_getShaderParameter_i1(cwgl_ctx_t* ctx, cwgl_Shader_t* shader, 
                            cwgl_enum_t pname, int32_t* x){
+    switch(pname){
+        case SHADER_TYPE:
+            *x = shader->state.SHADER_TYPE;
+            break;
+        case DELETE_STATUS:
+            *x = shader->state.DELETE_STATUS ? 
+                CWGL_TRUE : CWGL_FALSE;
+            break;
+        case COMPILE_STATUS:
+            *x = shader->state.COMPILE_STATUS ? 
+                CWGL_TRUE : CWGL_FALSE;
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            return CWGL_QR_GLERROR;
+    }
+    return CWGL_QR_SUCCESS;
 }
 
 CWGL_API int 
@@ -21,6 +38,33 @@ cwgl_isProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
 CWGL_API cwgl_query_result_t 
 cwgl_getProgramParameter_i1(cwgl_ctx_t* ctx, cwgl_Program_t* program, 
                             cwgl_enum_t pname, int32_t* x){
+    switch(pname){
+        case DELETE_STATUS:
+            *x = program->state.DELETE_STATUS ? 
+                CWGL_TRUE : CWGL_FALSE;
+            break;
+        case LINK_STATUS:
+            *x = program->state.LINK_STATUS ? 
+                CWGL_TRUE : CWGL_FALSE;
+            break;
+        case VALIDATE_STATUS:
+            *x = program->state.VALIDATE_STATUS ? 
+                CWGL_TRUE : CWGL_FALSE;
+            break;
+        case ATTACHED_SHADERS:
+            *x = program->state.ATTACHED_SHADERS;
+            break;
+        case ACTIVE_ATTRIBUTES:
+            *x = program->state.ACTIVE_ATTRIBUTES;
+            break;
+        case ACTIVE_UNIFORMS:
+            *x = program->state.ACTIVE_UNIFORMS;
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            return CWGL_QR_GLERROR;
+    }
+    return CWGL_QR_SUCCESS;
 }
 
 CWGL_API cwgl_query_result_t 
@@ -34,10 +78,20 @@ cwgl_getAttachedShaders(cwgl_ctx_t* ctx, cwgl_Program_t* program,
 
 CWGL_API cwgl_string_t* 
 cwgl_getProgramInfoLog(cwgl_ctx_t* ctx, cwgl_Program_t* program){
+    if(program->state.infolog){
+        return cwgl_priv_string_dup(ctx, program->state.infolog);
+    }else{
+        return NULL;
+    }
 }
 
 CWGL_API cwgl_string_t* 
 cwgl_getShaderInfoLog(cwgl_ctx_t* ctx, cwgl_Shader_t* shader){
+    if(shader->state.infolog){
+        return cwgl_priv_string_dup(ctx, shader->state.infolog);
+    }else{
+        return NULL;
+    }
 }
 
 CWGL_API cwgl_string_t* 
