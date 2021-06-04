@@ -2,6 +2,7 @@
 #define __YUNI_CWGL_TRACKER_PRIV_H
 
 #include "cwgl-tracker-integ.h"
+#include "cwgl-backend-states.h"
 
 #ifdef __cplusplus
 extern "C" {

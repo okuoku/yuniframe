@@ -1,7 +1,7 @@
 #include "cwgl-tracker-priv.h"
 
 #define SETB1(name, x) ctx->state.glo.name = x ? CWGL_TRUE : CWGL_FALSE
-void
+int
 cwgl_integ_ctx_init(cwgl_ctx_t* ctx){
     CTX_SET_ERROR(ctx, NO_ERROR);
 
@@ -76,6 +76,8 @@ cwgl_integ_ctx_init(cwgl_ctx_t* ctx){
     ctx->state.glo.VIEWPORT[1] = 0;
     ctx->state.glo.VIEWPORT[2] = 0; // FIXME: Configure at window attach
     ctx->state.glo.VIEWPORT[3] = 0; // FIXME: Configure at window attach
+
+    return cwgl_backend_cfg_init(&ctx->state.cfg);
 }
 
 void

@@ -42,12 +42,6 @@ struct cwgl_ctx_config_s {
     /* SHADER_BINARY_FORMATS: n/a */
     /* NUM_SHADER_BINARY_FORMATS: n/a */
     /* SHADER_COMPILER: n/a */
-    /* ShaderPrecisionFormat: n/a */
-    /* EXTENSIONS: n/a */
-    /* RENDERER: n/a */
-    /* SHADING_LANGUAGE_VERSION: n/a */
-    /* VENDOR: n/a */
-    /* VERSION: n/a */
     /* GLES2 Table 6.20 */
     int32_t MAX_VERTEX_ATTRIBS;
     int32_t MAX_VERTEX_UNIFORM_VECTORS;

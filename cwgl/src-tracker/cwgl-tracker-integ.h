@@ -10,7 +10,7 @@ extern "C" {
 #endif
 // }
 
-void cwgl_integ_ctx_init(cwgl_ctx_t* ctx);
+int cwgl_integ_ctx_init(cwgl_ctx_t* ctx);
 
 // {
 #ifdef __cplusplus
