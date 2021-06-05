@@ -137,7 +137,7 @@ cwgl_vertexAttribPointer(cwgl_ctx_t* ctx, uint32_t indx,
     vao->attrib[indx].VERTEX_ATTRIB_ARRAY_POINTER = offset;
 
     if(vao->attrib[indx].VERTEX_ATTRIB_ARRAY_BUFFER_BINDING){
-        cwgl_priv_buffer_release(buf);
+        cwgl_priv_buffer_release(ctx, buf);
         vao->attrib[indx].VERTEX_ATTRIB_ARRAY_BUFFER_BINDING = NULL;
     }
     cwgl_priv_objhdr_retain(&buf->hdr);
@@ -181,7 +181,6 @@ cwgl_drawElements(cwgl_ctx_t* ctx, cwgl_enum_t mode,
 static void
 free_buffer(cwgl_Buffer_t* buffer){
     free(buffer);
-    // FIXME: Teardown backend object here
 }
 
 static void
@@ -190,17 +189,17 @@ unbind_buffer(cwgl_ctx_t* ctx, cwgl_Buffer_t* buffer){
     cwgl_VertexArrayObject_t* vao;
     if(buffer){
         if(ctx->state.bin.ARRAY_BUFFER_BINDING == buffer){
-            cwgl_priv_buffer_release(buffer);
+            cwgl_priv_buffer_release(ctx, buffer);
             ctx->state.bin.ARRAY_BUFFER_BINDING = NULL;
         }
         vao = current_vao(ctx);
         if(vao->state.ELEMENT_ARRAY_BUFFER_BINDING == buffer){
-            cwgl_priv_buffer_release(buffer);
+            cwgl_priv_buffer_release(ctx, buffer);
             vao->state.ELEMENT_ARRAY_BUFFER_BINDING = NULL;
         }
         for(i=0;i!=CWGL_MAX_VAO_SIZE;i++){
             if(vao->attrib[i].VERTEX_ATTRIB_ARRAY_BUFFER_BINDING == buffer){
-                cwgl_priv_buffer_release(buffer);
+                cwgl_priv_buffer_release(ctx, buffer);
                 vao->attrib[i].VERTEX_ATTRIB_ARRAY_BUFFER_BINDING = NULL;
             }
         }
@@ -208,11 +207,12 @@ unbind_buffer(cwgl_ctx_t* ctx, cwgl_Buffer_t* buffer){
 }
 
 void /* exported to cwgl-tracker-vao.c */
-cwgl_priv_buffer_release(cwgl_Buffer_t* buffer){
+cwgl_priv_buffer_release(cwgl_ctx_t* ctx, cwgl_Buffer_t* buffer){
     uintptr_t v;
     if(buffer){
         v = cwgl_priv_objhdr_release(&buffer->hdr);
         if(!v){
+            cwgl_backend_Buffer_release(ctx, buffer);
             free_buffer(buffer);
         }
     }
@@ -235,7 +235,7 @@ cwgl_bindBuffer(cwgl_ctx_t* ctx, cwgl_enum_t target, cwgl_Buffer_t* buffer){
             return;
     }
     if(*point){
-        cwgl_priv_buffer_release(*point);
+        cwgl_priv_buffer_release(ctx, *point);
     }
     *point = buffer;
     if(buffer){
@@ -255,13 +255,14 @@ cwgl_createBuffer(cwgl_ctx_t* ctx){
     if(buf){
         cwgl_priv_objhdr_init(ctx, &buf->hdr, CWGL_OBJ_BUFFER);
         cwgl_priv_buffer_init(&buf->state);
+        cwgl_backend_Buffer_init(ctx, buf);
     }
     return buf;
 }
 
 CWGL_API void
 cwgl_Buffer_release(cwgl_ctx_t* ctx, cwgl_Buffer_t* buffer){
-    cwgl_priv_buffer_release(buffer);
+    cwgl_priv_buffer_release(ctx, buffer);
 }
 
 CWGL_API void 
@@ -283,7 +284,7 @@ release_shader(cwgl_ctx_t* ctx, cwgl_Shader_t* shader){
         if(! v){
             cwgl_string_release(ctx, shader->state.source);
             cwgl_string_release(ctx, shader->state.infolog);
-            // FIXME: Release backend object here
+            cwgl_backend_Shader_release(ctx, shader);
             free(shader);
         }
     }
@@ -306,6 +307,7 @@ cwgl_createShader(cwgl_ctx_t* ctx, cwgl_enum_t type){
         shader->state.SHADER_TYPE = type;
         shader->state.DELETE_STATUS = CWGL_FALSE;
         shader->state.COMPILE_STATUS = CWGL_FALSE;
+        cwgl_backend_Shader_init(ctx, shader);
     }
     return shader;
 }
@@ -343,10 +345,10 @@ release_program(cwgl_ctx_t* ctx, cwgl_Program_t* program){
     if(program){
         v = cwgl_priv_objhdr_release(&program->hdr);
         if(! v){
-            // FIXME: Release backend objects here
             release_shader(ctx, program->state.vertex_shader);
             release_shader(ctx, program->state.fragment_shader);
             cwgl_string_release(ctx, program->state.infolog);
+            cwgl_backend_Program_release(ctx, program);
             free(program);
         }
     }
@@ -366,6 +368,7 @@ cwgl_createProgram(cwgl_ctx_t* ctx){
         program->state.ACTIVE_UNIFORMS = 0;
         program->state.vertex_shader = NULL;
         program->state.fragment_shader = NULL;
+        cwgl_backend_Program_init(ctx, program);
     }
     return program;
 }

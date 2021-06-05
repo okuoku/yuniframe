@@ -1,10 +1,6 @@
-#include "cwgl-tracker-states.h"
+#include "cwgl-backend-gles2-priv.h"
 #include <stdint.h>
 #include <stdio.h>
-
-#include <GLES2/gl2.h>
-#define GL_GLEXT_PROTOTYPES
-#include <GLES2/gl2ext.h>
 
 static int
 checkerr(void){

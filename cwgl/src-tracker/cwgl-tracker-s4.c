@@ -506,15 +506,15 @@ cwgl_readPixels(cwgl_ctx_t* ctx, int32_t x, int32_t y, uint32_t width, uint32_t 
 }
 
 // 4.4.1 Binding and Managing Framebuffer Objects
-static void release_renderbuffer(cwgl_Renderbuffer_t* rb);
+static void release_renderbuffer(cwgl_ctx_t* ctx, cwgl_Renderbuffer_t* rb);
 static void
-release_framebuffer_attachment(cwgl_framebuffer_attachment_state_t* a){
+release_framebuffer_attachment(cwgl_ctx_t* ctx, cwgl_framebuffer_attachment_state_t* a){
     switch(a->FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE){
         case RENDERBUFFER:
-            release_renderbuffer(a->FRAMEBUFFER_ATTACHMENT_OBJECT_NAME.asRenderbuffer);
+            release_renderbuffer(ctx, a->FRAMEBUFFER_ATTACHMENT_OBJECT_NAME.asRenderbuffer);
             break;
         case TEXTURE:
-            cwgl_priv_texture_release(a->FRAMEBUFFER_ATTACHMENT_OBJECT_NAME.asTexture);
+            cwgl_priv_texture_release(ctx, a->FRAMEBUFFER_ATTACHMENT_OBJECT_NAME.asTexture);
             break;
         default:
             /* Do nothing */
@@ -523,14 +523,15 @@ release_framebuffer_attachment(cwgl_framebuffer_attachment_state_t* a){
 }
 
 static void
-release_framebuffer(cwgl_Framebuffer_t* fb){
+release_framebuffer(cwgl_ctx_t* ctx, cwgl_Framebuffer_t* fb){
     uintptr_t v;
     if(fb){
         v = cwgl_priv_objhdr_release(&fb->hdr);
         if(!v){
-            release_framebuffer_attachment(&fb->state.COLOR_ATTACHMENT0);
-            release_framebuffer_attachment(&fb->state.DEPTH_ATTACHMENT);
-            release_framebuffer_attachment(&fb->state.STENCIL_ATTACHMENT);
+            release_framebuffer_attachment(ctx, &fb->state.COLOR_ATTACHMENT0);
+            release_framebuffer_attachment(ctx, &fb->state.DEPTH_ATTACHMENT);
+            release_framebuffer_attachment(ctx, &fb->state.STENCIL_ATTACHMENT);
+            cwgl_backend_Framebuffer_release(ctx, fb);
             free(fb);
         }
     }
@@ -539,7 +540,7 @@ static void
 unbind_framebuffer(cwgl_ctx_t* ctx, cwgl_Framebuffer_t* fb){
     if(fb){
         if(ctx->state.bin.FRAMEBUFFER_BINDING == fb){
-            release_framebuffer(fb);
+            release_framebuffer(ctx, fb);
             ctx->state.bin.FRAMEBUFFER_BINDING = NULL;
         }
     }
@@ -575,23 +576,24 @@ cwgl_createFramebuffer(cwgl_ctx_t* ctx){
         cwgl_priv_framebuffer_attachment_init(&fb->state.COLOR_ATTACHMENT0);
         cwgl_priv_framebuffer_attachment_init(&fb->state.DEPTH_ATTACHMENT);
         cwgl_priv_framebuffer_attachment_init(&fb->state.STENCIL_ATTACHMENT);
+        cwgl_backend_Framebuffer_init(ctx, fb);
     }
     return fb;
 }
 
 CWGL_API void
 cwgl_Framebuffer_release(cwgl_ctx_t* ctx, cwgl_Framebuffer_t* framebuffer){
-    release_framebuffer(framebuffer);
+    release_framebuffer(ctx, framebuffer);
 }
 
 // 4.4.3 Renderbuffer Objects
 static void
-release_renderbuffer(cwgl_Renderbuffer_t* rb){
+release_renderbuffer(cwgl_ctx_t* ctx, cwgl_Renderbuffer_t* rb){
     uintptr_t v;
     if(rb){
         v = cwgl_priv_objhdr_release(&rb->hdr);
         if(! v){
-            // FIXME: Teardown backend renderbuffer here
+            cwgl_backend_Renderbuffer_release(ctx, rb);
             free(rb);
         }
     }
@@ -600,7 +602,7 @@ static void
 unbind_renderbuffer(cwgl_ctx_t* ctx, cwgl_Renderbuffer_t* rb){
     if(rb){
         if(ctx->state.bin.RENDERBUFFER_BINDING == rb){
-            release_renderbuffer(rb);
+            release_renderbuffer(ctx, rb);
             ctx->state.bin.RENDERBUFFER_BINDING = NULL;
         }
     }
@@ -623,7 +625,7 @@ cwgl_bindRenderbuffer(cwgl_ctx_t* ctx, cwgl_enum_t target,
 
 CWGL_API void 
 cwgl_deleteRenderbuffer(cwgl_ctx_t* ctx, cwgl_Renderbuffer_t* renderbuffer){
-    release_renderbuffer(renderbuffer);
+    release_renderbuffer(ctx, renderbuffer);
 }
 
 CWGL_API cwgl_Renderbuffer_t* 
@@ -633,13 +635,14 @@ cwgl_createRenderbuffer(cwgl_ctx_t* ctx){
     if(rb){
         cwgl_priv_objhdr_init(ctx, &rb->hdr, CWGL_OBJ_RENDERBUFFER);
         cwgl_priv_renderbuffer_init(&rb->state);
+        cwgl_backend_Renderbuffer_init(ctx, rb);
     }
     return rb;
 }
 
 CWGL_API void
 cwgl_Renderbuffer_release(cwgl_ctx_t* ctx, cwgl_Renderbuffer_t* renderbuffer){
-    release_renderbuffer(renderbuffer);
+    release_renderbuffer(ctx, renderbuffer);
 }
 
 CWGL_API void 
@@ -684,7 +687,7 @@ cwgl_framebufferRenderbuffer(cwgl_ctx_t* ctx, cwgl_enum_t target,
             CTX_SET_ERROR(ctx, INVALID_ENUM);
             return;
     }
-    release_framebuffer_attachment(point);
+    release_framebuffer_attachment(ctx, point);
     if(renderbuffer){
         cwgl_priv_objhdr_retain(&renderbuffer->hdr);
         point->FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE = RENDERBUFFER;
@@ -743,7 +746,7 @@ cwgl_framebufferTexture2D(cwgl_ctx_t* ctx, cwgl_enum_t target,
             CTX_SET_ERROR(ctx, INVALID_ENUM);
             return;
     }
-    release_framebuffer_attachment(point);
+    release_framebuffer_attachment(ctx, point);
     if(texture){
         cwgl_priv_objhdr_retain(&texture->hdr);
         point->FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE = TEXTURE;

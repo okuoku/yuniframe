@@ -257,12 +257,12 @@ cwgl_generateMipmap(cwgl_ctx_t* ctx, cwgl_enum_t target){
 
 // 3.7.13 Texture Objects
 void
-cwgl_priv_texture_release(cwgl_Texture_t* texture){
+cwgl_priv_texture_release(cwgl_ctx_t* ctx, cwgl_Texture_t* texture){
     uintptr_t v;
     if(texture){
         v = cwgl_priv_objhdr_release(&texture->hdr);
         if(! v){
-            // FIXME: Release backend resource here.
+            cwgl_backend_Texture_release(ctx, texture);
             free(texture);
         }
     }
@@ -298,7 +298,7 @@ cwgl_bindTexture(cwgl_ctx_t* ctx, cwgl_enum_t target, cwgl_Texture_t* texture){
             return;
     }
     if(*point){
-        cwgl_priv_texture_release(*point);
+        cwgl_priv_texture_release(ctx, *point);
     }
     if(texture){
         cwgl_priv_objhdr_retain(&texture->hdr);
@@ -312,11 +312,11 @@ unbind_texture(cwgl_ctx_t* ctx, cwgl_Texture_t* texture){
     if(texture){
         for(i=0;i!=CWGL_MAX_TEXTURE_UNITS;i++){
             if(ctx->state.bin.texture_unit[i].TEXTURE_BINDING_2D == texture){
-                cwgl_priv_texture_release(texture);
+                cwgl_priv_texture_release(ctx, texture);
                 ctx->state.bin.texture_unit[i].TEXTURE_BINDING_2D = NULL;
             }
             if(ctx->state.bin.texture_unit[i].TEXTURE_BINDING_CUBE_MAP == texture){
-                cwgl_priv_texture_release(texture);
+                cwgl_priv_texture_release(ctx, texture);
                 ctx->state.bin.texture_unit[i].TEXTURE_BINDING_CUBE_MAP = NULL;
             }
         }
@@ -335,13 +335,14 @@ cwgl_createTexture(cwgl_ctx_t* ctx){
     if(t){
         cwgl_priv_objhdr_init(ctx, &t->hdr, CWGL_OBJ_TEXTURE);
         cwgl_priv_texture_init(&t->state);
+        cwgl_backend_Texture_init(ctx, t);
     }
     return t;
 }
 
 CWGL_API void
 cwgl_Texture_release(cwgl_ctx_t* ctx, cwgl_Texture_t* texture){
-    cwgl_priv_texture_release(texture);
+    cwgl_priv_texture_release(ctx, texture);
 }
 
 

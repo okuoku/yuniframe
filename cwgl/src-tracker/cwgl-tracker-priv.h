@@ -43,20 +43,24 @@ typedef struct cwgl_objhdr_s cwgl_objhdr_t;
 
 struct cwgl_ctx_s {
     cwgl_ctx_tracker_state_t state;
+    cwgl_backend_ctx_t* backend;
 };
 
 /* Buffer structures */
 struct cwgl_Buffer_s {
     cwgl_objhdr_t hdr;
     cwgl_buffer_state_t state;
+    cwgl_backend_Buffer_t* backend;
 };
 struct cwgl_Shader_s {
     cwgl_objhdr_t hdr;
     cwgl_shader_state_t state;
+    cwgl_backend_Shader_t* backend;
 };
 struct cwgl_Program_s {
     cwgl_objhdr_t hdr;
     cwgl_program_state_t state;
+    cwgl_backend_Program_t* backend;
 };
 struct cwgl_UniformLocation_s {
     cwgl_objhdr_t hdr;
@@ -65,16 +69,19 @@ struct cwgl_UniformLocation_s {
 struct cwgl_Texture_s {
     cwgl_objhdr_t hdr;
     cwgl_texture_state_t state;
+    cwgl_backend_Texture_t* backend;
 };
 
 struct cwgl_Renderbuffer_s {
     cwgl_objhdr_t hdr;
     cwgl_renderbuffer_state_t state;
+    cwgl_backend_Renderbuffer_t* backend;
 };
 
 struct cwgl_Framebuffer_s {
     cwgl_objhdr_t hdr;
     cwgl_framebuffer_state_t state;
+    cwgl_backend_Framebuffer_t* backend;
 };
 
 #define CWGL_MAX_VAO_SIZE 32
@@ -96,8 +103,8 @@ uintptr_t cwgl_priv_objhdr_release(cwgl_objhdr_t* hdr);
 void cwgl_priv_objhdr_retain(cwgl_objhdr_t* hdr);
 
 /* xref */
-void cwgl_priv_buffer_release(cwgl_Buffer_t* buffer);
-void cwgl_priv_texture_release(cwgl_Texture_t* texture);
+void cwgl_priv_buffer_release(cwgl_ctx_t* ctx, cwgl_Buffer_t* buffer);
+void cwgl_priv_texture_release(cwgl_ctx_t* ctx, cwgl_Texture_t* texture);
 
 #define CTX_SET_ERROR(ctx, num) ctx->state.err = num
 

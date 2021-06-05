@@ -13,22 +13,22 @@ cwgl_createVertexArray(cwgl_ctx_t* ctx){
 }
 
 static void
-free_vao(cwgl_VertexArrayObject_t* vao){
+free_vao(cwgl_ctx_t* ctx, cwgl_VertexArrayObject_t* vao){
     int i;
-    cwgl_priv_buffer_release(vao->state.ELEMENT_ARRAY_BUFFER_BINDING);
+    cwgl_priv_buffer_release(ctx, vao->state.ELEMENT_ARRAY_BUFFER_BINDING);
     for(i=0;i!=CWGL_MAX_VAO_SIZE;i++){
-        cwgl_priv_buffer_release(vao->attrib[i].VERTEX_ATTRIB_ARRAY_BUFFER_BINDING);
+        cwgl_priv_buffer_release(ctx, vao->attrib[i].VERTEX_ATTRIB_ARRAY_BUFFER_BINDING);
     }
     free(vao);
 }
 
 static void
-release_vao(cwgl_VertexArrayObject_t* vao){
+release_vao(cwgl_ctx_t* ctx, cwgl_VertexArrayObject_t* vao){
     uintptr_t v;
     if(vao){
         v = cwgl_priv_objhdr_release(&vao->hdr);
         if(!v){
-            free_vao(vao);
+            free_vao(ctx, vao);
         }
     }
 }
@@ -37,7 +37,7 @@ static void
 unbind_vao(cwgl_ctx_t* ctx, cwgl_VertexArrayObject_t* vao){
     if(ctx->state.bin.VERTEX_ARRAY_BINDING == vao){
         ctx->state.bin.VERTEX_ARRAY_BINDING = NULL;
-        release_vao(vao);
+        release_vao(ctx, vao);
     }
 }
 
@@ -60,5 +60,5 @@ cwgl_deleteVertexArray(cwgl_ctx_t* ctx, cwgl_VertexArrayObject_t* obj){
 
 CWGL_API void 
 cwgl_VertexArrayObject_release(cwgl_ctx_t* ctx, cwgl_VertexArrayObject_t* vao){
-    release_vao(vao);
+    release_vao(ctx, vao);
 }
