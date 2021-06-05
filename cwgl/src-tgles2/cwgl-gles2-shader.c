@@ -9,7 +9,7 @@ int
 cwgl_backend_compileShader(cwgl_ctx_t* ctx, cwgl_Shader_t* shader){
     GLuint name;
     char* buf;
-    size_t srcsize;
+    GLint srcsize;
     GLsizei infosize;
     GLint p = GL_FALSE;
     name = shader->backend->name;

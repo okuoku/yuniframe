@@ -170,7 +170,7 @@ cwgl_backend_drawElements(cwgl_ctx_t* ctx, cwgl_enum_t mode,
                           uint32_t count, cwgl_enum_t type, uint32_t offset){
     configure_drawstate(ctx, mode);
     configure_texture(ctx);
-    glDrawElements(mode, count, type, (uintptr_t)offset);
+    glDrawElements(mode, count, type, (void*)(uintptr_t)offset);
     return 0;
 }
 

@@ -1,5 +1,6 @@
 #include "cwgl-tracker-priv.h"
 #include <stdlib.h>
+#include <string.h>
 
 /* Current VAO for attrib ops */
 static cwgl_VertexArrayObject_t*
@@ -389,7 +390,6 @@ cwgl_integ_program_setup(cwgl_ctx_t* ctx, cwgl_Program_t* program,
 
 static void
 release_program(cwgl_ctx_t* ctx, cwgl_Program_t* program){
-    int i;
     uintptr_t v;
     if(program){
         v = cwgl_priv_objhdr_release(&program->hdr);

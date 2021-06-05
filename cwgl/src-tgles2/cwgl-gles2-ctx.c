@@ -26,7 +26,7 @@ static int
 get_int32(GLenum pname, int32_t* i32){
     GLint i[2];
     i[0] = 0;
-    glGetIntegerv(pname, &i);
+    glGetIntegerv(pname, i);
     *i32 = i[0];
     return checkerr();
 }
@@ -36,7 +36,7 @@ get_int32_2(GLenum pname, int32_t* i32){
     GLint i[2];
     i[0] = 0;
     i[1] = 0;
-    glGetIntegerv(pname, &i);
+    glGetIntegerv(pname, i);
     i32[0] = i[0];
     i32[1] = i[1];
     return checkerr();
@@ -47,7 +47,7 @@ get_float_2(GLenum pname, float* f32){
     GLfloat f[2];
     f[0] = 0;
     f[1] = 0;
-    glGetFloatv(pname, &f);
+    glGetFloatv(pname, f);
     f32[0] = f[0];
     f32[1] = f[1];
     return checkerr();
@@ -77,9 +77,9 @@ cwgl_backend_cfg_init(cwgl_ctx_config_t* cfg){
     if(r) return r;
     r = get_int32(GL_MAX_CUBE_MAP_TEXTURE_SIZE, &cfg->MAX_CUBE_MAP_TEXTURE_SIZE);
     if(r) return r;
-    r = get_int32_2(GL_MAX_VIEWPORT_DIMS, &cfg->MAX_VIEWPORT_DIMS);
+    r = get_int32_2(GL_MAX_VIEWPORT_DIMS, cfg->MAX_VIEWPORT_DIMS);
     if(r) return r;
-    r = get_float_2(GL_ALIASED_POINT_SIZE_RANGE, &cfg->ALIASED_POINT_SIZE_RANGE);
+    r = get_float_2(GL_ALIASED_POINT_SIZE_RANGE, cfg->ALIASED_POINT_SIZE_RANGE);
     if(r) return r;
     r = get_int32(GL_SAMPLE_BUFFERS, &cfg->SAMPLE_BUFFERS);
     if(r) return r;
