@@ -465,6 +465,7 @@ cwgl_stencilMaskSeparate(cwgl_ctx_t* ctx, cwgl_enum_t face, uint32_t mask){
 // 4.2.3 Clearing the Buffers
 CWGL_API void 
 cwgl_clear(cwgl_ctx_t* ctx, uint32_t mask){
+    cwgl_backend_clear(ctx, mask);
 }
 
 CWGL_API void 
