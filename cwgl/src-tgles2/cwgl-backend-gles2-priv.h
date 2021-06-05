@@ -21,6 +21,8 @@ struct cwgl_backend_Shader_s {
 
 struct cwgl_backend_Program_s {
     GLuint name;
+    GLuint attached_vs;
+    GLuint attached_fs;
 };
 
 struct cwgl_backend_Texture_s {

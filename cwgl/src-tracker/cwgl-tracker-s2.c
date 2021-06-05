@@ -331,6 +331,7 @@ cwgl_shaderSource(cwgl_ctx_t* ctx, cwgl_Shader_t* shader, const char* source,
 
 CWGL_API void 
 cwgl_compileShader(cwgl_ctx_t* ctx, cwgl_Shader_t* shader){
+    cwgl_backend_compileShader(ctx, shader);
 }
 
 CWGL_API void 
@@ -342,11 +343,61 @@ cwgl_deleteShader(cwgl_ctx_t* ctx, cwgl_Shader_t* shader){
 
 // 2.10.3 Program Objects
 static void
+release_activeinfo(cwgl_ctx_t* ctx, cwgl_activeinfo_t* a, uint32_t count){
+    int i;
+    if(a){
+        for(i=0;i!=count;i++){
+            cwgl_string_release(ctx, a[i].name);
+        }
+        free(a);
+    }
+}
+
+int /* Exported to backend */
+cwgl_integ_program_setup(cwgl_ctx_t* ctx, cwgl_Program_t* program,
+                         uint32_t n_uniform, uint32_t n_attribute){
+    uint32_t uniformcount;
+    uint32_t attributecount;
+    cwgl_uniformcontent_t* contents;
+    cwgl_activeinfo_t* uniforms;
+    cwgl_activeinfo_t* attributes;
+    release_activeinfo(ctx, program->state.uniforms, 
+                       program->state.ACTIVE_UNIFORMS);
+    release_activeinfo(ctx, program->state.attributes, 
+                       program->state.ACTIVE_ATTRIBUTES);
+    program->state.ACTIVE_ATTRIBUTES = n_attribute;
+    program->state.ACTIVE_UNIFORMS = n_uniform;
+    uniformcount = program->state.ACTIVE_UNIFORMS;
+    attributecount = program->state.ACTIVE_ATTRIBUTES;
+    contents = malloc(sizeof(cwgl_uniformcontent_t)*uniformcount);
+    if(contents){
+        memset(contents,0,sizeof(cwgl_uniformcontent_t)*uniformcount);
+    }
+    uniforms = malloc(sizeof(cwgl_activeinfo_t)*uniformcount);
+    if(uniforms){
+        memset(uniforms,0,sizeof(cwgl_activeinfo_t)*uniformcount);
+    }
+    attributes = malloc(sizeof(cwgl_activeinfo_t)*attributecount);
+    if(attributes){
+        memset(attributes,0,sizeof(cwgl_activeinfo_t)*attributecount);
+    }
+    program->state.uniforms = uniforms;
+    program->state.uniformcontents = contents;
+    program->state.attributes = attributes;
+    return 0;
+}
+
+static void
 release_program(cwgl_ctx_t* ctx, cwgl_Program_t* program){
+    int i;
     uintptr_t v;
     if(program){
         v = cwgl_priv_objhdr_release(&program->hdr);
         if(! v){
+            release_activeinfo(ctx, program->state.uniforms, 
+                               program->state.ACTIVE_UNIFORMS);
+            release_activeinfo(ctx, program->state.attributes, 
+                               program->state.ACTIVE_ATTRIBUTES);
             release_shader(ctx, program->state.vertex_shader);
             release_shader(ctx, program->state.fragment_shader);
             cwgl_string_release(ctx, program->state.infolog);
@@ -370,6 +421,8 @@ cwgl_createProgram(cwgl_ctx_t* ctx){
         program->state.ACTIVE_UNIFORMS = 0;
         program->state.vertex_shader = NULL;
         program->state.fragment_shader = NULL;
+        program->state.uniforms = NULL;
+        program->state.attributes = NULL;
         cwgl_backend_Program_init(ctx, program);
     }
     return program;
@@ -459,7 +512,7 @@ cwgl_detachShader(cwgl_ctx_t* ctx, cwgl_Program_t* program,
 
 CWGL_API void 
 cwgl_linkProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
-    // FIXME: Populate uniform/attribs and Fill ACTIVE_* etc here
+    cwgl_backend_linkProgram(ctx, program);
 }
 
 CWGL_API void 
@@ -617,6 +670,7 @@ cwgl_uniformMatrix4fv(cwgl_ctx_t* ctx, cwgl_UniformLocation_t* location,
 // 2.10.5 Shader Execution
 CWGL_API void 
 cwgl_validateProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
+    cwgl_backend_validateProgram(ctx, program);
 }
 
 // 2.12.1 Controlling the Viewport

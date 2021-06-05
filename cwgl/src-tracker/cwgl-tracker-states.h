@@ -234,6 +234,40 @@ struct cwgl_texture_state_s {
 
 typedef struct cwgl_texture_state_s cwgl_texture_state_t;
 
+struct cwgl_activeinfo_s {
+    cwgl_enum_t type;
+    uint32_t size; /* 1 for non-array */
+    cwgl_string_t* name; /* allocated by backend */
+};
+
+typedef struct cwgl_activeinfo_s cwgl_activeinfo_t;
+
+union cwgl_uniformcontent_u {
+    struct {
+        float v0;
+        float v1;
+        float v2;
+        float v3;
+    }asFloat;
+    struct {
+        int32_t v0;
+        int32_t v1;
+        int32_t v2;
+        int32_t v3;
+    }asInt;
+    struct {
+        float m[2*2];
+    }asMat2;
+    struct {
+        float m[3*3];
+    }asMat3;
+    struct {
+        float m[4*4];
+    }asMat4;
+};
+
+typedef union cwgl_uniformcontent_u cwgl_uniformcontent_t;
+
 struct cwgl_program_state_s {
     cwgl_bool_t DELETE_STATUS;
     cwgl_bool_t LINK_STATUS;
@@ -242,6 +276,9 @@ struct cwgl_program_state_s {
     uint32_t ACTIVE_ATTRIBUTES;
     uint32_t ACTIVE_UNIFORMS;
     /* Maintained by tracker, not in the spec */
+    cwgl_activeinfo_t* uniforms;
+    cwgl_uniformcontent_t* uniformcontents;
+    cwgl_activeinfo_t* attributes;
     cwgl_Shader_t* vertex_shader;
     cwgl_Shader_t* fragment_shader;
     cwgl_string_t* infolog; /* allocated by backend */

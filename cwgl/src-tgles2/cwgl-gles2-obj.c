@@ -47,6 +47,8 @@ cwgl_backend_Program_init(cwgl_ctx_t* ctx, cwgl_Program_t* program){
     if(p){
         name = glCreateProgram();
         p->name = name;
+        p->attached_vs = 0;
+        p->attached_fs = 0;
     }
     program->backend = p;
     return 0;
