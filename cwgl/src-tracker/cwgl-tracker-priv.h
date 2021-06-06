@@ -14,6 +14,8 @@ void cwgl_priv_check_current(cwgl_ctx_t* ctx);
 cwgl_string_t* cwgl_priv_alloc_string(cwgl_ctx_t* ctx, const char* str,
                                       size_t buflen);
 cwgl_string_t* cwgl_priv_string_dup(cwgl_ctx_t* ctx, cwgl_string_t* src);
+int cwgl_priv_match_sym(cwgl_ctx_t* ctx, cwgl_string_t* s, const char* name, int* array_idx_l, int* array_idx_r);
+int cwgl_priv_match_symobj(cwgl_ctx_t* ctx, cwgl_string_t* s, cwgl_string_t* t, int* array_idx_l, int* array_idx_r);
 struct cwgl_string_s {
     size_t size; /* Includes nul */
     char* str;
@@ -84,7 +86,6 @@ struct cwgl_Framebuffer_s {
     cwgl_backend_Framebuffer_t* backend;
 };
 
-#define CWGL_MAX_VAO_SIZE 32
 struct cwgl_VertexArrayObject_s {
     cwgl_objhdr_t hdr;
     cwgl_vao_state_t state;

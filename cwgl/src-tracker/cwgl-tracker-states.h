@@ -242,6 +242,13 @@ struct cwgl_activeinfo_s {
 
 typedef struct cwgl_activeinfo_s cwgl_activeinfo_t;
 
+struct cwgl_attriblocation_s {
+    cwgl_string_t* name;
+    uint32_t active_index; /* Filled in link phase */
+};
+
+typedef struct cwgl_attriblocation_s cwgl_attriblocation_t;
+
 union cwgl_uniformcontent_u {
     struct {
         float v0;
@@ -268,6 +275,7 @@ union cwgl_uniformcontent_u {
 
 typedef union cwgl_uniformcontent_u cwgl_uniformcontent_t;
 
+#define CWGL_MAX_VAO_SIZE 32
 struct cwgl_program_state_s {
     cwgl_bool_t DELETE_STATUS;
     cwgl_bool_t LINK_STATUS;
@@ -276,6 +284,7 @@ struct cwgl_program_state_s {
     uint32_t ACTIVE_ATTRIBUTES;
     uint32_t ACTIVE_UNIFORMS;
     /* Maintained by tracker, not in the spec */
+    cwgl_attriblocation_t attriblocations[CWGL_MAX_VAO_SIZE];
     cwgl_activeinfo_t* uniforms;
     cwgl_uniformcontent_t* uniformcontents;
     cwgl_activeinfo_t* attributes;

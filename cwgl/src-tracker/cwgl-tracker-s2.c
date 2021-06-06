@@ -1,5 +1,6 @@
 #include "cwgl-tracker-priv.h"
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 /* Current VAO for attrib ops */
@@ -354,6 +355,16 @@ release_activeinfo(cwgl_ctx_t* ctx, cwgl_activeinfo_t* a, uint32_t count){
     }
 }
 
+static void
+clear_attriblocations(cwgl_ctx_t* ctx, cwgl_attriblocation_t* loc){
+    int i;
+    for(i=0;i!=CWGL_MAX_VAO_SIZE;i++){
+        cwgl_string_release(ctx, loc[i].name);
+        loc[i].name = NULL;
+        loc[i].active_index = 0;
+    }
+}
+
 int /* Exported to backend */
 cwgl_integ_program_setup(cwgl_ctx_t* ctx, cwgl_Program_t* program,
                          uint32_t n_uniform, uint32_t n_attribute){
@@ -403,6 +414,7 @@ release_program(cwgl_ctx_t* ctx, cwgl_Program_t* program){
             release_shader(ctx, program->state.fragment_shader);
             cwgl_string_release(ctx, program->state.infolog);
             cwgl_backend_Program_release(ctx, program);
+            clear_attriblocations(ctx, program->state.attriblocations);
             free(program);
         }
     }
@@ -414,6 +426,8 @@ cwgl_createProgram(cwgl_ctx_t* ctx){
     program = malloc(sizeof(cwgl_Program_t));
     if(program){
         cwgl_priv_objhdr_init(ctx, &program->hdr, CWGL_OBJ_PROGRAM);
+        memset(program->state.attriblocations, 0, 
+               sizeof(cwgl_attriblocation_t)*CWGL_MAX_VAO_SIZE);
         program->state.DELETE_STATUS = CWGL_FALSE;
         program->state.LINK_STATUS = CWGL_FALSE;
         program->state.VALIDATE_STATUS = CWGL_FALSE;
@@ -509,11 +523,54 @@ cwgl_detachShader(cwgl_ctx_t* ctx, cwgl_Program_t* program,
         i++;
     }
     program->state.ATTACHED_SHADERS = i;
+    clear_attriblocations(ctx, program->state.attriblocations);
 }
 
 CWGL_API void 
 cwgl_linkProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
+    int i,j,r;
+    unsigned int attrib_binding[CWGL_MAX_VAO_SIZE];
+    cwgl_attriblocation_t* a;
+    cwgl_activeinfo_t* f;
     cwgl_backend_linkProgram(ctx, program);
+    // FIXME: Follow WebGL alias rule
+    if(program->state.ACTIVE_ATTRIBUTES > CWGL_MAX_VAO_SIZE){
+        printf("CWGL: Too many active attributes ..?? %d\n",
+               program->state.ACTIVE_ATTRIBUTES);
+    }else{
+        a = program->state.attriblocations;
+        f = program->state.attributes;
+        for(i=0;i!=CWGL_MAX_VAO_SIZE;i++){
+            a[i].active_index = -1;
+            attrib_binding[i] = -1;
+        }
+        /* First, bind user-specified binding */
+        for(i=0;i!=CWGL_MAX_VAO_SIZE;i++){
+            if(a[i].name){
+                for(j=0;j!=program->state.ACTIVE_ATTRIBUTES;j++){
+                    r = cwgl_priv_match_symobj(ctx, a[i].name,
+                                               f[j].name, NULL, NULL);
+                    if(r){
+                        attrib_binding[j] = i;
+                        a[i].active_index = j;
+                    }
+                }
+            }
+        }
+        /* Bind rest of attributes */
+        for(j=0;j!=program->state.ACTIVE_ATTRIBUTES;j++){
+            if(attrib_binding[j] == -1){
+                for(i=0;i!=CWGL_MAX_VAO_SIZE;i++){
+                    if(! a[i].name){
+                        a[i].name = cwgl_priv_string_dup(ctx, f[j].name);
+                        a[i].active_index = j;
+                        attrib_binding[j] = i;
+                        break;
+                    }
+                }
+            }
+        }
+    }
 }
 
 CWGL_API void 
@@ -557,14 +614,41 @@ cwgl_getActiveAttrib(cwgl_ctx_t* ctx, cwgl_Program_t* program,
     *name = cwgl_priv_string_dup(ctx,a[index].name);
     return CWGL_QR_SUCCESS;
 }
+
 CWGL_API int32_t 
 cwgl_getAttribLocation(cwgl_ctx_t* ctx, cwgl_Program_t* program, 
                        const char* name){
+    // FIXME: Check for gl_
+    int i,r;
+    if(! program->state.LINK_STATUS){
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        return -1;
+    }
+    for(i=0;i!=CWGL_MAX_VAO_SIZE;i++){
+        r = cwgl_priv_match_sym(ctx, 
+                                program->state.attriblocations[i].name,
+                                name,
+                                NULL, NULL);
+        if(r){
+            return i;
+        }
+    }
+    return -1;
 }
 
 CWGL_API void 
 cwgl_bindAttribLocation(cwgl_ctx_t* ctx, cwgl_Program_t* program, 
                         uint32_t index, const char* name){
+    // FIXME: Check for gl_
+    size_t len;
+    if(index >= CWGL_MAX_VAO_SIZE){
+        CTX_SET_ERROR(ctx, INVALID_VALUE);
+        return;
+    }
+    len = strnlen(name, 1024);
+    cwgl_string_release(ctx, program->state.attriblocations[index].name);
+    program->state.attriblocations[index].name =
+        cwgl_priv_alloc_string(ctx, name, len);
 }
 
 CWGL_API cwgl_UniformLocation_t* 
