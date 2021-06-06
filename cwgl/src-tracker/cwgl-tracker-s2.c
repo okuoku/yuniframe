@@ -366,6 +366,7 @@ cwgl_integ_program_setup(cwgl_ctx_t* ctx, cwgl_Program_t* program,
                        program->state.ACTIVE_UNIFORMS);
     release_activeinfo(ctx, program->state.attributes, 
                        program->state.ACTIVE_ATTRIBUTES);
+    free(program->state.uniformcontents);
     program->state.ACTIVE_ATTRIBUTES = n_attribute;
     program->state.ACTIVE_UNIFORMS = n_uniform;
     uniformcount = program->state.ACTIVE_UNIFORMS;
@@ -537,8 +538,24 @@ CWGL_API cwgl_query_result_t
 cwgl_getActiveAttrib(cwgl_ctx_t* ctx, cwgl_Program_t* program, 
                      int32_t index, int32_t* out_size, 
                      int32_t* type, cwgl_string_t** name){
-    // FIXME: Implement this
-    return CWGL_QR_UNIMPLEMENTED;
+    cwgl_activeinfo_t* a;
+    if(! program){
+        CTX_SET_ERROR(ctx, INVALID_VALUE);
+        return CWGL_QR_GLERROR;
+    }
+    if(index < 0){
+        CTX_SET_ERROR(ctx, INVALID_VALUE);
+        return CWGL_QR_GLERROR;
+    }
+    if(index >= program->state.ACTIVE_ATTRIBUTES){
+        CTX_SET_ERROR(ctx, INVALID_VALUE);
+        return CWGL_QR_GLERROR;
+    }
+    a = program->state.attributes;
+    *out_size = a[index].size;
+    *type = a[index].type;
+    *name = cwgl_priv_string_dup(ctx,a[index].name);
+    return CWGL_QR_SUCCESS;
 }
 CWGL_API int32_t 
 cwgl_getAttribLocation(cwgl_ctx_t* ctx, cwgl_Program_t* program, 
@@ -569,8 +586,24 @@ CWGL_API cwgl_query_result_t
 cwgl_getActiveUniform(cwgl_ctx_t* ctx, cwgl_Program_t* program, 
                       int32_t index, int32_t* out_size, int32_t* out_type, 
                       cwgl_string_t** name){
-    // FIXME: Implement this
-    return CWGL_QR_UNIMPLEMENTED;
+    cwgl_activeinfo_t* a;
+    if(! program){
+        CTX_SET_ERROR(ctx, INVALID_VALUE);
+        return CWGL_QR_GLERROR;
+    }
+    if(index < 0){
+        CTX_SET_ERROR(ctx, INVALID_VALUE);
+        return CWGL_QR_GLERROR;
+    }
+    if(index >= program->state.ACTIVE_UNIFORMS){
+        CTX_SET_ERROR(ctx, INVALID_VALUE);
+        return CWGL_QR_GLERROR;
+    }
+    a = program->state.uniforms;
+    *out_size = a[index].size;
+    *out_type = a[index].type;
+    *name = cwgl_priv_string_dup(ctx,a[index].name);
+    return CWGL_QR_SUCCESS;
 }
 
 CWGL_API void 
