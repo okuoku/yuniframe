@@ -41,6 +41,46 @@ cwgl_backend_compileShader(cwgl_ctx_t* ctx, cwgl_Shader_t* shader){
     return 0;
 }
 
+static int
+uniform_size(GLenum type, int size){
+    int basetype = 0;
+    switch(basetype){
+        default:
+        case GL_FLOAT:
+        case GL_INT:
+        case GL_BOOL:
+        case GL_SAMPLER_2D:
+        case GL_SAMPLER_CUBE:
+            basetype = 1;
+            break;
+        case GL_FLOAT_VEC2:
+        case GL_INT_VEC2:
+        case GL_BOOL_VEC2:
+            basetype = 2;
+            break;
+        case GL_FLOAT_VEC3:
+        case GL_INT_VEC3:
+        case GL_BOOL_VEC3:
+            basetype = 3;
+            break;
+        case GL_FLOAT_VEC4:
+        case GL_INT_VEC4:
+        case GL_BOOL_VEC4:
+            basetype = 4;
+            break;
+        case GL_FLOAT_MAT2:
+            basetype = 2*2;
+            break;
+        case GL_FLOAT_MAT3:
+            basetype = 3*3;
+            break;
+        case GL_FLOAT_MAT4:
+            basetype = 4*4;
+            break;
+    }
+    return basetype * size;
+}
+
 int 
 cwgl_backend_linkProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
     GLuint name;
@@ -55,6 +95,7 @@ cwgl_backend_linkProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
     int i;
     int r;
     char* buf;
+    uint32_t curoff;
     GLsizei infosize;
     cwgl_activeinfo_t* a;
     name = program->backend->name;
@@ -97,6 +138,7 @@ cwgl_backend_linkProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
     if(!r){
         glGetProgramiv(name, GL_ACTIVE_ATTRIBUTES, &attribute_count);
         glGetProgramiv(name, GL_ACTIVE_UNIFORMS, &uniform_count);
+        curoff = 0;
         a = program->state.attributes;
         for(i=0;i!=attribute_count;i++){
             glGetActiveAttrib(name, i, 1024, &namelen, &size, &type,
@@ -104,7 +146,9 @@ cwgl_backend_linkProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
             a[i].type = type;
             a[i].size = size;
             a[i].name = cwgl_priv_alloc_string(ctx, buf, namelen);
+            a[i].offset = 0;
         }
+        curoff = 0;
         a = program->state.uniforms;
         for(i=0;i!=uniform_count;i++){
             glGetActiveUniform(name, i, 1024, &namelen, &size, &type,
@@ -112,7 +156,10 @@ cwgl_backend_linkProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
             a[i].type = type;
             a[i].size = size;
             a[i].name = cwgl_priv_alloc_string(ctx, buf, namelen);
+            a[i].offset = curoff;
+            curoff += uniform_size(type, size);
         }
+        program->state.uniform_buffer_size = curoff;
     }
     free(buf);
     return 0;

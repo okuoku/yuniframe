@@ -66,6 +66,10 @@ struct cwgl_Program_s {
 };
 struct cwgl_UniformLocation_s {
     cwgl_objhdr_t hdr;
+    cwgl_Program_t* program; /* Back reference */
+    uint32_t index;
+    uint32_t offset;
+    uint32_t age_link;
 };
 
 struct cwgl_Texture_s {

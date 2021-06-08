@@ -370,22 +370,16 @@ cwgl_integ_program_setup(cwgl_ctx_t* ctx, cwgl_Program_t* program,
                          uint32_t n_uniform, uint32_t n_attribute){
     uint32_t uniformcount;
     uint32_t attributecount;
-    cwgl_uniformcontent_t* contents;
     cwgl_activeinfo_t* uniforms;
     cwgl_activeinfo_t* attributes;
     release_activeinfo(ctx, program->state.uniforms, 
                        program->state.ACTIVE_UNIFORMS);
     release_activeinfo(ctx, program->state.attributes, 
                        program->state.ACTIVE_ATTRIBUTES);
-    free(program->state.uniformcontents);
     program->state.ACTIVE_ATTRIBUTES = n_attribute;
     program->state.ACTIVE_UNIFORMS = n_uniform;
     uniformcount = program->state.ACTIVE_UNIFORMS;
     attributecount = program->state.ACTIVE_ATTRIBUTES;
-    contents = malloc(sizeof(cwgl_uniformcontent_t)*uniformcount);
-    if(contents){
-        memset(contents,0,sizeof(cwgl_uniformcontent_t)*uniformcount);
-    }
     uniforms = malloc(sizeof(cwgl_activeinfo_t)*uniformcount);
     if(uniforms){
         memset(uniforms,0,sizeof(cwgl_activeinfo_t)*uniformcount);
@@ -395,7 +389,6 @@ cwgl_integ_program_setup(cwgl_ctx_t* ctx, cwgl_Program_t* program,
         memset(attributes,0,sizeof(cwgl_activeinfo_t)*attributecount);
     }
     program->state.uniforms = uniforms;
-    program->state.uniformcontents = contents;
     program->state.attributes = attributes;
     return 0;
 }
@@ -438,6 +431,8 @@ cwgl_createProgram(cwgl_ctx_t* ctx){
         program->state.fragment_shader = NULL;
         program->state.uniforms = NULL;
         program->state.attributes = NULL;
+        program->state.uniformcontents = NULL;
+        program->state.age_link = 0;
         cwgl_backend_Program_init(ctx, program);
     }
     return program;
@@ -533,6 +528,7 @@ cwgl_linkProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
     cwgl_attriblocation_t* a;
     cwgl_activeinfo_t* f;
     cwgl_backend_linkProgram(ctx, program);
+    program->state.age_link++;
     // FIXME: Follow WebGL alias rule
     if(program->state.ACTIVE_ATTRIBUTES > CWGL_MAX_VAO_SIZE){
         printf("CWGL: Too many active attributes ..?? %d\n",
@@ -571,6 +567,12 @@ cwgl_linkProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
             }
         }
     }
+    free(program->state.uniformcontents);
+    program->state.uniformcontents = malloc(sizeof(cwgl_uniformcontent_t)*
+                                            program->state.uniform_buffer_size);
+    memset(program->state.uniformcontents,0,sizeof(cwgl_uniformcontent_t)*
+                                            program->state.uniform_buffer_size);
+
 }
 
 CWGL_API void 
@@ -651,18 +653,95 @@ cwgl_bindAttribLocation(cwgl_ctx_t* ctx, cwgl_Program_t* program,
         cwgl_priv_alloc_string(ctx, name, len);
 }
 
+static int
+calc_type_size(cwgl_Program_t* program, int index){
+    int basetype;
+    cwgl_enum_t type;
+    cwgl_activeinfo_t* a;
+    a = program->state.uniforms;
+    type = a[index].type;
+    switch(type){
+        default:
+        case FLOAT:
+        case INT:
+        case BOOL:
+        case SAMPLER_2D:
+        case SAMPLER_CUBE:
+            basetype = 1;
+            break;
+        case FLOAT_VEC2:
+        case INT_VEC2:
+        case BOOL_VEC2:
+            basetype = 2;
+            break;
+        case FLOAT_VEC3:
+        case INT_VEC3:
+        case BOOL_VEC3:
+            basetype = 3;
+            break;
+        case FLOAT_VEC4:
+        case INT_VEC4:
+        case BOOL_VEC4:
+            basetype = 4;
+            break;
+        case FLOAT_MAT2:
+            basetype = 2*2;
+            break;
+        case FLOAT_MAT3:
+            basetype = 3*3;
+            break;
+        case FLOAT_MAT4:
+            basetype = 4*4;
+            break;
+    }
+    return basetype;
+}
+
 CWGL_API cwgl_UniformLocation_t* 
 cwgl_getUniformLocation(cwgl_ctx_t* ctx, cwgl_Program_t* program, 
                         const char* name){
-    // FIXME: Link with backend UniformLocation
+    int i,r;
+    int ax, ay;
+    int indx;
+    int array_index;
+    cwgl_activeinfo_t* a;
     cwgl_UniformLocation_t* u;
+    if(!program->state.LINK_STATUS){
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        return NULL;
+    }
+    /* Calc index */
+    indx = -1;
+    a = program->state.uniforms;
+    for(i=0;i!=program->state.ACTIVE_UNIFORMS;i++){
+        r = cwgl_priv_match_sym(ctx, a[i].name, name, &ax, &ay);
+        if(r){
+            if(ay != -1){
+                array_index = ay;
+            }else{
+                array_index = 0;
+            }
+            indx = r;
+            break;
+        }
+    }
+    if(indx == -1){
+        return NULL;
+    }
+    /* Allocate object, retain Program */
     u = malloc(sizeof(cwgl_UniformLocation_t));
+    cwgl_priv_objhdr_retain(&program->hdr);
+    u->index = indx;
+    u->age_link = program->state.age_link;
+    /* Calc storage offset */
+    u->offset = a[indx].offset + 
+        (array_index * calc_type_size(program, indx));
     return u;
 }
 
 CWGL_API void
 cwgl_UniformLocation_release(cwgl_ctx_t* ctx, cwgl_UniformLocation_t* u){
-    // FIXME: Teardown backend UniformLocation here
+    release_program(ctx, u->program);
     free(u);
 }
 
@@ -690,97 +769,360 @@ cwgl_getActiveUniform(cwgl_ctx_t* ctx, cwgl_Program_t* program,
     return CWGL_QR_SUCCESS;
 }
 
+static int /* bool */
+valid_uniformlocation_p(cwgl_UniformLocation_t* loc, int req){
+    if(loc->age_link != loc->program->state.age_link){
+        return 0;
+    }else{
+        if(loc->program->state.uniform_buffer_size <
+           req + loc->offset){
+            return 0;
+        }else{
+            return 1;
+        }
+    }
+}
+
 CWGL_API void 
 cwgl_uniform1f(cwgl_ctx_t* ctx, cwgl_UniformLocation_t* location, float x){
+    cwgl_uniformcontent_t* u;
+    uint32_t off;
+    u = location->program->state.uniformcontents;
+    off = location->offset;
+    if(valid_uniformlocation_p(location,1)){
+        u[off+0].asFloat = x;
+    }else{
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+    }
 }
 
 CWGL_API void 
 cwgl_uniform1i(cwgl_ctx_t* ctx, cwgl_UniformLocation_t* location, int32_t x){
+    cwgl_uniformcontent_t* u;
+    uint32_t off;
+    u = location->program->state.uniformcontents;
+    off = location->offset;
+    if(valid_uniformlocation_p(location,1)){
+        u[off+0].asInt = x;
+    }else{
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+    }
 }
 
 CWGL_API void 
 cwgl_uniform2f(cwgl_ctx_t* ctx, cwgl_UniformLocation_t* location, 
                float x, float y){
+    cwgl_uniformcontent_t* u;
+    uint32_t off;
+    u = location->program->state.uniformcontents;
+    off = location->offset;
+    if(valid_uniformlocation_p(location,2)){
+        u[off+0].asFloat = x;
+        u[off+1].asFloat = y;
+    }else{
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+    }
 }
 
 CWGL_API void 
 cwgl_uniform2i(cwgl_ctx_t* ctx, cwgl_UniformLocation_t* location, 
                int32_t x, int32_t y){
+    cwgl_uniformcontent_t* u;
+    uint32_t off;
+    u = location->program->state.uniformcontents;
+    off = location->offset;
+    if(valid_uniformlocation_p(location,2)){
+        u[off+0].asInt = x;
+        u[off+1].asInt = y;
+    }else{
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+    }
 }
 
 CWGL_API void 
 cwgl_uniform3f(cwgl_ctx_t* ctx, cwgl_UniformLocation_t* location, 
                float x, float y, float z){
+    cwgl_uniformcontent_t* u;
+    uint32_t off;
+    u = location->program->state.uniformcontents;
+    off = location->offset;
+    if(valid_uniformlocation_p(location,3)){
+        u[off+0].asFloat = x;
+        u[off+1].asFloat = y;
+        u[off+2].asFloat = z;
+    }else{
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+    }
 }
 
 CWGL_API void 
 cwgl_uniform3i(cwgl_ctx_t* ctx, cwgl_UniformLocation_t* location, 
                int32_t x, int32_t y, int32_t z){
+    cwgl_uniformcontent_t* u;
+    uint32_t off;
+    u = location->program->state.uniformcontents;
+    off = location->offset;
+    if(valid_uniformlocation_p(location,3)){
+        u[off+0].asInt = x;
+        u[off+1].asInt = y;
+        u[off+2].asInt = z;
+    }else{
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+    }
 }
 
 CWGL_API void 
 cwgl_uniform4f(cwgl_ctx_t* ctx, cwgl_UniformLocation_t* location, 
                float x, float y, float z, float w){
+    cwgl_uniformcontent_t* u;
+    uint32_t off;
+    u = location->program->state.uniformcontents;
+    off = location->offset;
+    if(valid_uniformlocation_p(location,4)){
+        u[off+0].asFloat = x;
+        u[off+1].asFloat = y;
+        u[off+2].asFloat = z;
+        u[off+3].asFloat = w;
+    }else{
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+    }
 }
 
 CWGL_API void 
 cwgl_uniform4i(cwgl_ctx_t* ctx, cwgl_UniformLocation_t* location, 
                int32_t x, int32_t y, int32_t z, int32_t w){
+    cwgl_uniformcontent_t* u;
+    uint32_t off;
+    u = location->program->state.uniformcontents;
+    off = location->offset;
+    if(valid_uniformlocation_p(location,4)){
+        u[off+0].asInt = x;
+        u[off+1].asInt = y;
+        u[off+2].asInt = z;
+        u[off+3].asInt = w;
+    }else{
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+    }
+}
+
+static void
+fill_uniform_int(cwgl_UniformLocation_t* loc, int32_t* values,
+                 size_t count){
+    uint32_t i;
+    uint32_t off;
+    cwgl_uniformcontent_t* u;
+    u = loc->program->state.uniformcontents;
+    off = loc->offset;
+
+    for(i=0;i!=count;i++){
+        u[off+i].asInt = values[i];
+    }
+}
+
+static void
+fill_uniform_float(cwgl_UniformLocation_t* loc, float* values,
+                   size_t count){
+    uint32_t i;
+    uint32_t off;
+    cwgl_uniformcontent_t* u;
+    u = loc->program->state.uniformcontents;
+    off = loc->offset;
+
+    for(i=0;i!=count;i++){
+        u[off+i].asFloat = values[i];
+    }
 }
 
 CWGL_API void 
 cwgl_uniform1fv(cwgl_ctx_t* ctx, cwgl_UniformLocation_t* location, 
                 float* values, size_t count){
+    cwgl_uniformcontent_t* u;
+    uint32_t off;
+    u = location->program->state.uniformcontents;
+    off = location->offset;
+    if(valid_uniformlocation_p(location,count)){
+        fill_uniform_float(location, values, count);
+    }else{
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+    }
 }
 
 CWGL_API void 
 cwgl_uniform1iv(cwgl_ctx_t* ctx, cwgl_UniformLocation_t* location, 
                 int32_t* values, size_t count){
+    cwgl_uniformcontent_t* u;
+    uint32_t off;
+    u = location->program->state.uniformcontents;
+    off = location->offset;
+    if(valid_uniformlocation_p(location,count)){
+        fill_uniform_int(location, values, count);
+    }else{
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+    }
 }
 
 CWGL_API void 
 cwgl_uniform2fv(cwgl_ctx_t* ctx, cwgl_UniformLocation_t* location, 
                 float* values, size_t count){
+    cwgl_uniformcontent_t* u;
+    uint32_t off;
+    u = location->program->state.uniformcontents;
+    off = location->offset;
+    if(valid_uniformlocation_p(location,2*count)){
+        fill_uniform_float(location, values, 2*count);
+    }else{
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+    }
 }
 
 CWGL_API void 
 cwgl_uniform2iv(cwgl_ctx_t* ctx, cwgl_UniformLocation_t* location, 
                 int32_t* values, size_t count){
+    cwgl_uniformcontent_t* u;
+    uint32_t off;
+    u = location->program->state.uniformcontents;
+    off = location->offset;
+    if(valid_uniformlocation_p(location,2*count)){
+        fill_uniform_int(location, values, 2*count);
+    }else{
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+    }
 }
 
 CWGL_API void 
 cwgl_uniform3fv(cwgl_ctx_t* ctx, cwgl_UniformLocation_t* location, 
                 float* values, size_t count){
+    cwgl_uniformcontent_t* u;
+    uint32_t off;
+    u = location->program->state.uniformcontents;
+    off = location->offset;
+    if(valid_uniformlocation_p(location,3*count)){
+        fill_uniform_float(location, values, 3*count);
+    }else{
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+    }
 }
 
 CWGL_API void 
 cwgl_uniform3iv(cwgl_ctx_t* ctx, cwgl_UniformLocation_t* location, 
                 int32_t* values, size_t count){
+    cwgl_uniformcontent_t* u;
+    uint32_t off;
+    u = location->program->state.uniformcontents;
+    off = location->offset;
+    if(valid_uniformlocation_p(location,3*count)){
+        fill_uniform_int(location, values, 3*count);
+    }else{
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+    }
 }
 
 CWGL_API void 
 cwgl_uniform4fv(cwgl_ctx_t* ctx, cwgl_UniformLocation_t* location, 
                 float* values, size_t count){
+    cwgl_uniformcontent_t* u;
+    uint32_t off;
+    u = location->program->state.uniformcontents;
+    off = location->offset;
+    if(valid_uniformlocation_p(location,4*count)){
+        fill_uniform_float(location, values, 4*count);
+    }else{
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+    }
 }
 
 CWGL_API void 
 cwgl_uniform4iv(cwgl_ctx_t* ctx, cwgl_UniformLocation_t* location, 
                 int32_t* values, size_t count){
+    cwgl_uniformcontent_t* u;
+    uint32_t off;
+    u = location->program->state.uniformcontents;
+    off = location->offset;
+    if(valid_uniformlocation_p(location,4*count)){
+        fill_uniform_int(location, values, 4*count);
+    }else{
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+    }
+}
+
+static void
+fill_uniform_float_xpose(cwgl_UniformLocation_t* loc, float* values,
+                         int matsize, int count){
+    uint32_t i,j,c;
+    uint32_t off,b;
+
+    cwgl_uniformcontent_t* u;
+    u = loc->program->state.uniformcontents;
+    off = loc->offset;
+
+    for(c=0;c!=count;c++){
+        b = c * (matsize*matsize);
+        for(j=0;j!=matsize;j++){
+            for(i=0;i!=matsize;i++){
+                u[b+off+(matsize*i+j)].asFloat = values[b+(matsize*j+i)];
+            }
+        }
+    }
 }
 
 CWGL_API void 
 cwgl_uniformMatrix2fv(cwgl_ctx_t* ctx, cwgl_UniformLocation_t* location, 
                       int transpose, float* value, size_t count){
+    cwgl_uniformcontent_t* u;
+    uint32_t off;
+    u = location->program->state.uniformcontents;
+    off = location->offset;
+    if(valid_uniformlocation_p(location,2*2*count)){
+        if(transpose){
+            fill_uniform_float_xpose(location,
+                                     value, 2, 
+                                     count);
+        }else{
+            fill_uniform_float(location, value, 2*2*count);
+        }
+    }else{
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+    }
 }
 
 CWGL_API void 
 cwgl_uniformMatrix3fv(cwgl_ctx_t* ctx, cwgl_UniformLocation_t* location, 
                       int transpose, float* value, size_t count){
+    cwgl_uniformcontent_t* u;
+    uint32_t off;
+    u = location->program->state.uniformcontents;
+    off = location->offset;
+    if(valid_uniformlocation_p(location,3*3*count)){
+        if(transpose){
+            fill_uniform_float_xpose(location,
+                                     value, 3, 
+                                     count);
+        }else{
+            fill_uniform_float(location, value, 3*3*count);
+        }
+    }else{
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+    }
 }
 
 CWGL_API void 
 cwgl_uniformMatrix4fv(cwgl_ctx_t* ctx, cwgl_UniformLocation_t* location, 
                       int transpose, float* value, size_t count){
+    cwgl_uniformcontent_t* u;
+    uint32_t off;
+    u = location->program->state.uniformcontents;
+    off = location->offset;
+    if(valid_uniformlocation_p(location,4*4*count)){
+        if(transpose){
+            fill_uniform_float_xpose(location,
+                                     value, 4, 
+                                     count);
+        }else{
+            fill_uniform_float(location, value, 4*4*count);
+        }
+    }else{
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+    }
 }
 
 

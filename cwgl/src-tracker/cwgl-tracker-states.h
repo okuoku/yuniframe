@@ -238,6 +238,7 @@ struct cwgl_activeinfo_s {
     cwgl_enum_t type;
     uint32_t size; /* 1 for non-array */
     cwgl_string_t* name; /* allocated by backend */
+    uint32_t offset; /* Uniform: Offset */
 };
 
 typedef struct cwgl_activeinfo_s cwgl_activeinfo_t;
@@ -250,27 +251,8 @@ struct cwgl_attriblocation_s {
 typedef struct cwgl_attriblocation_s cwgl_attriblocation_t;
 
 union cwgl_uniformcontent_u {
-    struct {
-        float v0;
-        float v1;
-        float v2;
-        float v3;
-    }asFloat;
-    struct {
-        int32_t v0;
-        int32_t v1;
-        int32_t v2;
-        int32_t v3;
-    }asInt;
-    struct {
-        float m[2*2];
-    }asMat2;
-    struct {
-        float m[3*3];
-    }asMat3;
-    struct {
-        float m[4*4];
-    }asMat4;
+    float asFloat;
+    uint32_t asInt;
 };
 
 typedef union cwgl_uniformcontent_u cwgl_uniformcontent_t;
@@ -291,6 +273,8 @@ struct cwgl_program_state_s {
     cwgl_Shader_t* vertex_shader;
     cwgl_Shader_t* fragment_shader;
     cwgl_string_t* infolog; /* allocated by backend */
+    uint32_t uniform_buffer_size;
+    uint32_t age_link;
 };
 
 typedef struct cwgl_program_state_s cwgl_program_state_t;
