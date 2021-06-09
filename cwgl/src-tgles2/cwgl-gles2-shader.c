@@ -147,6 +147,7 @@ cwgl_backend_linkProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
             a[i].size = size;
             a[i].name = cwgl_priv_alloc_string(ctx, buf, namelen);
             a[i].offset = 0;
+            a[i].location = glGetAttribLocation(name, buf);
         }
         curoff = 0;
         a = program->state.uniforms;
@@ -158,6 +159,10 @@ cwgl_backend_linkProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
             a[i].name = cwgl_priv_alloc_string(ctx, buf, namelen);
             a[i].offset = curoff;
             curoff += uniform_size(type, size);
+            a[i].location = glGetUniformLocation(name, buf);
+            if(a[i].location < 0){
+                printf("ERR: No location?? %s\n", buf);
+            }
         }
         program->state.uniform_buffer_size = curoff;
     }

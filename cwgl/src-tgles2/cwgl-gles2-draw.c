@@ -150,9 +150,215 @@ configure_texture(cwgl_ctx_t* ctx){
     }
 }
 
+// FIXME: Copied from s2
+static cwgl_VertexArrayObject_t*
+current_vao(cwgl_ctx_t* ctx){
+    if(ctx->state.bin.VERTEX_ARRAY_BINDING){
+        return ctx->state.bin.VERTEX_ARRAY_BINDING;
+    }else{
+        return ctx->state.default_vao;
+    }
+}
+
 static void
 configure_shader(cwgl_ctx_t* ctx){
-    // FIXME: Implement this
+    int i;
+    int ai;
+    cwgl_activeinfo_t* u;
+    cwgl_activeinfo_t* a;
+    cwgl_Program_t* program;
+    cwgl_uniformcontent_t* uc;
+    cwgl_VertexArrayObject_t* vao;
+    cwgl_vao_attrib_state_t* attrib;
+    GLint location;
+    
+    program = ctx->state.bin.CURRENT_PROGRAM;
+    if(! program){
+        // FIXME: Return error
+        // FIXME: Check for not linked
+        return;
+    }
+
+    glUseProgram(program->backend->name);
+
+    u = program->state.uniforms;
+    a = program->state.attributes;
+    uc = program->state.uniformcontents;
+
+    /* Configure uniforms */
+    for(i=0;i!=program->state.ACTIVE_UNIFORMS;i++){
+        switch(u[i].type){
+            default:
+                /* Do nothing */
+                break;
+            case FLOAT:
+                glUniform1fv(u[i].location,
+                             u[i].size,
+                             (float *)&uc[u[i].offset]);
+                break;
+            case INT:
+            case BOOL:
+            case SAMPLER_2D:
+            case SAMPLER_CUBE:
+                glUniform1iv(u[i].location,
+                             u[i].size,
+                             (uint32_t *)&uc[u[i].offset]);
+                break;
+            case FLOAT_VEC2:
+                glUniform2fv(u[i].location,
+                             u[i].size,
+                             (float *)&uc[u[i].offset]);
+                break;
+            case INT_VEC2:
+            case BOOL_VEC2:
+                glUniform2iv(u[i].location,
+                             u[i].size,
+                             (uint32_t *)&uc[u[i].offset]);
+                break;
+            case FLOAT_VEC3:
+                glUniform3fv(u[i].location,
+                             u[i].size,
+                             (float *)&uc[u[i].offset]);
+                break;
+            case INT_VEC3:
+            case BOOL_VEC3:
+                glUniform3iv(u[i].location,
+                             u[i].size,
+                             (uint32_t *)&uc[u[i].offset]);
+                break;
+            case FLOAT_VEC4:
+                glUniform4fv(u[i].location,
+                             u[i].size,
+                             (float *)&uc[u[i].offset]);
+                break;
+            case INT_VEC4:
+            case BOOL_VEC4:
+                glUniform4iv(u[i].location,
+                             u[i].size,
+                             (uint32_t *)&uc[u[i].offset]);
+                break;
+            case FLOAT_MAT2:
+                glUniformMatrix2fv(u[i].location,
+                                   u[i].size,
+                                   GL_FALSE,
+                                   (float *)&uc[u[i].offset]);
+                break;
+            case FLOAT_MAT3:
+                glUniformMatrix3fv(u[i].location,
+                                   u[i].size,
+                                   GL_FALSE,
+                                   (float *)&uc[u[i].offset]);
+                break;
+            case FLOAT_MAT4:
+                glUniformMatrix4fv(u[i].location,
+                                   u[i].size,
+                                   GL_FALSE,
+                                   (float *)&uc[u[i].offset]);
+                break;
+        }
+    }
+
+    /* Configure attributes */
+    vao = current_vao(ctx);
+    for(i=0;i!=CWGL_MAX_VAO_SIZE;i++){
+        ai = program->state.attriblocations[i].active_index;
+        if(ai >= 0){
+            location = a[ai].location;
+            attrib = &vao->attrib[i];
+            if(attrib->VERTEX_ATTRIB_ARRAY_ENABLED){
+                glEnableVertexAttribArray(location);
+                glBindBuffer(GL_ARRAY_BUFFER,
+                             attrib->VERTEX_ATTRIB_ARRAY_BUFFER_BINDING->backend->name);
+                glVertexAttribPointer(location,
+                                      attrib->VERTEX_ATTRIB_ARRAY_SIZE,
+                                      attrib->VERTEX_ATTRIB_ARRAY_TYPE,
+                                      attrib->VERTEX_ATTRIB_ARRAY_NORMALIZED ?
+                                      GL_TRUE : GL_FALSE,
+                                      attrib->VERTEX_ATTRIB_ARRAY_STRIDE,
+                                      (void*)(uintptr_t)attrib->VERTEX_ATTRIB_ARRAY_POINTER);
+            }else{
+                glDisableVertexAttribArray(location);
+                switch(a[ai].type){
+                    default:
+                        /* Do nothing */
+                        break;
+                    case FLOAT:
+                        glVertexAttrib1f(location,
+                                         attrib->CURRENT_VERTEX_ATTRIB[0]);
+                        break;
+                    case FLOAT_VEC2:
+                        glVertexAttrib2f(location,
+                                         attrib->CURRENT_VERTEX_ATTRIB[0],
+                                         attrib->CURRENT_VERTEX_ATTRIB[1]);
+                        break;
+                    case FLOAT_VEC3:
+                        glVertexAttrib3f(location,
+                                         attrib->CURRENT_VERTEX_ATTRIB[0],
+                                         attrib->CURRENT_VERTEX_ATTRIB[1],
+                                         attrib->CURRENT_VERTEX_ATTRIB[2]);
+                        break;
+                    case FLOAT_VEC4:
+                        glVertexAttrib4f(location,
+                                         attrib->CURRENT_VERTEX_ATTRIB[0],
+                                         attrib->CURRENT_VERTEX_ATTRIB[1],
+                                         attrib->CURRENT_VERTEX_ATTRIB[2],
+                                         attrib->CURRENT_VERTEX_ATTRIB[3]);
+                        break;
+                    case FLOAT_MAT2:
+                        glVertexAttrib2f(location,
+                                         attrib->CURRENT_VERTEX_ATTRIB[0],
+                                         attrib->CURRENT_VERTEX_ATTRIB[1]);
+                        attrib = &vao->attrib[i+1];
+                        glVertexAttrib2f(location+1,
+                                         attrib->CURRENT_VERTEX_ATTRIB[0],
+                                         attrib->CURRENT_VERTEX_ATTRIB[1]);
+                        break;
+                    case FLOAT_MAT3:
+                        glVertexAttrib3f(location,
+                                         attrib->CURRENT_VERTEX_ATTRIB[0],
+                                         attrib->CURRENT_VERTEX_ATTRIB[1],
+                                         attrib->CURRENT_VERTEX_ATTRIB[2]);
+                        attrib = &vao->attrib[i+1];
+                        glVertexAttrib3f(location+1,
+                                         attrib->CURRENT_VERTEX_ATTRIB[0],
+                                         attrib->CURRENT_VERTEX_ATTRIB[1],
+                                         attrib->CURRENT_VERTEX_ATTRIB[2]);
+                        attrib = &vao->attrib[i+2];
+                        glVertexAttrib3f(location+2,
+                                         attrib->CURRENT_VERTEX_ATTRIB[0],
+                                         attrib->CURRENT_VERTEX_ATTRIB[1],
+                                         attrib->CURRENT_VERTEX_ATTRIB[2]);
+                        break;
+                    case FLOAT_MAT4:
+                        glVertexAttrib4f(location,
+                                         attrib->CURRENT_VERTEX_ATTRIB[0],
+                                         attrib->CURRENT_VERTEX_ATTRIB[1],
+                                         attrib->CURRENT_VERTEX_ATTRIB[2],
+                                         attrib->CURRENT_VERTEX_ATTRIB[3]);
+                        attrib = &vao->attrib[i+1];
+                        glVertexAttrib4f(location+1,
+                                         attrib->CURRENT_VERTEX_ATTRIB[0],
+                                         attrib->CURRENT_VERTEX_ATTRIB[1],
+                                         attrib->CURRENT_VERTEX_ATTRIB[2],
+                                         attrib->CURRENT_VERTEX_ATTRIB[3]);
+                        attrib = &vao->attrib[i+2];
+                        glVertexAttrib4f(location+2,
+                                         attrib->CURRENT_VERTEX_ATTRIB[0],
+                                         attrib->CURRENT_VERTEX_ATTRIB[1],
+                                         attrib->CURRENT_VERTEX_ATTRIB[2],
+                                         attrib->CURRENT_VERTEX_ATTRIB[3]);
+                        attrib = &vao->attrib[i+3];
+                        glVertexAttrib4f(location+3,
+                                         attrib->CURRENT_VERTEX_ATTRIB[0],
+                                         attrib->CURRENT_VERTEX_ATTRIB[1],
+                                         attrib->CURRENT_VERTEX_ATTRIB[2],
+                                         attrib->CURRENT_VERTEX_ATTRIB[3]);
+                        break;
+                }
+            }
+
+        }
+    }
 }
 
 int 
@@ -160,6 +366,7 @@ cwgl_backend_drawArrays(cwgl_ctx_t* ctx, cwgl_enum_t mode,
                         int32_t first, uint32_t count){
     configure_drawstate(ctx, mode);
     configure_texture(ctx);
+    configure_shader(ctx);
     glDrawArrays(mode, first, count);
     return 0;
 }
@@ -168,8 +375,15 @@ cwgl_backend_drawArrays(cwgl_ctx_t* ctx, cwgl_enum_t mode,
 int 
 cwgl_backend_drawElements(cwgl_ctx_t* ctx, cwgl_enum_t mode, 
                           uint32_t count, cwgl_enum_t type, uint32_t offset){
+    cwgl_VertexArrayObject_t* vao;
+
     configure_drawstate(ctx, mode);
     configure_texture(ctx);
+    configure_shader(ctx);
+    /* Configure element buffer */
+    vao = current_vao(ctx);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,
+                 vao->state.ELEMENT_ARRAY_BUFFER_BINDING->backend->name);
     glDrawElements(mode, count, type, (void*)(uintptr_t)offset);
     return 0;
 }
@@ -179,6 +393,7 @@ cwgl_backend_clear(cwgl_ctx_t* ctx, uint32_t mask){
     cwgl_ctx_global_state_t* s;
     s = &ctx->state.glo;
     configure_drawstate(ctx, 0);
+    /* Configure clear */
     if(mask & GL_COLOR_BUFFER_BIT){
         glClearColor(s->COLOR_CLEAR_VALUE[0],
                      s->COLOR_CLEAR_VALUE[1],

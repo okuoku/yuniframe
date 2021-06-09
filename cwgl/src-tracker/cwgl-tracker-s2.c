@@ -361,7 +361,7 @@ clear_attriblocations(cwgl_ctx_t* ctx, cwgl_attriblocation_t* loc){
     for(i=0;i!=CWGL_MAX_VAO_SIZE;i++){
         cwgl_string_release(ctx, loc[i].name);
         loc[i].name = NULL;
-        loc[i].active_index = 0;
+        loc[i].active_index = -1;
     }
 }
 

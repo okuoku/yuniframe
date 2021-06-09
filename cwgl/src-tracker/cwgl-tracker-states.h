@@ -239,17 +239,19 @@ struct cwgl_activeinfo_s {
     uint32_t size; /* 1 for non-array */
     cwgl_string_t* name; /* allocated by backend */
     uint32_t offset; /* Uniform: Offset */
+    int32_t location; /* For backend use (signed) */
 };
 
 typedef struct cwgl_activeinfo_s cwgl_activeinfo_t;
 
 struct cwgl_attriblocation_s {
     cwgl_string_t* name;
-    uint32_t active_index; /* Filled in link phase */
+    int32_t active_index; /* Filled in link phase */
 };
 
 typedef struct cwgl_attriblocation_s cwgl_attriblocation_t;
 
+// FIXME: Static assert for sizeof() == 4
 union cwgl_uniformcontent_u {
     float asFloat;
     uint32_t asInt;
