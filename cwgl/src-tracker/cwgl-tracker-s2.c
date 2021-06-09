@@ -272,11 +272,41 @@ cwgl_Buffer_release(cwgl_ctx_t* ctx, cwgl_Buffer_t* buffer){
 CWGL_API void 
 cwgl_bufferData(cwgl_ctx_t* ctx, cwgl_enum_t target, 
                 uint32_t size, void* data, cwgl_enum_t usage){
+    cwgl_VertexArrayObject_t* vao;
+    switch(target){
+        case ARRAY_BUFFER:
+            if(! ctx->state.bin.ARRAY_BUFFER_BINDING){
+                CTX_SET_ERROR(ctx, INVALID_OPERATION);
+                return;
+            }
+            break;
+        case ELEMENT_ARRAY_BUFFER:
+            vao = current_vao(ctx);
+            if(! vao->state.ELEMENT_ARRAY_BUFFER_BINDING){
+                CTX_SET_ERROR(ctx, INVALID_OPERATION);
+                return;
+            }
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            return;
+    }
+    switch(usage){
+        case STATIC_DRAW:
+        case DYNAMIC_DRAW:
+            /* Do nothing */
+            break;
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            return;
+    }
+    cwgl_backend_bufferData(ctx, target, size, data, usage);
 }
 
 CWGL_API void 
 cwgl_bufferSubData(cwgl_ctx_t* ctx, cwgl_enum_t target, 
                    uint32_t offset, void* data, size_t buflen){
+    cwgl_backend_bufferSubData(ctx, target, offset, data, buflen);
 }
 
 // 2.10.1 Loading and Creating Shader Source
