@@ -148,6 +148,7 @@ configure_texture(cwgl_ctx_t* ctx){
                           s[i].TEXTURE_BINDING_CUBE_MAP->backend->name);
         }
     }
+    // FIXME: Apply texparameter
 }
 
 // FIXME: Copied from s2

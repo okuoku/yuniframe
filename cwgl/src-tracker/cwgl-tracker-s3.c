@@ -113,37 +113,6 @@ cwgl_activeTexture(cwgl_ctx_t* ctx, cwgl_enum_t texture){
     }
 }
 
-// 3.7.1 Texture Image Specification
-CWGL_API void 
-cwgl_texImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target, 
-                int32_t level, cwgl_enum_t internalformat, 
-                uint32_t width, uint32_t height, int32_t border, 
-                cwgl_enum_t format, cwgl_enum_t type, 
-                const void* buf, size_t buflen){
-}
-
-// 3.7.2 Alternate Texture Image Specification Commands
-CWGL_API void 
-cwgl_copyTexImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target, int32_t level, cwgl_enum_t internalformat, int32_t x, int32_t y, uint32_t width, uint32_t height, int32_t border){
-}
-
-CWGL_API void 
-cwgl_texSubImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target, int32_t level, int32_t xoffset, int32_t yoffset, uint32_t width, uint32_t height, cwgl_enum_t format, cwgl_enum_t type, const void* buf, size_t buflen){
-}
-
-CWGL_API void 
-cwgl_copyTexSubImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target, int32_t level, int32_t xoffset, int32_t yoffset, int32_t x, int32_t y, uint32_t width, uint32_t height){
-}
-
-// 3.7.3 Compressed Texture Images
-CWGL_API void 
-cwgl_compressedTexImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target, int32_t level, cwgl_enum_t internalformat, uint32_t width, uint32_t height, int32_t border, const void* buf, size_t buflen){
-}
-
-CWGL_API void 
-cwgl_compressedTexSubImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target, int32_t level, int32_t xoffset, int32_t yoffset, uint32_t width, uint32_t height, cwgl_enum_t format, const void* buf, size_t buflen){
-}
-
 static cwgl_texture_unit_state_t*
 current_texture_unit(cwgl_ctx_t* ctx){
     int id = (ctx->state.glo.ACTIVE_TEXTURE - TEXTURE0);
@@ -157,6 +126,95 @@ current_texture_unit(cwgl_ctx_t* ctx){
     }
     return &ctx->state.bin.texture_unit[id];
 }
+
+static int /* bool */
+validtexture_p(cwgl_ctx_t* ctx, cwgl_enum_t target){
+    cwgl_texture_unit_state_t* s;
+    int id = (ctx->state.glo.ACTIVE_TEXTURE - TEXTURE0);
+
+    s = current_texture_unit(ctx);
+    if(!s){
+        return 0;
+    }
+
+    switch(target){
+        case TEXTURE_2D:
+            if(s[id].TEXTURE_BINDING_2D){
+                return 1;
+            }else{
+                CTX_SET_ERROR(ctx, INVALID_OPERATION);
+                return 0;
+            }
+            break;
+        case TEXTURE_CUBE_MAP_POSITIVE_X:
+        case TEXTURE_CUBE_MAP_NEGATIVE_X:
+        case TEXTURE_CUBE_MAP_POSITIVE_Y:
+        case TEXTURE_CUBE_MAP_NEGATIVE_Y:
+        case TEXTURE_CUBE_MAP_POSITIVE_Z:
+        case TEXTURE_CUBE_MAP_NEGATIVE_Z:
+            if(s[id].TEXTURE_BINDING_CUBE_MAP){
+                return 1;
+            }else{
+                CTX_SET_ERROR(ctx, INVALID_OPERATION);
+                return 0;
+            }
+            break;
+
+        default:
+            CTX_SET_ERROR(ctx, INVALID_ENUM);
+            return 0;
+    }
+}
+
+// 3.7.1 Texture Image Specification
+CWGL_API void 
+cwgl_texImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target, 
+                int32_t level, cwgl_enum_t internalformat, 
+                uint32_t width, uint32_t height, int32_t border, 
+                cwgl_enum_t format, cwgl_enum_t type, 
+                const void* buf, size_t buflen){
+    if(validtexture_p(ctx, target)){
+        cwgl_backend_texImage2D(ctx, target, level, internalformat, width, height, border, format, type, buf, buflen);
+    }
+}
+
+// 3.7.2 Alternate Texture Image Specification Commands
+CWGL_API void 
+cwgl_copyTexImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target, int32_t level, cwgl_enum_t internalformat, int32_t x, int32_t y, uint32_t width, uint32_t height, int32_t border){
+    if(validtexture_p(ctx, target)){
+        cwgl_backend_copyTexImage2D(ctx, target, level, internalformat, x, y, width, height, border);
+    }
+}
+
+CWGL_API void 
+cwgl_texSubImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target, int32_t level, int32_t xoffset, int32_t yoffset, uint32_t width, uint32_t height, cwgl_enum_t format, cwgl_enum_t type, const void* buf, size_t buflen){
+    if(validtexture_p(ctx, target)){
+        cwgl_backend_texSubImage2D(ctx, target, level, xoffset, yoffset, width, height, format, type, buf, buflen);
+    }
+}
+
+CWGL_API void 
+cwgl_copyTexSubImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target, int32_t level, int32_t xoffset, int32_t yoffset, int32_t x, int32_t y, uint32_t width, uint32_t height){
+    if(validtexture_p(ctx, target)){
+        cwgl_backend_copyTexSubImage2D(ctx, target, level, xoffset, yoffset, x, y, width, height);
+    }
+}
+
+// 3.7.3 Compressed Texture Images
+CWGL_API void 
+cwgl_compressedTexImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target, int32_t level, cwgl_enum_t internalformat, uint32_t width, uint32_t height, int32_t border, const void* buf, size_t buflen){
+    if(validtexture_p(ctx, target)){
+        cwgl_backend_compressedTexImage2D(ctx, target, level, internalformat, width, height, border, buf, buflen);
+    }
+}
+
+CWGL_API void 
+cwgl_compressedTexSubImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target, int32_t level, int32_t xoffset, int32_t yoffset, uint32_t width, uint32_t height, cwgl_enum_t format, const void* buf, size_t buflen){
+    if(validtexture_p(ctx, target)){
+        cwgl_backend_compressedTexSubImage2D(ctx, target, level, xoffset, yoffset, width, height, format, buf, buflen);
+    }
+}
+
 
 
 // 3.7.4 Texture Parameters
