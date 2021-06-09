@@ -253,6 +253,7 @@ cwgl_texParameteri(cwgl_ctx_t* ctx, cwgl_enum_t target, cwgl_enum_t pname, int32
 // 3.7.11 Mipmap Generation
 CWGL_API void 
 cwgl_generateMipmap(cwgl_ctx_t* ctx, cwgl_enum_t target){
+    cwgl_backend_generateMipmap(ctx, target);
 }
 
 // 3.7.13 Texture Objects
