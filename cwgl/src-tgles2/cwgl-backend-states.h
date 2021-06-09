@@ -45,9 +45,6 @@ int cwgl_backend_drawArrays(cwgl_ctx_t* ctx, cwgl_enum_t mode, int32_t first, ui
 int cwgl_backend_drawElements(cwgl_ctx_t* ctx, cwgl_enum_t mode, uint32_t count, cwgl_enum_t type, uint32_t offset);
 int cwgl_backend_clear(cwgl_ctx_t* ctx, uint32_t mask);
 
-/* read */
-int cwgl_backend_readPixels(cwgl_ctx_t* ctx, int32_t x, int32_t y, uint32_t width, uint32_t height, cwgl_enum_t format, cwgl_enum_t type, void* buf, size_t buflen);
-
 /* buffer */
 int cwgl_backend_bufferData(cwgl_ctx_t* ctx, cwgl_enum_t target, uint32_t size, void* data, cwgl_enum_t usage);
 int cwgl_backend_bufferSubData(cwgl_ctx_t* ctx, cwgl_enum_t target, uint32_t offset, void* data, size_t buflen);
@@ -64,6 +61,7 @@ int cwgl_backend_compressedTexSubImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target, in
 int cwgl_backend_generateMipmap(cwgl_ctx_t* ctx, cwgl_enum_t target);
 
 /* framebuffer */
+int cwgl_backend_readPixels(cwgl_ctx_t* ctx, int32_t x, int32_t y, uint32_t width, uint32_t height, cwgl_enum_t format, cwgl_enum_t type, void* buf, size_t buflen);
 int cwgl_backend_renderbufferStorage(cwgl_ctx_t* ctx, cwgl_enum_t target, cwgl_enum_t internalformat, uint32_t width, uint32_t height);
 // FIXME: checkFramebufferStatus
 

@@ -504,6 +504,7 @@ cwgl_clearStencil(cwgl_ctx_t* ctx, int32_t s){
 // 4.3.1 Reading Pixels
 CWGL_API void 
 cwgl_readPixels(cwgl_ctx_t* ctx, int32_t x, int32_t y, uint32_t width, uint32_t height, cwgl_enum_t format, cwgl_enum_t type, void* buf, size_t buflen){
+    cwgl_backend_readPixels(ctx, x, y, width, height, format, type, buf, buflen);
 }
 
 // 4.4.1 Binding and Managing Framebuffer Objects
@@ -650,7 +651,16 @@ CWGL_API void
 cwgl_renderbufferStorage(cwgl_ctx_t* ctx, 
                          cwgl_enum_t target, cwgl_enum_t internalformat, 
                          uint32_t width, uint32_t height){
-    // FIXME: Allocate backend objects and adjust states here
+    if(target != RENDERBUFFER){
+        CTX_SET_ERROR(ctx, INVALID_ENUM);
+        return;
+    }
+    if(! ctx->state.bin.RENDERBUFFER_BINDING){
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        return;
+    }
+    cwgl_backend_renderbufferStorage(ctx, target,
+                                     internalformat, width, height);
 }
 
 CWGL_API void 
