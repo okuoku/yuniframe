@@ -265,63 +265,220 @@ cwgl_getVertexAttribOffset(cwgl_ctx_t* ctx, uint32_t index, cwgl_enum_t pname){
     }
 }
 
+// FIXME: Copied from s2
+static int /* bool */
+valid_uniformlocation_p(cwgl_UniformLocation_t* loc, int req){
+    if(loc->age_link != loc->program->state.age_link){
+        return 0;
+    }else{
+        if(loc->program->state.uniform_buffer_size <
+           req + loc->offset){
+            return 0;
+        }else{
+            return 1;
+        }
+    }
+}
+
 CWGL_API cwgl_query_result_t 
 cwgl_getUniform_i1(cwgl_ctx_t* ctx, cwgl_Program_t* program, 
                    cwgl_UniformLocation_t* location, int32_t* x){
+    cwgl_uniformcontent_t* u;
+    uint32_t off;
+    u = location->program->state.uniformcontents;
+    off = location->offset;
+    if(valid_uniformlocation_p(location,1)){
+        *x = u[off+0].asInt;
+    }else{
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        return CWGL_QR_GLERROR;
+    }
+    return CWGL_QR_SUCCESS;
 }
 
 CWGL_API cwgl_query_result_t 
 cwgl_getUniform_i2(cwgl_ctx_t* ctx, cwgl_Program_t* program, 
                    cwgl_UniformLocation_t* location, int32_t* x, int32_t* y){
+    cwgl_uniformcontent_t* u;
+    uint32_t off;
+    u = location->program->state.uniformcontents;
+    off = location->offset;
+    if(valid_uniformlocation_p(location,2)){
+        *x = u[off+0].asInt;
+        *y = u[off+1].asInt;
+    }else{
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        return CWGL_QR_GLERROR;
+    }
+    return CWGL_QR_SUCCESS;
 }
 
 CWGL_API cwgl_query_result_t 
 cwgl_getUniform_i3(cwgl_ctx_t* ctx, cwgl_Program_t* program, 
                    cwgl_UniformLocation_t* location, 
                    int32_t* x, int32_t* y, int32_t* z){
+    cwgl_uniformcontent_t* u;
+    uint32_t off;
+    u = location->program->state.uniformcontents;
+    off = location->offset;
+    if(valid_uniformlocation_p(location,3)){
+        *x = u[off+0].asInt;
+        *y = u[off+1].asInt;
+        *z = u[off+2].asInt;
+    }else{
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        return CWGL_QR_GLERROR;
+    }
+    return CWGL_QR_SUCCESS;
 }
 
 CWGL_API cwgl_query_result_t 
 cwgl_getUniform_i4(cwgl_ctx_t* ctx, cwgl_Program_t* program, 
                    cwgl_UniformLocation_t* location, 
                    int32_t* x, int32_t* y, int32_t* z, int32_t* w){
+    cwgl_uniformcontent_t* u;
+    uint32_t off;
+    u = location->program->state.uniformcontents;
+    off = location->offset;
+    if(valid_uniformlocation_p(location,4)){
+        *x = u[off+0].asInt;
+        *y = u[off+1].asInt;
+        *z = u[off+2].asInt;
+        *w = u[off+3].asInt;
+    }else{
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        return CWGL_QR_GLERROR;
+    }
+    return CWGL_QR_SUCCESS;
 }
 
 CWGL_API cwgl_query_result_t 
 cwgl_getUniform_f1(cwgl_ctx_t* ctx, cwgl_Program_t* program, 
                    cwgl_UniformLocation_t* location, float* x){
+    cwgl_uniformcontent_t* u;
+    uint32_t off;
+    u = location->program->state.uniformcontents;
+    off = location->offset;
+    if(valid_uniformlocation_p(location,1)){
+        *x = u[off+0].asFloat;
+    }else{
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        return CWGL_QR_GLERROR;
+    }
+    return CWGL_QR_SUCCESS;
 }
 
 CWGL_API cwgl_query_result_t 
 cwgl_getUniform_f2(cwgl_ctx_t* ctx, cwgl_Program_t* program, 
                    cwgl_UniformLocation_t* location, float* x, float* y){
+    cwgl_uniformcontent_t* u;
+    uint32_t off;
+    u = location->program->state.uniformcontents;
+    off = location->offset;
+    if(valid_uniformlocation_p(location,2)){
+        *x = u[off+0].asFloat;
+        *y = u[off+1].asFloat;
+    }else{
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        return CWGL_QR_GLERROR;
+    }
+    return CWGL_QR_SUCCESS;
 }
 
 CWGL_API cwgl_query_result_t 
 cwgl_getUniform_f3(cwgl_ctx_t* ctx, cwgl_Program_t* program, 
                    cwgl_UniformLocation_t* location, 
                    float* x, float* y, float* z){
+    cwgl_uniformcontent_t* u;
+    uint32_t off;
+    u = location->program->state.uniformcontents;
+    off = location->offset;
+    if(valid_uniformlocation_p(location,3)){
+        *x = u[off+0].asFloat;
+        *y = u[off+1].asFloat;
+        *z = u[off+2].asFloat;
+    }else{
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        return CWGL_QR_GLERROR;
+    }
+    return CWGL_QR_SUCCESS;
 }
 
 CWGL_API cwgl_query_result_t 
 cwgl_getUniform_f4(cwgl_ctx_t* ctx, cwgl_Program_t* program, 
                    cwgl_UniformLocation_t* location, 
                    float* x, float* y, float* z, float* w){
+    cwgl_uniformcontent_t* u;
+    uint32_t off;
+    u = location->program->state.uniformcontents;
+    off = location->offset;
+    if(valid_uniformlocation_p(location,4)){
+        *x = u[off+0].asFloat;
+        *y = u[off+1].asFloat;
+        *z = u[off+2].asFloat;
+        *w = u[off+3].asFloat;
+    }else{
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        return CWGL_QR_GLERROR;
+    }
+    return CWGL_QR_SUCCESS;
 }
 
 CWGL_API cwgl_query_result_t 
 cwgl_getUniform_m2(cwgl_ctx_t* ctx, cwgl_Program_t* program, 
                    cwgl_UniformLocation_t* location, float* x){
+    cwgl_uniformcontent_t* u;
+    uint32_t off;
+    int i;
+    u = location->program->state.uniformcontents;
+    off = location->offset;
+    if(valid_uniformlocation_p(location,2*2)){
+        for(i=0;i!=2*2;i++){
+            x[i] = u[off+i].asFloat;
+        }
+    }else{
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        return CWGL_QR_GLERROR;
+    }
+    return CWGL_QR_SUCCESS;
 }
 
 CWGL_API cwgl_query_result_t 
 cwgl_getUniform_m3(cwgl_ctx_t* ctx, cwgl_Program_t* program, 
                    cwgl_UniformLocation_t* location, float* x){
+    cwgl_uniformcontent_t* u;
+    uint32_t off;
+    int i;
+    u = location->program->state.uniformcontents;
+    off = location->offset;
+    if(valid_uniformlocation_p(location,3*3)){
+        for(i=0;i!=3*3;i++){
+            x[i] = u[off+i].asFloat;
+        }
+    }else{
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        return CWGL_QR_GLERROR;
+    }
+    return CWGL_QR_SUCCESS;
 }
 
 CWGL_API cwgl_query_result_t 
 cwgl_getUniform_m4(cwgl_ctx_t* ctx, cwgl_Program_t* program, 
                    cwgl_UniformLocation_t* location, float* x){
+    cwgl_uniformcontent_t* u;
+    uint32_t off;
+    int i;
+    u = location->program->state.uniformcontents;
+    off = location->offset;
+    if(valid_uniformlocation_p(location,3*3)){
+        for(i=0;i!=3*3;i++){
+            x[i] = u[off+i].asFloat;
+        }
+    }else{
+        CTX_SET_ERROR(ctx, INVALID_OPERATION);
+        return CWGL_QR_GLERROR;
+    }
+    return CWGL_QR_SUCCESS;
 }
 
 
