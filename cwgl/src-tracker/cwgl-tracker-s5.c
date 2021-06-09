@@ -3,10 +3,12 @@
 // 5.1 Flush and Finish
 CWGL_API void 
 cwgl_finish(cwgl_ctx_t* ctx){
+    cwgl_backend_finish(ctx);
 }
 
 CWGL_API void 
 cwgl_flush(cwgl_ctx_t* ctx){
+    cwgl_backend_flush(ctx);
 }
 
 // 5.2 Hints
