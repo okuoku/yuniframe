@@ -765,6 +765,7 @@ cwgl_getUniformLocation(cwgl_ctx_t* ctx, cwgl_Program_t* program,
     u = malloc(sizeof(cwgl_UniformLocation_t));
     cwgl_priv_objhdr_retain(&program->hdr);
     u->index = indx;
+    u->program = program;
     u->age_link = program->state.age_link;
     /* Calc storage offset */
     u->offset = a[indx].offset + 
