@@ -614,6 +614,7 @@ cwgl_useProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
         CTX_SET_ERROR(ctx, INVALID_VALUE);
         return;
     }
+    cwgl_priv_objhdr_retain(&program->hdr);
     release_program(ctx, ctx->state.bin.CURRENT_PROGRAM);
     ctx->state.bin.CURRENT_PROGRAM = program;
 }
