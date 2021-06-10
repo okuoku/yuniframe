@@ -4,7 +4,7 @@
 CWGL_API cwgl_VertexArrayObject_t* 
 cwgl_createVertexArray(cwgl_ctx_t* ctx){
     cwgl_VertexArrayObject_t* vao;
-    vao = malloc(sizeof(vao));
+    vao = malloc(sizeof(cwgl_VertexArrayObject_t));
     if(vao){
         cwgl_priv_objhdr_init(ctx, &vao->hdr, CWGL_OBJ_VAO);
         cwgl_priv_vao_init(&vao->state, vao->attrib);
