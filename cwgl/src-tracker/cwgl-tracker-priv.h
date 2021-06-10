@@ -46,6 +46,7 @@ typedef struct cwgl_objhdr_s cwgl_objhdr_t;
 struct cwgl_ctx_s {
     cwgl_ctx_tracker_state_t state;
     cwgl_backend_ctx_t* backend;
+    void* platform;
 };
 
 /* Buffer structures */

@@ -1,3 +1,7 @@
+#ifdef CWGL_EXPERIMENTAL_TRACKER
+#include "cwgl.h"
+#include "cwgl-tracker-priv.h"
+#endif
 #include "yfrm.h"
 
 #include <string.h>
@@ -14,12 +18,19 @@ void* yfrm_gpu_initpfdev_d3d11(void);
 
 /* Globals */
 static SDL_Window* wnd;
+#ifdef CWGL_EXPERIMENTAL_TRACKER
+struct cwgl_platform_ctx_s;
+typedef struct cwgl_platform_ctx_s cwgl_platform_ctx_t;
+static cwgl_platform_ctx_t* cur;
+#else
 static cwgl_ctx_t* cur;
+#endif
 
 YFRM_API int
 yfrm_init(void){
     wnd = NULL;
     cur = NULL;
+    return 0;
 }
 
 YFRM_API void
@@ -31,17 +42,28 @@ yfrm_terminate(void){
     cur = NULL;
 }
 
+#ifdef CWGL_EXPERIMENTAL_TRACKER
+struct cwgl_platform_ctx_s {
+    SDL_Window* wnd;
+    SDL_GLContext glc;
+    void* pf;
+};
+#else
 struct cwgl_ctx_s {
     SDL_Window* wnd;
     SDL_GLContext glc;
     void* pf;
 };
+#endif
 
 static cwgl_ctx_t*
 ctx_create_EGL(int32_t width, int32_t height, int32_t reserved,
                      int32_t flags){
     SDL_GLContext glc;
     cwgl_ctx_t* r;
+#ifdef CWGL_EXPERIMENTAL_TRACKER
+    cwgl_platform_ctx_t* p;
+#endif
 
     if(! wnd){
         SDL_Window* window;
@@ -79,8 +101,16 @@ ctx_create_EGL(int32_t width, int32_t height, int32_t reserved,
     SDL_GL_SetSwapInterval(0);
 
     r = malloc(sizeof(cwgl_ctx_t));
+#ifdef CWGL_EXPERIMENTAL_TRACKER
+    cwgl_integ_ctx_init(r);
+    p = malloc(sizeof(cwgl_platform_ctx_t));
+    p->wnd = wnd;
+    p->glc = glc;
+    r->platform = p;
+#else
     r->wnd = wnd;
     r->glc = glc;
+#endif
 
     return r;
 }
@@ -95,6 +125,9 @@ ctx_create_ANGLE(int32_t width, int32_t height, int32_t reserved,
     void* pfwnd;
     void* pf;
     uint32_t wndflags = 0;
+#ifdef CWGL_EXPERIMENTAL_TRACKER
+    cwgl_platform_ctx_t* p;
+#endif
 #if defined(SDL_VIDEO_DRIVER_COCOA) || defined(SDL_VIDEO_DRIVER_UIKIT)
     wndflags |= SDL_WINDOW_METAL|SDL_WINDOW_ALLOW_HIGHDPI;
 #endif
@@ -143,9 +176,18 @@ ctx_create_ANGLE(int32_t width, int32_t height, int32_t reserved,
     pf = yfrm_cwgl_pfctx_create_angle(dev, pfwnd);
 
     r = malloc(sizeof(cwgl_ctx_t));
+#ifdef CWGL_EXPERIMENTAL_TRACKER
+    cwgl_integ_ctx_init(r);
+    p = malloc(sizeof(cwgl_platform_ctx_t));
+    p->wnd = wnd;
+    p->glc = NULL;
+    p->pf = pf;
+    r->platform = p;
+#else
     r->wnd = wnd;
     r->glc = NULL;
     r->pf = pf;
+#endif
 
     return r;
 }
@@ -173,13 +215,21 @@ yfrm_frame_begin0(void* c){
         printf("WARNING: Overriding frame !\n");
     }
 
+#ifdef CWGL_EXPERIMENTAL_TRACKER
+    cur = (cwgl_platform_ctx_t*)((cwgl_ctx_t*)c)->platform;
+#else
     cur = (cwgl_ctx_t*)c;
+#endif
 
 }
 
 YFRM_API void
 yfrm_frame_end0(void* c){
+#ifdef CWGL_EXPERIMENTAL_TRACKER
+    cwgl_platform_ctx_t* ctx = (cwgl_platform_ctx_t*)((cwgl_ctx_t*)c)->platform;
+#else
     cwgl_ctx_t* ctx = (cwgl_ctx_t*)c;
+#endif
     cur = NULL;
 #ifndef YFRM_CWGL_USE_ANGLE
     SDL_GL_SwapWindow(ctx->wnd);
@@ -190,8 +240,14 @@ yfrm_frame_end0(void* c){
 
 void
 cwgl_priv_check_current(cwgl_ctx_t* ctx){
+#ifdef CWGL_EXPERIMENTAL_TRACKER
+    if(ctx->platform != (void*)cur){
+        printf("WARNING: Submitting cross context command !\n");
+    }
+#else
     if(ctx != cur){
         printf("WARNING: Submitting cross context command !\n");
     }
+#endif
 }
 
