@@ -79,6 +79,8 @@ cwgl_integ_ctx_init(cwgl_ctx_t* ctx){
     ctx->state.glo.VIEWPORT[2] = 0; // FIXME: Configure at window attach
     ctx->state.glo.VIEWPORT[3] = 0; // FIXME: Configure at window attach
 
+    ctx->state.default_vao = cwgl_createVertexArray(ctx);
+
     return cwgl_backend_cfg_init(&ctx->state.cfg);
 }
 
