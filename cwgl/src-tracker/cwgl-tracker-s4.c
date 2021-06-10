@@ -706,6 +706,7 @@ cwgl_framebufferRenderbuffer(cwgl_ctx_t* ctx, cwgl_enum_t target,
         cwgl_priv_framebuffer_attachment_init(point);
     }
     point->FRAMEBUFFER_ATTACHMENT_OBJECT_NAME.asRenderbuffer = renderbuffer;
+    cwgl_backend_configure_framebuffer(ctx, NULL);
 }
 
 CWGL_API void 
@@ -767,11 +768,15 @@ cwgl_framebufferTexture2D(cwgl_ctx_t* ctx, cwgl_enum_t target,
         cwgl_priv_framebuffer_attachment_init(point);
     }
     point->FRAMEBUFFER_ATTACHMENT_OBJECT_NAME.asTexture = texture;
+    cwgl_backend_configure_framebuffer(ctx, NULL);
 }
 
 
 // 4.4.5 Framebuffer Completeness
 CWGL_API cwgl_enum_t 
 cwgl_checkFramebufferStatus(cwgl_ctx_t* ctx, cwgl_enum_t target){
+    cwgl_enum_t e;
+    cwgl_backend_configure_framebuffer(ctx, &e);
+    return e;
 }
 
