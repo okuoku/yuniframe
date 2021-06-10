@@ -341,6 +341,8 @@ cwgl_createShader(cwgl_ctx_t* ctx, cwgl_enum_t type){
         shader->state.SHADER_TYPE = type;
         shader->state.DELETE_STATUS = CWGL_FALSE;
         shader->state.COMPILE_STATUS = CWGL_FALSE;
+        shader->state.source = NULL;
+        shader->state.infolog = NULL;
         cwgl_backend_Shader_init(ctx, shader);
     }
     return shader;
@@ -459,6 +461,7 @@ cwgl_createProgram(cwgl_ctx_t* ctx){
         program->state.ACTIVE_UNIFORMS = 0;
         program->state.vertex_shader = NULL;
         program->state.fragment_shader = NULL;
+        program->state.infolog = NULL;
         program->state.uniforms = NULL;
         program->state.attributes = NULL;
         program->state.uniformcontents = NULL;

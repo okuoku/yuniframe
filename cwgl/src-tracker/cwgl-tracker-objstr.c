@@ -60,6 +60,7 @@ parsesym(const char* sym, int len, int* out_symlen, int* out_idx){
         }
         i++;
     }
+    *out_symlen = sym_end;
     /* Generate array index */
     if(array_idx_start > 0){
         acc = 0;

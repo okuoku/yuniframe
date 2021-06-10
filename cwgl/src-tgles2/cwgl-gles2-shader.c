@@ -132,12 +132,12 @@ cwgl_backend_linkProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
     /* Populate Uniform/Attributes */
     uniform_count = 0;
     attribute_count = 0;
-    buf = malloc(1024);
+    glGetProgramiv(name, GL_ACTIVE_ATTRIBUTES, &attribute_count);
+    glGetProgramiv(name, GL_ACTIVE_UNIFORMS, &uniform_count);
     r = cwgl_integ_program_setup(ctx, program, 
                                  uniform_count, attribute_count);
+    buf = malloc(1024);
     if(!r){
-        glGetProgramiv(name, GL_ACTIVE_ATTRIBUTES, &attribute_count);
-        glGetProgramiv(name, GL_ACTIVE_UNIFORMS, &uniform_count);
         curoff = 0;
         a = program->state.attributes;
         for(i=0;i!=attribute_count;i++){
