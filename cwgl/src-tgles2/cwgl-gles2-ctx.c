@@ -81,8 +81,12 @@ cwgl_backend_cfg_init(cwgl_ctx_config_t* cfg){
     if(r) return r;
     r = get_float_2(GL_ALIASED_POINT_SIZE_RANGE, cfg->ALIASED_POINT_SIZE_RANGE);
     if(r) return r;
+    r = get_float_2(GL_ALIASED_LINE_WIDTH_RANGE, cfg->ALIASED_LINE_WIDTH_RANGE);
+    if(r) return r;
+    // FIXME: Perhaps should be from framebuffer?
     r = get_int32(GL_SAMPLE_BUFFERS, &cfg->SAMPLE_BUFFERS);
     if(r) return r;
+    // FIXME: Perhaps should be from framebuffer?
     r = get_int32(GL_SAMPLES, &cfg->SAMPLES);
     if(r) return r;
     r = get_int32(GL_MAX_VERTEX_ATTRIBS, &cfg->MAX_VERTEX_ATTRIBS);
