@@ -5,22 +5,23 @@ configure_tu(cwgl_ctx_t* ctx, cwgl_enum_t target){
     cwgl_texture_unit_state_t* s;
     int id;
     id = (int)ctx->state.glo.ACTIVE_TEXTURE - (int)TEXTURE0;
+    s = &ctx->state.bin.texture_unit[id];
     glActiveTexture(GL_TEXTURE0);
     if(target == TEXTURE_2D){
         /* 2D */
         glBindTexture(GL_TEXTURE_2D,
-                      s[id].TEXTURE_BINDING_2D->backend->name);
+                      s->TEXTURE_BINDING_2D->backend->name);
     }else{
         /* Cube map */
         glBindTexture(GL_TEXTURE_CUBE_MAP,
-                      s[id].TEXTURE_BINDING_CUBE_MAP->backend->name);
+                      s->TEXTURE_BINDING_CUBE_MAP->backend->name);
     }
     // FIXME: Apply texparameter
 }
 
 static void
 configure_fb(cwgl_ctx_t* ctx){
-    // FIXME: Configure fb here
+    cwgl_backend_configure_framebuffer(ctx, NULL);
 }
 
 int 
