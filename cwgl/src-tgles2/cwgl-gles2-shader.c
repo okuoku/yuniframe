@@ -44,7 +44,7 @@ cwgl_backend_compileShader(cwgl_ctx_t* ctx, cwgl_Shader_t* shader){
 static int
 uniform_size(GLenum type, int size){
     int basetype = 0;
-    switch(basetype){
+    switch(type){
         default:
         case GL_FLOAT:
         case GL_INT:
