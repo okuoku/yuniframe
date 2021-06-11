@@ -292,6 +292,7 @@ cwgl_bufferData(cwgl_ctx_t* ctx, cwgl_enum_t target,
             return;
     }
     switch(usage){
+        case STREAM_DRAW:
         case STATIC_DRAW:
         case DYNAMIC_DRAW:
             /* Do nothing */
@@ -755,7 +756,7 @@ cwgl_getUniformLocation(cwgl_ctx_t* ctx, cwgl_Program_t* program,
             }else{
                 array_index = 0;
             }
-            indx = r;
+            indx = i;
             break;
         }
     }
@@ -764,6 +765,7 @@ cwgl_getUniformLocation(cwgl_ctx_t* ctx, cwgl_Program_t* program,
     }
     /* Allocate object, retain Program */
     u = malloc(sizeof(cwgl_UniformLocation_t));
+    cwgl_priv_objhdr_init(ctx, &u->hdr, CWGL_OBJ_UNIFORMLOCATION);
     cwgl_priv_objhdr_retain(&program->hdr);
     u->index = indx;
     u->program = program;
@@ -776,8 +778,14 @@ cwgl_getUniformLocation(cwgl_ctx_t* ctx, cwgl_Program_t* program,
 
 CWGL_API void
 cwgl_UniformLocation_release(cwgl_ctx_t* ctx, cwgl_UniformLocation_t* u){
-    release_program(ctx, u->program);
-    free(u);
+    uintptr_t v;
+    if(u){
+        v = cwgl_priv_objhdr_release(&u->hdr);
+        if(! v){
+            release_program(ctx, u->program);
+            free(u);
+        }
+    }
 }
 
 CWGL_API cwgl_query_result_t 
