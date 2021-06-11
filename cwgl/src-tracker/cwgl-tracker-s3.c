@@ -338,19 +338,17 @@ cwgl_bindTexture(cwgl_ctx_t* ctx, cwgl_enum_t target, cwgl_Texture_t* texture){
     switch(target){
         case TEXTURE_2D:
             point = &state->TEXTURE_BINDING_2D;
-            if(texture->state.texture_type == TEXTURE_CUBE_MAP){
+            if(texture && texture->state.texture_type == TEXTURE_CUBE_MAP){
                 CTX_SET_ERROR(ctx, INVALID_OPERATION);
                 return;
             }
-            texture->state.texture_type = TEXTURE_2D;
             break;
         case TEXTURE_CUBE_MAP:
             point = &state->TEXTURE_BINDING_CUBE_MAP;
-            if(texture->state.texture_type == TEXTURE_2D){
+            if(texture && texture->state.texture_type == TEXTURE_2D){
                 CTX_SET_ERROR(ctx, INVALID_OPERATION);
                 return;
             }
-            texture->state.texture_type = TEXTURE_CUBE_MAP;
             break;
         default:
             CTX_SET_ERROR(ctx, INVALID_ENUM);
@@ -361,6 +359,7 @@ cwgl_bindTexture(cwgl_ctx_t* ctx, cwgl_enum_t target, cwgl_Texture_t* texture){
     }
     if(texture){
         cwgl_priv_objhdr_retain(&texture->hdr);
+        texture->state.texture_type = target;
     }
     *point = texture;
 }
