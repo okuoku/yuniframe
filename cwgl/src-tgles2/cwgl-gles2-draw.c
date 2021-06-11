@@ -94,8 +94,8 @@ configure_drawstate(cwgl_ctx_t* ctx, cwgl_enum_t primitive){
         if(s->BLEND){
             glEnable(BLEND);
             glBlendFuncSeparate(s->BLEND_SRC_RGB,
-                                s->BLEND_SRC_ALPHA,
                                 s->BLEND_DST_RGB,
+                                s->BLEND_SRC_ALPHA,
                                 s->BLEND_DST_ALPHA);
             glBlendEquationSeparate(s->BLEND_EQUATION_RGB,
                                     s->BLEND_EQUATION_ALPHA);
