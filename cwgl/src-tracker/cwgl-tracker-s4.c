@@ -616,7 +616,9 @@ cwgl_bindRenderbuffer(cwgl_ctx_t* ctx, cwgl_enum_t target,
     switch(target){
         case RENDERBUFFER:
             unbind_renderbuffer(ctx, ctx->state.bin.RENDERBUFFER_BINDING);
-            cwgl_priv_objhdr_retain(&renderbuffer->hdr);
+            if(renderbuffer){
+                cwgl_priv_objhdr_retain(&renderbuffer->hdr);
+            }
             ctx->state.bin.RENDERBUFFER_BINDING = renderbuffer;
             break;
         default:
