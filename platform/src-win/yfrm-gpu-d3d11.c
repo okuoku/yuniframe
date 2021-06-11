@@ -1,3 +1,4 @@
+#ifdef YFRM_CWGL_USE_ANGLE
 #include <windows.h>
 #include <d3d11.h>
 
@@ -28,3 +29,5 @@ yfrm_gpu_initpfdev_d3d11(void){
         return pfdev;
     }
 }
+#endif
+
