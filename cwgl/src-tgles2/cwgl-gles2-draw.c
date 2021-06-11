@@ -131,24 +131,48 @@ configure_texture(cwgl_ctx_t* ctx){
     int i;
     int activated;
     cwgl_texture_unit_state_t* s;
+    cwgl_Texture_t* t;
     s = ctx->state.bin.texture_unit;
     for(i=0;i!=CWGL_MAX_TEXTURE_UNITS;i++){
         activated = 0;
         if(s[i].TEXTURE_BINDING_2D){
             glActiveTexture(GL_TEXTURE0 + i);
             activated = 1;
-            glBindTexture(GL_TEXTURE_2D,
-                          s[i].TEXTURE_BINDING_2D->backend->name);
+            t = s[i].TEXTURE_BINDING_2D;
+            glBindTexture(GL_TEXTURE_2D, t->backend->name);
+            glTexParameteri(GL_TEXTURE_2D,
+                            GL_TEXTURE_MAG_FILTER,
+                            t->state.TEXTURE_MAG_FILTER);
+            glTexParameteri(GL_TEXTURE_2D,
+                            GL_TEXTURE_MIN_FILTER,
+                            t->state.TEXTURE_MIN_FILTER);
+            glTexParameteri(GL_TEXTURE_2D,
+                            GL_TEXTURE_WRAP_S,
+                            t->state.TEXTURE_WRAP_S);
+            glTexParameteri(GL_TEXTURE_2D,
+                            GL_TEXTURE_WRAP_T,
+                            t->state.TEXTURE_WRAP_T);
         }
         if(s[i].TEXTURE_BINDING_CUBE_MAP){
             if(! activated){
                 glActiveTexture(GL_TEXTURE0 + i);
             }
-            glBindTexture(GL_TEXTURE_CUBE_MAP,
-                          s[i].TEXTURE_BINDING_CUBE_MAP->backend->name);
+            t = s[i].TEXTURE_BINDING_CUBE_MAP;
+            glBindTexture(GL_TEXTURE_CUBE_MAP, t->backend->name);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP,
+                            GL_TEXTURE_MAG_FILTER,
+                            t->state.TEXTURE_MAG_FILTER);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP,
+                            GL_TEXTURE_MIN_FILTER,
+                            t->state.TEXTURE_MIN_FILTER);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP,
+                            GL_TEXTURE_WRAP_S,
+                            t->state.TEXTURE_WRAP_S);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP,
+                            GL_TEXTURE_WRAP_T,
+                            t->state.TEXTURE_WRAP_T);
         }
     }
-    // FIXME: Apply texparameter
 }
 
 // FIXME: Copied from s2
