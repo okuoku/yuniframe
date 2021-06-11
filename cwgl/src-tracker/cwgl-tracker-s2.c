@@ -552,7 +552,6 @@ cwgl_detachShader(cwgl_ctx_t* ctx, cwgl_Program_t* program,
         i++;
     }
     program->state.ATTACHED_SHADERS = i;
-    clear_attriblocations(ctx, program->state.attriblocations);
 }
 
 CWGL_API void 
@@ -568,6 +567,7 @@ cwgl_linkProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
         printf("CWGL: Too many active attributes ..?? %d\n",
                program->state.ACTIVE_ATTRIBUTES);
     }else{
+        clear_attriblocations(ctx, program->state.attriblocations);
         a = program->state.attriblocations;
         f = program->state.attributes;
         for(i=0;i!=CWGL_MAX_VAO_SIZE;i++){
