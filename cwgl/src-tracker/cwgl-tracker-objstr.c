@@ -5,8 +5,8 @@
 cwgl_string_t* 
 cwgl_priv_alloc_string(cwgl_ctx_t* ctx, const char* str, size_t buflen){
     cwgl_string_t* r;
-    void* buf;
-    buf = malloc(buflen);
+    char* buf;
+    buf = malloc(buflen+1);
     if(buf){
         r = malloc(sizeof(cwgl_string_t));
         if(!r){
@@ -14,6 +14,7 @@ cwgl_priv_alloc_string(cwgl_ctx_t* ctx, const char* str, size_t buflen){
             return NULL;
         }
         memcpy(buf, str, buflen);
+        buf[buflen] = 0;
         r->size = buflen;
         r->str = buf;
     }else{
