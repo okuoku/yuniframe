@@ -557,6 +557,7 @@ cwgl_bindFramebuffer(cwgl_ctx_t* ctx,
                 cwgl_priv_objhdr_retain(&framebuffer->hdr);
             }
             ctx->state.bin.FRAMEBUFFER_BINDING = framebuffer;
+            cwgl_backend_configure_framebuffer(ctx, NULL);
             break;
         default:
             CTX_SET_ERROR(ctx, INVALID_ENUM);
