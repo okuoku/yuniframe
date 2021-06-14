@@ -26,12 +26,33 @@ static cwgl_platform_ctx_t* cur;
 static cwgl_ctx_t* cur;
 #endif
 
+void* eglGetProcAddress(char const * procname);
+void (*ptr_glGenVertexArrays)(size_t n, unsigned int *arrays);
+void (*ptr_glBindVertexArray)(unsigned int array);
+
 YFRM_API int
 yfrm_init(void){
+#ifndef CWGL_EXPERIMENTAL_TRACKER
+    ptr_glGenVertexArrays = eglGetProcAddress("glGenVertexArraysOES");
+    ptr_glBindVertexArray = eglGetProcAddress("glBindVertexArrayOES");
+#endif
     wnd = NULL;
     cur = NULL;
     return 0;
 }
+
+void 
+cwgl_ctx_glGenVertexArray(uintptr_t* id){
+    unsigned int i;
+    ptr_glGenVertexArrays(1, &i);
+    *id = i;
+}
+
+void 
+cwgl_ctx_glBindVertexArray(uintptr_t id){
+    ptr_glBindVertexArray(id);
+}
+
 
 YFRM_API void
 yfrm_terminate(void){
