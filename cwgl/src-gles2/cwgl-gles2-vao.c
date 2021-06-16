@@ -28,7 +28,7 @@ cwgl_bindVertexArray(cwgl_ctx_t* ctx, cwgl_VertexArrayObject_t* obj){
     }else{
         name = 0;
     }
-    glBindVertexArray(name);
+    cwgl_ctx_glBindVertexArray(name);
     CTX_LEAVE(ctx);
 }
 
