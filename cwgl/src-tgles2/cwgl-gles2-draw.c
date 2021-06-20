@@ -92,7 +92,7 @@ configure_drawstate(cwgl_ctx_t* ctx, cwgl_enum_t primitive){
             glDisable(GL_DEPTH_TEST);
         }
         if(s->BLEND){
-            glEnable(BLEND);
+            glEnable(GL_BLEND);
             glBlendFuncSeparate(s->BLEND_SRC_RGB,
                                 s->BLEND_DST_RGB,
                                 s->BLEND_SRC_ALPHA,
@@ -102,7 +102,7 @@ configure_drawstate(cwgl_ctx_t* ctx, cwgl_enum_t primitive){
             glBlendColor(s->BLEND_COLOR[0], s->BLEND_COLOR[1],
                          s->BLEND_COLOR[2], s->BLEND_COLOR[3]);
         }else{
-            glDisable(BLEND);
+            glDisable(GL_BLEND);
         }
     }
     if(s->SCISSOR_TEST){
