@@ -153,6 +153,9 @@ cwgl_string_read(cwgl_ctx_t* ctx, cwgl_string_t* str, char* buf, size_t buflen){
     if(str){
         if(buflen >= siz){
             memcpy(buf, str->str, siz);
+            if(buflen > siz){
+                buf[siz] = 0;
+            }
             return CWGL_QR_SUCCESS;
         }else{
             return CWGL_QR_INSUFFICIENT_BUFFER;
