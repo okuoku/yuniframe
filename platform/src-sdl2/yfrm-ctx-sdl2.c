@@ -33,8 +33,15 @@ void (*ptr_glBindVertexArray)(unsigned int array);
 YFRM_API int
 yfrm_init(void){
 #ifndef CWGL_EXPERIMENTAL_TRACKER
+#ifdef __APPLE__
+extern void glGenVertexArraysOES(size_t n, unsigned int *arrays);
+extern void glBindVertexArrayOES(unsigned int array);
+    ptr_glGenVertexArrays = glGenVertexArraysOES;
+    ptr_glBindVertexArray = glBindVertexArrayOES;
+#else
     ptr_glGenVertexArrays = eglGetProcAddress("glGenVertexArraysOES");
     ptr_glBindVertexArray = eglGetProcAddress("glBindVertexArrayOES");
+#endif
 #endif
     wnd = NULL;
     cur = NULL;
