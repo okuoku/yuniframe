@@ -12,6 +12,7 @@ cwgl_backend_readPixels(cwgl_ctx_t* ctx,
     glPixelStorei(GL_PACK_ALIGNMENT, ctx->state.glo.PACK_ALIGNMENT);
     glReadPixels(x, y, width, height,
                  format, type, buf);
+    return 0;
 }
 
 int 
