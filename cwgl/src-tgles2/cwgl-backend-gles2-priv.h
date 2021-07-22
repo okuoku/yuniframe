@@ -1,4 +1,5 @@
 #ifndef __YUNI_CWGL_BACKEND_GLES2_PRIV_H
+#define __YUNI_CWGL_BACKEND_GLES2_PRIV_H
 
 #include "cwgl-tracker-priv.h"
 #include "cwgl-backend-states.h"
