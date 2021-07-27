@@ -674,6 +674,7 @@ shxm_private_patch_spirv(shxm_ctx_t* ctx,
     cur.ir = temp_ir;
     cur.intr = intr;
     cur.curid = intr->ent_count;
+    cur.int32_type_id = 0;
 
     cur.idpatch = malloc(sizeof(struct idpatchparam_s)*cur.curid);
     if(! cur.idpatch){

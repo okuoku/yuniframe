@@ -55,7 +55,7 @@ shxm_private_read_spirv(uint32_t* ir, int len){
     intr->defs_start = 0;
     intr->defs_end = 0;
     intr->preamble_end = 0;
-    intr->int32_type_id;
+    intr->int32_type_id = 0;
     if(ent){
         intr->ent = ent;
         intr->ent_count = bound;
