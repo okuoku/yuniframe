@@ -81,6 +81,9 @@ cwgl_integ_ctx_init(cwgl_ctx_t* ctx){
 
     ctx->state.default_vao = cwgl_createVertexArray(ctx);
 
+    // FIXME: Reorder call tree
+    cwgl_backend_ctx_init(ctx); // Tentative
+
     return cwgl_backend_cfg_init(&ctx->state.cfg);
 }
 
