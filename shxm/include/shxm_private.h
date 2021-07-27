@@ -71,6 +71,7 @@ struct shxm_program_s {
     /* Post-link fields */
     unsigned int slot_count;
     unsigned int uniform_count;
+    unsigned int uniform_size;
     unsigned int input_count;
     unsigned int output_count;
     unsigned int varying_count;
@@ -122,7 +123,6 @@ struct shxm_spirv_intr_s {
     unsigned int* chain;
     shxm_spirv_ent_t* ent;
     unsigned int ent_count;
-    unsigned int chain_count;
     int entrypoint; /* ID for entrypoint */
     int preamble_end; /* First OpName location */
     int defs_start;

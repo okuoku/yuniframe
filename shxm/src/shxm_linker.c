@@ -668,6 +668,7 @@ layout_uniforms(shxm_program_t* prog){
         prog->uniform[i].size = size;
         curoff += size;
     }
+    prog->uniform_size = curoff;
     return 0;
 }
 
@@ -820,7 +821,6 @@ shxm_program_link(shxm_ctx_t* ctx, shxm_program_t* prog){
         shxm_private_decomp_spirv(opt_ir, opt_ir_len);
     }
 
-    // FIXME: Implement this.
-    return 1;
+    return 0;
 }
 
