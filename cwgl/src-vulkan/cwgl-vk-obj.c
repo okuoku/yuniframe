@@ -8,6 +8,9 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
     cwgl_backend_ctx_t* c;
     c = malloc(sizeof(cwgl_backend_ctx_t));
     ctx->backend = c;
+    if(c){
+        c->shxm_ctx = shxm_init();
+    }
     return 0;
 }
 
@@ -28,6 +31,13 @@ cwgl_backend_Shader_init(cwgl_ctx_t* ctx, cwgl_Shader_t* shader){
     s = malloc(sizeof(cwgl_backend_Shader_t));
     if(s){
         // FIXME: Init content here
+        if(shader->state.SHADER_TYPE == VERTEX_SHADER){
+            s->shader = shxm_shader_create(ctx->backend->shxm_ctx,
+                SHXM_SHADER_STAGE_VERTEX);
+        }else{
+            s->shader = shxm_shader_create(ctx->backend->shxm_ctx,
+                SHXM_SHADER_STAGE_FRAGMENT);
+        }
     }
     shader->backend = s;
     return 0;
@@ -37,7 +47,7 @@ cwgl_backend_Program_init(cwgl_ctx_t* ctx, cwgl_Program_t* program){
     cwgl_backend_Program_t* p;
     p = malloc(sizeof(cwgl_backend_Program_t));
     if(p){
-        // FIXME: Init content here
+        p->program = shxm_program_create(ctx->backend->shxm_ctx);
     }
     program->backend = p;
     return 0;

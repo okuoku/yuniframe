@@ -4,8 +4,10 @@
 #include "cwgl-tracker-priv.h"
 #include "cwgl-backend-states.h"
 
+#include "shxm.h"
+
 struct cwgl_backend_ctx_s {
-    int dummy;
+    shxm_ctx_t* shxm_ctx;
 };
 
 struct cwgl_backend_Buffer_s {
@@ -13,11 +15,11 @@ struct cwgl_backend_Buffer_s {
 };
 
 struct cwgl_backend_Shader_s {
-    int dummy;
+    shxm_shader_t* shader;
 };
 
 struct cwgl_backend_Program_s {
-    int dummy;
+    shxm_program_t* program;
 };
 
 struct cwgl_backend_Texture_s {
