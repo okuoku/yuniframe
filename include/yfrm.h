@@ -15,7 +15,11 @@ extern "C" {
 #define YFRM_API __attribute__ ((visibility ("default")))
 #endif /* _WIN32 */
 #else
+#ifdef _WIN32
 #define YFRM_API __declspec(dllimport)
+#else
+#define YFRM_API
+#endif
 #endif
 #else
 /* Generic static-library */
