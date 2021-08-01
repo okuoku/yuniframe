@@ -6,6 +6,12 @@
 
 #include "shxm.h"
 
+#ifdef CWGL_EXPERIMENTAL_USE_VOLK
+#include "volk.h"
+#else
+#error NEED CWGL_EXPERIMENTAL_USE_VOLK
+#endif
+
 struct cwgl_backend_ctx_s {
     shxm_ctx_t* shxm_ctx;
 };
