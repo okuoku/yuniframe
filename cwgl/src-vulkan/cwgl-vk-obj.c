@@ -5,13 +5,145 @@
 
 int
 cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
+    VkInstance instance;
+    VkApplicationInfo ai;
+    VkInstanceCreateInfo ci;
+    uint32_t gpus;
+    VkPhysicalDevice* devices;
+    uint32_t qfs;
+    uint32_t i;
+    int32_t queue_index;
+    VkQueueFamilyProperties* qfp;
+    VkDeviceQueueCreateInfo qi;
+    VkDeviceCreateInfo di;
+    VkDevice device;
+    const float queue_priorities = 0.0;
+    VkCommandPoolCreateInfo cpi;
+    VkCommandPool command_pool;
+    VkCommandBufferAllocateInfo cbi;
+    VkCommandBuffer command_buffer;
+
+    VkResult r;
     cwgl_backend_ctx_t* c;
+    /* Detect Vulkan */
+#ifdef CWGL_EXPERIMENTAL_USE_VOLK
+    r = volkInitialize();
+    if(r != VK_SUCCESS){
+        return -1;
+    }
+#else
+#error UNIMPL
+#endif
     c = malloc(sizeof(cwgl_backend_ctx_t));
     ctx->backend = c;
     if(c){
+        /* Vulkan: Init instance */
+        ai.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+        ai.pNext = NULL;
+        ai.pApplicationName = "cwgl";
+        ai.applicationVersion = 0;
+        ai.pEngineName = "yfrm";
+        ai.engineVersion =  0;
+        ai.apiVersion = VK_API_VERSION_1_1;
+        ci.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+        ci.pNext = NULL;
+        ci.flags = 0;
+        ci.pApplicationInfo = &ai;
+        ci.enabledLayerCount = 0;
+        ci.ppEnabledLayerNames = NULL;
+        ci.enabledExtensionCount = 0;
+        ci.ppEnabledExtensionNames = 0;
+        r = vkCreateInstance(&ci, NULL, &instance);
+        if(r != VK_SUCCESS){
+            goto initfail;
+        }
+#ifdef CWGL_EXPERIMENTAL_USE_VOLK
+        volkLoadInstance(instance);
+#endif
+        /* Vulkan: Count GPUs */
+        r = vkEnumeratePhysicalDevices(instance, &gpus, NULL);
+        if(r != VK_SUCCESS){
+            goto initfail_instance;
+        }
+        devices = malloc(sizeof(VkPhysicalDevice) * gpus);
+        if(! devices){
+            goto initfail_instance;
+        }
+        r = vkEnumeratePhysicalDevices(instance, &gpus, devices);
+        if(r != VK_SUCCESS){
+            free(devices);
+            goto initfail_instance;
+        }
+        /* Vulkan: Search appropriate queue */
+        vkGetPhysicalDeviceQueueFamilyProperties(devices[0], &qfs, NULL);
+        qfp = malloc(sizeof(VkQueueFamilyProperties)*qfs);
+        vkGetPhysicalDeviceQueueFamilyProperties(devices[0], &qfs, qfp);
+        queue_index = -1;
+        for(i=0;i!=qfs;i++){
+            /* Pickup a graphics queue */
+            if(qfp[i].queueFlags & VK_QUEUE_GRAPHICS_BIT){
+                queue_index = i;
+                break;
+            }
+        }
+        free(qfp);
+        if(queue_index < 0){
+            goto initfail_instance;
+        }
+        /* Vulkan: Create device */
+        qi.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        qi.pNext = NULL;
+        qi.queueFamilyIndex = queue_index;
+        qi.queueCount = 1;
+        qi.pQueuePriorities = &queue_priorities;
+        di.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        di.pNext = NULL;
+        di.queueCreateInfoCount = 1;
+        di.pQueueCreateInfos = &qi;
+        di.enabledExtensionCount = 0;
+        di.ppEnabledExtensionNames = NULL;
+        di.enabledLayerCount = 0;
+        di.ppEnabledLayerNames = NULL;
+        di.pEnabledFeatures = NULL;
+        r = vkCreateDevice(devices[0], &di, NULL, &device);
+        free(devices);
+        /* Vulkan: Create command buffer */
+        cpi.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        cpi.pNext = NULL;
+        cpi.queueFamilyIndex = queue_index;
+        cpi.flags = 0;
+        r = vkCreateCommandPool(device, &cpi, NULL, &command_pool);
+        if(r != VK_SUCCESS){
+            goto initfail_device;
+        }
+        cbi.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        cbi.pNext = NULL;
+        cbi.commandPool = command_pool;
+        cbi.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        cbi.commandBufferCount = 1;
+        r = vkAllocateCommandBuffers(device, &cbi, &command_buffer);
+        if(r != VK_SUCCESS){
+            goto initfail_command_pool;
+        }
+        c->command_buffer = command_buffer;
+        c->command_pool = command_pool;
+        c->instance = instance;
+        c->device = device;
+        /* SHXM */
         c->shxm_ctx = shxm_init();
     }
     return 0;
+initfail_command_pool:
+    vkDestroyCommandPool(device, command_pool, NULL);
+initfail_device:
+    vkDestroyDevice(device, NULL);
+initfail_instance:
+    vkDestroyInstance(instance, NULL);
+initfail:
+    free(c);
+    ctx->backend = NULL;
+    return -1;
+
 }
 
 int
@@ -30,7 +162,6 @@ cwgl_backend_Shader_init(cwgl_ctx_t* ctx, cwgl_Shader_t* shader){
     cwgl_backend_Shader_t* s;
     s = malloc(sizeof(cwgl_backend_Shader_t));
     if(s){
-        // FIXME: Init content here
         if(shader->state.SHADER_TYPE == VERTEX_SHADER){
             s->shader = shxm_shader_create(ctx->backend->shxm_ctx,
                 SHXM_SHADER_STAGE_VERTEX);

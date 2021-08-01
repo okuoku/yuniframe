@@ -13,6 +13,12 @@
 #endif
 
 struct cwgl_backend_ctx_s {
+    /* Vulkan */
+    VkInstance instance;
+    VkDevice device;
+    VkCommandPool command_pool;
+    VkCommandBuffer command_buffer;
+    /* SHXM */
     shxm_ctx_t* shxm_ctx;
 };
 
