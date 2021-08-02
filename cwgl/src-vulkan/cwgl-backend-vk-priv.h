@@ -18,12 +18,22 @@ struct cwgl_backend_ctx_s {
     VkDevice device;
     VkCommandPool command_pool;
     VkCommandBuffer command_buffer;
+    VkQueue queue;
+    VkPhysicalDeviceMemoryProperties memory_properties;
+    uint32_t queue_family_index;
+    int queue_active;
+    int queue_has_command;
     /* SHXM */
     shxm_ctx_t* shxm_ctx;
 };
 
+typedef struct buffer_patch_request_s buffer_patch_request_t;
+
 struct cwgl_backend_Buffer_s {
-    int dummy;
+    int allocated;
+    VkBuffer buffer;
+    VkDeviceMemory device_memory;
+    size_t device_memory_size;
 };
 
 struct cwgl_backend_Shader_s {
@@ -35,16 +45,29 @@ struct cwgl_backend_Program_s {
 };
 
 struct cwgl_backend_Texture_s {
-    int dummy;
+    int allocated;
+    VkImage image;
+    VkImageView view;
+    VkDeviceMemory device_memory;
+    size_t device_memory_size;
 };
 
 struct cwgl_backend_Renderbuffer_s {
-    int dummy;
+    int allocated;
+    VkImage image;
+    VkImageView view;
+    VkDeviceMemory device_memory;
+    size_t device_memory_size;
 };
 
 struct cwgl_backend_Framebuffer_s {
     int dummy;
 };
 
+void cwgl_vkpriv_graphics_submit(cwgl_ctx_t* ctx);
+void cwgl_vkpriv_graphics_wait(cwgl_ctx_t* ctx);
+void cwgl_vkpriv_destroy_texture(cwgl_backend_Texture_t* texture_backend);
+int32_t cwgl_vkpriv_select_memory_type(cwgl_ctx_t* ctx, uint32_t requirement,
+                                       VkMemoryPropertyFlags request);
 
 #endif

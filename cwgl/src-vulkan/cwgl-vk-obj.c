@@ -10,6 +10,7 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
     VkInstanceCreateInfo ci;
     uint32_t gpus;
     VkPhysicalDevice* devices;
+    VkPhysicalDeviceMemoryProperties memory_properties;
     uint32_t qfs;
     uint32_t i;
     int32_t queue_index;
@@ -17,6 +18,7 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
     VkDeviceQueueCreateInfo qi;
     VkDeviceCreateInfo di;
     VkDevice device;
+    VkQueue queue;
     const float queue_priorities = 0.0;
     VkCommandPoolCreateInfo cpi;
     VkCommandPool command_pool;
@@ -77,6 +79,7 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
         /* Vulkan: Search appropriate queue */
         vkGetPhysicalDeviceQueueFamilyProperties(devices[0], &qfs, NULL);
         qfp = malloc(sizeof(VkQueueFamilyProperties)*qfs);
+        vkGetPhysicalDeviceMemoryProperties(devices[0], &memory_properties);
         vkGetPhysicalDeviceQueueFamilyProperties(devices[0], &qfs, qfp);
         queue_index = -1;
         for(i=0;i!=qfs;i++){
@@ -125,6 +128,13 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
         if(r != VK_SUCCESS){
             goto initfail_command_pool;
         }
+        vkGetDeviceQueue(device, queue_index, 0, &queue);
+
+        c->queue = queue;
+        c->queue_active = 0;
+        c->queue_has_command = 0;
+        c->memory_properties = memory_properties;
+        c->queue_family_index = queue_index;
         c->command_buffer = command_buffer;
         c->command_pool = command_pool;
         c->instance = instance;
@@ -151,7 +161,7 @@ cwgl_backend_Buffer_init(cwgl_ctx_t* ctx, cwgl_Buffer_t* buffer){
     cwgl_backend_Buffer_t* b;
     b = malloc(sizeof(cwgl_backend_Buffer_t));
     if(b){
-        // FIXME: Init buffer content here
+        b->allocated = 0;
     }
     buffer->backend = b;
     return 0;
@@ -188,7 +198,7 @@ cwgl_backend_Texture_init(cwgl_ctx_t* ctx, cwgl_Texture_t* texture){
     cwgl_backend_Texture_t* t;
     t = malloc(sizeof(cwgl_backend_Texture_t));
     if(t){
-        // FIXME: Init content here
+        t->allocated = 0;
     }
     texture->backend = t;
     return 0;
@@ -199,7 +209,7 @@ cwgl_backend_Renderbuffer_init(cwgl_ctx_t* ctx,
     cwgl_backend_Renderbuffer_t* r;
     r = malloc(sizeof(cwgl_backend_Renderbuffer_t));
     if(r){
-        // FIXME: Init content here
+        r->allocated = 0;
     }
     renderbuffer->backend = r;
     return 0;
@@ -217,6 +227,7 @@ cwgl_backend_Framebuffer_init(cwgl_ctx_t* ctx,
 }
 int
 cwgl_backend_ctx_release(cwgl_ctx_t* ctx){
+    // FIXME: Release Vulkan objects here
     free(ctx->backend);
     ctx->backend = NULL;
     return 0;
