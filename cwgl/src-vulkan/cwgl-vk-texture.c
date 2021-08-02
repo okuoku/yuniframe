@@ -236,6 +236,7 @@ cwgl_backend_texImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target,
         bi.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         bi.pNext = NULL;
         bi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        bi.pInheritanceInfo = NULL;
 
         vkBeginCommandBuffer(backend->command_buffer, &bi);
         vkCmdCopyBufferToImage(backend->command_buffer,

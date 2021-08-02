@@ -23,8 +23,13 @@ cwgl_vkpriv_graphics_submit(cwgl_ctx_t* ctx){
         }
         si.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         si.pNext = NULL;
+        si.waitSemaphoreCount = 0;
+        si.pWaitSemaphores = 0;
+        si.pWaitDstStageMask = NULL;
         si.commandBufferCount = 1;
         si.pCommandBuffers = &backend->command_buffer;
+        si.signalSemaphoreCount = 0;
+        si.pSignalSemaphores = NULL;
         r = vkQueueSubmit(backend->queue, 1, &si, NULL);
         if(r == VK_SUCCESS){
             backend->queue_active = 1;
