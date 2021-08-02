@@ -47,9 +47,7 @@ struct cwgl_backend_Program_s {
 struct cwgl_backend_Texture_s {
     int allocated;
     VkImage image;
-    VkImageView view;
     VkDeviceMemory device_memory;
-    size_t device_memory_size;
 };
 
 struct cwgl_backend_Renderbuffer_s {
@@ -66,7 +64,8 @@ struct cwgl_backend_Framebuffer_s {
 
 void cwgl_vkpriv_graphics_submit(cwgl_ctx_t* ctx);
 void cwgl_vkpriv_graphics_wait(cwgl_ctx_t* ctx);
-void cwgl_vkpriv_destroy_texture(cwgl_backend_Texture_t* texture_backend);
+void cwgl_vkpriv_destroy_texture(cwgl_ctx_t* ctx,
+                                 cwgl_backend_Texture_t* texture_backend);
 int32_t cwgl_vkpriv_select_memory_type(cwgl_ctx_t* ctx, uint32_t requirement,
                                        VkMemoryPropertyFlags request);
 

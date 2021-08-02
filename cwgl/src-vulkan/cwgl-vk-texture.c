@@ -3,7 +3,9 @@
 #include <stdio.h>
 
 void 
-cwgl_vkpriv_destroy_texture(cwgl_backend_Texture_t* texture_backend){
+cwgl_vkpriv_destroy_texture(cwgl_ctx_t* ctx, cwgl_backend_Texture_t* texture_backend){
+    vkDestroyImage(ctx->backend->device, texture_backend->image, NULL);
+    vkFreeMemory(ctx->backend->device, texture_backend->device_memory, NULL);
     texture_backend->allocated = 0;
 }
 
@@ -130,7 +132,7 @@ cwgl_backend_texImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target,
 
     if(texture_backend->allocated){
         cwgl_vkpriv_graphics_wait(ctx);
-        cwgl_vkpriv_destroy_texture(texture_backend);
+        cwgl_vkpriv_destroy_texture(ctx, texture_backend);
     }
     /* Allocate temporary buffer */
     temp_bi.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -243,11 +245,14 @@ cwgl_backend_texImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target,
                                1,
                                &rgn);
         vkEndCommandBuffer(backend->command_buffer);
+        backend->queue_has_command = 1; // FIXME: Tentative
         cwgl_vkpriv_graphics_submit(ctx);
         cwgl_vkpriv_graphics_wait(ctx);
     }
     /* Destroy temp_buffer */
     texture_backend->allocated = 1;
+    texture_backend->image = image;
+    texture_backend->device_memory = device_memory;
     vkDestroyBuffer(backend->device, temp_buffer, NULL);
     vkFreeMemory(backend->device, temp_device_memory, NULL);
 
