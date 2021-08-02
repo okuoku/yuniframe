@@ -96,11 +96,13 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
         /* Vulkan: Create device */
         qi.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         qi.pNext = NULL;
+        qi.flags = 0;
         qi.queueFamilyIndex = queue_index;
         qi.queueCount = 1;
         qi.pQueuePriorities = &queue_priorities;
         di.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
         di.pNext = NULL;
+        di.flags = 0;
         di.queueCreateInfoCount = 1;
         di.pQueueCreateInfos = &qi;
         di.enabledExtensionCount = 0;
@@ -113,8 +115,8 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
         /* Vulkan: Create command buffer */
         cpi.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         cpi.pNext = NULL;
-        cpi.queueFamilyIndex = queue_index;
         cpi.flags = 0;
+        cpi.queueFamilyIndex = queue_index;
         r = vkCreateCommandPool(device, &cpi, NULL, &command_pool);
         if(r != VK_SUCCESS){
             goto initfail_device;
