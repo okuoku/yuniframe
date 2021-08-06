@@ -21,6 +21,8 @@ struct cwgl_backend_ctx_s {
     VkQueue queue;
     VkPhysicalDeviceMemoryProperties memory_properties;
     uint32_t queue_family_index;
+    VkSurfaceKHR surface;
+    /* Vulkan Queue status */
     int queue_active;
     int queue_has_command;
     /* SHXM */

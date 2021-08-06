@@ -3,6 +3,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+/* In platform/src-sdl2 */
+int cwgl_integ_vkpriv_getextensions(cwgl_ctx_t* ctx, int* out_count, const char** out_extensions);
+int cwgl_integ_vkpriv_createsurface(cwgl_ctx_t* ctx, VkInstance instance, VkSurfaceKHR* surface);
+
 int
 cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
     VkInstance instance;
@@ -19,6 +23,9 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
     VkDeviceCreateInfo di;
     VkDevice device;
     VkQueue queue;
+    VkSurfaceKHR surface;
+    int instance_extensions_count;
+    char** instance_extensions;
     const float queue_priorities = 0.0;
     VkCommandPoolCreateInfo cpi;
     VkCommandPool command_pool;
@@ -39,6 +46,16 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
     c = malloc(sizeof(cwgl_backend_ctx_t));
     ctx->backend = c;
     if(c){
+        /* Pass1: Get extensions count */
+        cwgl_integ_vkpriv_getextensions(ctx, 
+                                        &instance_extensions_count,
+                                        NULL);
+        instance_extensions = malloc(sizeof(char*)*instance_extensions_count);
+        /* Pass2: Get extensions */
+        cwgl_integ_vkpriv_getextensions(ctx, 
+                                        &instance_extensions_count,
+                                        instance_extensions);
+
         /* Vulkan: Init instance */
         ai.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         ai.pNext = NULL;
@@ -53,8 +70,8 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
         ci.pApplicationInfo = &ai;
         ci.enabledLayerCount = 0;
         ci.ppEnabledLayerNames = NULL;
-        ci.enabledExtensionCount = 0;
-        ci.ppEnabledExtensionNames = 0;
+        ci.enabledExtensionCount = instance_extensions_count;
+        ci.ppEnabledExtensionNames = instance_extensions;
         r = vkCreateInstance(&ci, NULL, &instance);
         if(r != VK_SUCCESS){
             goto initfail;
@@ -141,10 +158,14 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
         c->command_pool = command_pool;
         c->instance = instance;
         c->device = device;
+        /* Create surface */
+        cwgl_integ_vkpriv_createsurface(ctx, instance, &surface);
+        c->surface = surface;
         /* SHXM */
         c->shxm_ctx = shxm_init();
     }
     return 0;
+
 initfail_command_pool:
     vkDestroyCommandPool(device, command_pool, NULL);
 initfail_device:
@@ -155,7 +176,6 @@ initfail:
     free(c);
     ctx->backend = NULL;
     return -1;
-
 }
 
 int

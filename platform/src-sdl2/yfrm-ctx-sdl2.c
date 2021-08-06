@@ -12,6 +12,10 @@
 #include "SDL_syswm.h"
 #endif
 
+#ifdef CWGL_EXPERIMENTAL_TRACKER
+#include "SDL_vulkan.h"
+#endif
+
 void* yfrm_cwgl_pfctx_create_angle(void* pfdev, void* pfwnd);
 void yfrm_cwgl_pfctx_flip_angle(void* pf);
 void* yfrm_gpu_initpfdev_d3d11(void);
@@ -85,6 +89,29 @@ struct cwgl_ctx_s {
 #endif
 
 #ifdef CWGL_EXPERIMENTAL_TRACKER
+int
+cwgl_integ_vkpriv_getextensions(cwgl_ctx_t* ctx,
+                                int* out_count,
+                                const char** out_extensions){
+    cwgl_platform_ctx_t* p;
+    p = (cwgl_platform_ctx_t*)ctx->platform;
+    if(SDL_Vulkan_GetInstanceExtensions(p->wnd, out_count, out_extensions)){
+        return 0;
+    }
+    return -1;
+}
+
+int
+cwgl_integ_vkpriv_createsurface(cwgl_ctx_t* ctx,
+                                VkInstance instance, VkSurfaceKHR* surface){
+    cwgl_platform_ctx_t* p;
+    p = (cwgl_platform_ctx_t*)ctx->platform;
+    if(SDL_Vulkan_CreateSurface(p->wnd, instance, surface)){
+        return 0;
+    }
+    return -1;
+}
+
 static cwgl_ctx_t*
 ctx_create_VK(int32_t width, int32_t height, int32_t reserved,
                      int32_t flags){
@@ -104,22 +131,22 @@ ctx_create_VK(int32_t width, int32_t height, int32_t reserved,
                                        SDL_WINDOWPOS_UNDEFINED,
                                        SDL_WINDOWPOS_UNDEFINED,
                                        width, height,
-                                       0))){
+                                       SDL_WINDOW_VULKAN))){
             SDL_Quit();
             printf("SDL CreateWindow failed.\n");
             return NULL;
         }
         wnd = window;
-        // FIXME: Create surface with SDL_Vulkan_CreateSurface here
     }
 
     r = malloc(sizeof(cwgl_ctx_t));
-    cwgl_integ_ctx_init(r);
     p = malloc(sizeof(cwgl_platform_ctx_t));
     p->wnd = wnd;
     //p->glc = glc;
     r->platform = p;
 
+    // FIXME: Move this to tracker
+    cwgl_integ_ctx_init(r);
     return r;
 }
 #endif
@@ -170,11 +197,12 @@ ctx_create_EGL(int32_t width, int32_t height, int32_t reserved,
 
     r = malloc(sizeof(cwgl_ctx_t));
 #ifdef CWGL_EXPERIMENTAL_TRACKER
-    cwgl_integ_ctx_init(r);
     p = malloc(sizeof(cwgl_platform_ctx_t));
     p->wnd = wnd;
     p->glc = glc;
     r->platform = p;
+    // FIXME: Move this to tracker
+    cwgl_integ_ctx_init(r);
 #else
     r->wnd = wnd;
     r->glc = glc;

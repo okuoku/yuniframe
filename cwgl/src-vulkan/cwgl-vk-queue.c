@@ -6,6 +6,7 @@ cwgl_vkpriv_graphics_wait(cwgl_ctx_t* ctx){
     cwgl_backend_ctx_t* backend;
     backend = ctx->backend;
     if(backend->queue_active){
+        // FIXME: We need some strategy here..
         vkQueueWaitIdle(backend->queue);
     }
     backend->queue_active = 0;
@@ -43,13 +44,13 @@ cwgl_vkpriv_graphics_submit(cwgl_ctx_t* ctx){
 int
 cwgl_backend_finish(cwgl_ctx_t* ctx){
     cwgl_vkpriv_graphics_submit(ctx);
+    cwgl_vkpriv_graphics_wait(ctx);
     return 0;
 }
 
 int
 cwgl_backend_flush(cwgl_ctx_t* ctx){
     cwgl_vkpriv_graphics_submit(ctx);
-    cwgl_vkpriv_graphics_wait(ctx);
     return 0;
 }
 
