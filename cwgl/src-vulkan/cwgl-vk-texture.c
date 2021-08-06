@@ -196,7 +196,7 @@ cwgl_backend_texImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target,
     ii.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     ii.queueFamilyIndexCount = 1;
     ii.pQueueFamilyIndices = &backend->queue_family_index;
-    ii.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    ii.initialLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     ii.usage =  VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     r = vkCreateImage(backend->device, &ii, NULL, &image);
     if(r != VK_SUCCESS){
