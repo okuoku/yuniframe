@@ -4,7 +4,7 @@
 #define SETB1(name, x) ctx->state.glo.name = x ? CWGL_TRUE : CWGL_FALSE
 int
 cwgl_integ_ctx_init(cwgl_ctx_t* ctx){
-    memset(ctx, 0, sizeof(cwgl_ctx_t));
+    memset(&ctx->state, 0, sizeof(cwgl_ctx_tracker_state_t));
     CTX_SET_ERROR(ctx, NO_ERROR);
 
     /* enable */
