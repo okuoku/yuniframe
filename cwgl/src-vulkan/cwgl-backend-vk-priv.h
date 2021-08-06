@@ -24,6 +24,7 @@ struct cwgl_backend_ctx_s {
     VkSurfaceKHR surface;
     VkSwapchainKHR swapchain;
     /* Vulkan current framebuffer */
+    uint32_t current_image_index;
     /* Vulkan Queue status */
     int queue_active;
     int queue_has_command;
