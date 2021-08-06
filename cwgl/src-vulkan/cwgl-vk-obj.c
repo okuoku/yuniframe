@@ -159,7 +159,7 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
         /* Create Swapchain */
         // FIXME: We assume selected Graphics queue also supports presentation
         // FIXME: Adjust image size and format
-        sci.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+        sci.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
         sci.pNext = NULL;
         sci.flags = 0;
         sci.surface = surface;
