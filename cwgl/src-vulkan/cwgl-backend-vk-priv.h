@@ -22,6 +22,8 @@ struct cwgl_backend_ctx_s {
     VkPhysicalDeviceMemoryProperties memory_properties;
     uint32_t queue_family_index;
     VkSurfaceKHR surface;
+    VkSwapchainKHR swapchain;
+    /* Vulkan current framebuffer */
     /* Vulkan Queue status */
     int queue_active;
     int queue_has_command;

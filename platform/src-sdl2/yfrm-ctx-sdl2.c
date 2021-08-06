@@ -16,6 +16,8 @@
 #include "SDL_vulkan.h"
 #endif
 
+int cwgl_backend_beginframe(cwgl_ctx_t* ctx); // FIXME: Define it elsewhere
+int cwgl_backend_endframe(cwgl_ctx_t* ctx); // FIXME: Define it elsewhere
 void* yfrm_cwgl_pfctx_create_angle(void* pfdev, void* pfwnd);
 void yfrm_cwgl_pfctx_flip_angle(void* pf);
 void* yfrm_gpu_initpfdev_d3d11(void);
@@ -318,6 +320,9 @@ yfrm_frame_begin0(void* c){
 #else
     cur = (cwgl_ctx_t*)c;
 #endif
+#if defined(CWGL_EXPERIMENTAL_TRACKER) && defined(YFRM_CWGL_USE_VULKAN)
+    cwgl_backend_beginframe((cwgl_ctx_t*)c);
+#endif
 
 }
 
@@ -329,10 +334,12 @@ yfrm_frame_end0(void* c){
     cwgl_ctx_t* ctx = (cwgl_ctx_t*)c;
 #endif
     cur = NULL;
-#ifndef YFRM_CWGL_USE_ANGLE
-    SDL_GL_SwapWindow(ctx->wnd);
-#else
+#if defined(CWGL_EXPERIMENTAL_TRACKER) && defined(YFRM_CWGL_USE_VULKAN)
+    cwgl_backend_endframe((cwgl_ctx_t*)c);
+#elif defined(YFRM_CWGL_USE_ANGLE)
     yfrm_cwgl_pfctx_flip_angle(ctx->pf);
+#else
+    SDL_GL_SwapWindow(ctx->wnd);
 #endif
 }
 

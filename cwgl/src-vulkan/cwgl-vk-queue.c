@@ -42,6 +42,19 @@ cwgl_vkpriv_graphics_submit(cwgl_ctx_t* ctx){
 }
 
 int
+cwgl_backend_beginframe(cwgl_ctx_t* ctx){
+    VkResult r;
+    return 0;
+}
+
+int
+cwgl_backend_endframe(cwgl_ctx_t* ctx){
+    VkResult r;
+    cwgl_vkpriv_graphics_wait(ctx);
+    return 0;
+}
+
+int
 cwgl_backend_finish(cwgl_ctx_t* ctx){
     cwgl_vkpriv_graphics_submit(ctx);
     cwgl_vkpriv_graphics_wait(ctx);

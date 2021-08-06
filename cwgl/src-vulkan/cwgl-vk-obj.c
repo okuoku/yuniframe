@@ -31,6 +31,9 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
     VkCommandPool command_pool;
     VkCommandBufferAllocateInfo cbi;
     VkCommandBuffer command_buffer;
+    VkSwapchainCreateInfoKHR sci;
+    VkSwapchainKHR swapchain;
+    char** device_extensions;
 
     VkResult r;
     cwgl_backend_ctx_t* c;
@@ -73,6 +76,7 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
         ci.enabledExtensionCount = instance_extensions_count;
         ci.ppEnabledExtensionNames = instance_extensions;
         r = vkCreateInstance(&ci, NULL, &instance);
+        free(instance_extensions);
         if(r != VK_SUCCESS){
             goto initfail;
         }
@@ -122,8 +126,10 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
         di.flags = 0;
         di.queueCreateInfoCount = 1;
         di.pQueueCreateInfos = &qi;
-        di.enabledExtensionCount = 0;
-        di.ppEnabledExtensionNames = NULL;
+        di.enabledExtensionCount = 1;
+        const char* swapchain_extension = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
+        device_extensions = &swapchain_extension;
+        di.ppEnabledExtensionNames = device_extensions;
         di.enabledLayerCount = 0;
         di.ppEnabledLayerNames = NULL;
         di.pEnabledFeatures = NULL;
@@ -148,6 +154,34 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
             goto initfail_command_pool;
         }
         vkGetDeviceQueue(device, queue_index, 0, &queue);
+        /* Create surface */
+        cwgl_integ_vkpriv_createsurface(ctx, instance, &surface);
+        /* Create Swapchain */
+        // FIXME: We assume selected Graphics queue also supports presentation
+        // FIXME: Adjust image size and format
+        sci.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+        sci.pNext = NULL;
+        sci.flags = 0;
+        sci.surface = surface;
+        sci.minImageCount = 2;
+        sci.imageFormat = VK_FORMAT_B8G8R8A8_UNORM;
+        sci.imageColorSpace = 0; /* sRGB, gamma */
+        sci.imageExtent.width = 1280;
+        sci.imageExtent.height = 720;
+        sci.imageArrayLayers = 1;
+        sci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+        sci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        sci.queueFamilyIndexCount = 0;
+        sci.pQueueFamilyIndices = NULL;
+        sci.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+        sci.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+        sci.presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR; /* HFLIP */
+        sci.clipped = VK_TRUE;
+        sci.oldSwapchain = VK_NULL_HANDLE;
+        r = vkCreateSwapchainKHR(device, &sci, NULL, &swapchain);
+        if(r != VK_SUCCESS){
+            goto initfail_command_pool;
+        }
 
         c->queue = queue;
         c->queue_active = 0;
@@ -158,9 +192,8 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
         c->command_pool = command_pool;
         c->instance = instance;
         c->device = device;
-        /* Create surface */
-        cwgl_integ_vkpriv_createsurface(ctx, instance, &surface);
         c->surface = surface;
+        c->swapchain = swapchain;
         /* SHXM */
         c->shxm_ctx = shxm_init();
     }
