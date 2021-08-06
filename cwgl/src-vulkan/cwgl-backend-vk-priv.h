@@ -38,7 +38,6 @@ struct cwgl_backend_Buffer_s {
     int allocated;
     VkBuffer buffer;
     VkDeviceMemory device_memory;
-    size_t device_memory_size;
 };
 
 struct cwgl_backend_Shader_s {
