@@ -51,6 +51,11 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
     c = malloc(sizeof(cwgl_backend_ctx_t));
     ctx->backend = c;
     if(c){
+        /* Init flags */
+        c->queue_active = 0;
+        c->queue_has_command = 0;
+        c->framebuffer_allocated = 0;
+
         /* Pass1: Get extensions count */
         cwgl_integ_vkpriv_getextensions(ctx, 
                                         &instance_extensions_count,
@@ -158,6 +163,7 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
         }
         vkGetDeviceQueue(device, queue_index, 0, &queue);
         /* Create surface */
+        // FIXME: Y-Flip surface?
         cwgl_integ_vkpriv_createsurface(ctx, instance, &surface);
         /* Validate surface */
         r = vkGetPhysicalDeviceSurfaceSupportKHR(physical_device,
@@ -198,8 +204,6 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
         }
 
         c->queue = queue;
-        c->queue_active = 0;
-        c->queue_has_command = 0;
         c->memory_properties = memory_properties;
         c->queue_family_index = queue_index;
         c->command_buffer = command_buffer;
@@ -211,6 +215,8 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
         /* SHXM */
         c->shxm_ctx = shxm_init();
     }
+    // FIXME: We should emit resize event instead..?
+    cwgl_vkpriv_prepare_fb(ctx);
     return 0;
 
 initfail_command_pool:

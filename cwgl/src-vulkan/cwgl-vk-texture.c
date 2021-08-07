@@ -211,7 +211,8 @@ cwgl_backend_texImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target,
         cwgl_vkpriv_select_memory_type(ctx,
                                        memory_requirements.memoryTypeBits,
                                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    if(r = vkAllocateMemory(backend->device, &ai, NULL, &device_memory)){
+    r = vkAllocateMemory(backend->device, &ai, NULL, &device_memory);
+    if(r != VK_SUCCESS){
         printf("FAILed to allocate image memory");
         return -1;
     }

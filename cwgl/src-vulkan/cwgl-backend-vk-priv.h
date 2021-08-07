@@ -12,6 +12,21 @@
 #error NEED CWGL_EXPERIMENTAL_USE_VOLK
 #endif
 
+#define CWGL_FRAMEBUFFER_COUNT 2
+
+struct cwgl_backend_Renderbuffer_s {
+    int allocated;
+    VkImage image;
+    VkImageView image_view;
+    VkDeviceMemory device_memory;
+};
+
+struct cwgl_backend_Framebuffer_s {
+    int dummy;
+};
+
+typedef struct cwgl_backend_fb_state_s cwgl_backend_fb_state_t;
+
 struct cwgl_backend_ctx_s {
     /* Vulkan */
     VkInstance instance;
@@ -23,8 +38,12 @@ struct cwgl_backend_ctx_s {
     uint32_t queue_family_index;
     VkSurfaceKHR surface;
     VkSwapchainKHR swapchain;
-    /* Vulkan current framebuffer */
+    /* Vulkan framebuffers */
     uint32_t current_image_index;
+    int framebuffer_allocated;
+    cwgl_backend_Renderbuffer_t cb[CWGL_FRAMEBUFFER_COUNT];
+    cwgl_backend_Renderbuffer_t depth;
+    cwgl_backend_Renderbuffer_t stencil;
     /* Vulkan Queue status */
     int queue_active;
     int queue_has_command;
@@ -54,18 +73,7 @@ struct cwgl_backend_Texture_s {
     VkDeviceMemory device_memory;
 };
 
-struct cwgl_backend_Renderbuffer_s {
-    int allocated;
-    VkImage image;
-    VkImageView view;
-    VkDeviceMemory device_memory;
-    size_t device_memory_size;
-};
-
-struct cwgl_backend_Framebuffer_s {
-    int dummy;
-};
-
+void cwgl_vkpriv_prepare_fb(cwgl_ctx_t* ctx);
 void cwgl_vkpriv_graphics_submit(cwgl_ctx_t* ctx);
 void cwgl_vkpriv_graphics_wait(cwgl_ctx_t* ctx);
 void cwgl_vkpriv_destroy_texture(cwgl_ctx_t* ctx,
