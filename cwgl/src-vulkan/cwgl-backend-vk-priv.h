@@ -42,6 +42,8 @@ struct cwgl_backend_ctx_s {
     uint32_t current_image_index;
     VkImage cb[CWGL_FRAMEBUFFER_COUNT];
     int framebuffer_allocated;
+    VkSemaphore sem_fb;
+    int need_wait_fb;
     // FIXME: Implement backbuffer (if required)
     cwgl_backend_Renderbuffer_t depth;
     cwgl_backend_Renderbuffer_t stencil;

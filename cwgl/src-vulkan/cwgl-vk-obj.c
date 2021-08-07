@@ -36,6 +36,7 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
     VkSwapchainCreateInfoKHR sci;
     VkSwapchainKHR swapchain;
     char** device_extensions;
+    VkSemaphoreCreateInfo si;
 
     VkResult r;
     cwgl_backend_ctx_t* c;
@@ -202,6 +203,10 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
         if(r != VK_SUCCESS){
             goto initfail_command_pool;
         }
+        si.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+        si.pNext = NULL;
+        si.flags = 0;
+        vkCreateSemaphore(device, &si, NULL, &c->sem_fb);
 
         c->queue = queue;
         c->memory_properties = memory_properties;
