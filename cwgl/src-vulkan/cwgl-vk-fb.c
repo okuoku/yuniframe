@@ -135,7 +135,6 @@ prepare_rb(cwgl_ctx_t* ctx, cwgl_backend_Renderbuffer_t* rb, cwgl_enum_t fmt,
 
 void
 cwgl_vkpriv_prepare_fb(cwgl_ctx_t* ctx){
-    int i;
     VkResult r;
     uint32_t imagecount;
     cwgl_backend_ctx_t* backend;
@@ -176,6 +175,7 @@ cwgl_backend_readPixels(cwgl_ctx_t* ctx,
                         int32_t x, int32_t y, uint32_t width, uint32_t height,
                         cwgl_enum_t format, cwgl_enum_t type,
                         void* buf, size_t buflen){
+    // FIXME: Implement this
     return 0;
 }
 
@@ -183,13 +183,67 @@ int
 cwgl_backend_renderbufferStorage(cwgl_ctx_t* ctx, cwgl_enum_t target,
                                  cwgl_enum_t internalformat,
                                  uint32_t width, uint32_t height){
-    // FIXME: Do we need this?
-    cwgl_backend_configure_framebuffer(ctx, NULL);
+    cwgl_Renderbuffer_t* rb;
+    cwgl_backend_Renderbuffer_t* rb_backend;
+    uint32_t red_size = 0;
+    uint32_t green_size = 0;
+    uint32_t blue_size = 0;
+    uint32_t alpha_size = 0;
+    uint32_t depth_size = 0;
+    uint32_t stencil_size = 0;
+    rb = ctx->state.bin.RENDERBUFFER_BINDING;
+    rb_backend = rb->backend;
+    prepare_rb(ctx, rb_backend, internalformat, width, height);
+    switch(internalformat){
+        case RGBA4:
+            red_size = green_size = blue_size = alpha_size = 8;
+            break;
+        case RGB565:
+            red_size = blue_size = 5;
+            green_size = 6;
+            alpha_size = 0;
+            break;
+        case RGB5_A1:
+            red_size = blue_size = 5;
+            green_size = 6;
+            alpha_size = 1;
+            break;
+        case DEPTH_COMPONENT16:
+            depth_size = 16;
+            break;
+        case DEPTH_STENCIL:
+            depth_size = 24;
+            stencil_size = 8;
+            break;
+        case STENCIL_INDEX8:
+            stencil_size = 8;
+            break;
+        default:
+            break;
+    }
+    rb->state.RENDERBUFFER_WIDTH = width;
+    rb->state.RENDERBUFFER_HEIGHT = height;
+    rb->state.RENDERBUFFER_INTERNAL_FORMAT = internalformat;
+    rb->state.RENDERBUFFER_RED_SIZE = red_size;
+    rb->state.RENDERBUFFER_GREEN_SIZE = green_size;
+    rb->state.RENDERBUFFER_BLUE_SIZE = blue_size;
+    rb->state.RENDERBUFFER_ALPHA_SIZE = alpha_size;
+    rb->state.RENDERBUFFER_DEPTH_SIZE = depth_size;
+    rb->state.RENDERBUFFER_STENCIL_SIZE = stencil_size;
+
     return 0;
 }
 
 int
 cwgl_backend_configure_framebuffer(cwgl_ctx_t* ctx, cwgl_enum_t* out_state){
+    // FIXME: Do we need this? (Do we have any incomplete combination..?)
+    cwgl_enum_t state;
+
+    state = FRAMEBUFFER_COMPLETE;
+
+    if(out_state){
+        *out_state = state;
+    }
     return 0;
 }
 
