@@ -19,6 +19,7 @@ struct cwgl_backend_Renderbuffer_s {
     VkImage image;
     VkImageView image_view;
     VkDeviceMemory device_memory;
+    VkFormat format;
 };
 
 struct cwgl_backend_Framebuffer_s {
@@ -42,12 +43,14 @@ struct cwgl_backend_ctx_s {
     /* Vulkan framebuffers */
     uint32_t current_image_index;
     VkImage cb[CWGL_FRAMEBUFFER_COUNT];
+    VkImageView cb_view[CWGL_FRAMEBUFFER_COUNT];
+    VkFormat cb_format;
     int framebuffer_allocated;
     VkSemaphore sem_fb;
     int need_wait_fb;
     // FIXME: Implement backbuffer (if required)
     cwgl_backend_Renderbuffer_t depth;
-    cwgl_backend_Renderbuffer_t stencil;
+    VkImageView depth_view;
     /* Vulkan Queue status */
     int queue_active;
     int queue_has_command;

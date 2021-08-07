@@ -44,6 +44,7 @@ prepare_rb(cwgl_ctx_t* ctx, cwgl_backend_Renderbuffer_t* rb, cwgl_enum_t fmt,
     VkDeviceMemory device_memory;
     VkImageUsageFlagBits usage;
     VkImageAspectFlags aspect_mask;
+    VkFormat format;
 
 
     backend = ctx->backend;
@@ -70,11 +71,12 @@ prepare_rb(cwgl_ctx_t* ctx, cwgl_backend_Renderbuffer_t* rb, cwgl_enum_t fmt,
             break;
 
     }
+    format = to_vulkan_rb_format(fmt);
     ii.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     ii.pNext = NULL;
     ii.flags = 0;
     ii.imageType = VK_IMAGE_TYPE_2D;
-    ii.format = to_vulkan_rb_format(fmt);
+    ii.format = format;
     ii.extent.width = width;
     ii.extent.height = height;
     ii.extent.depth = 1;
@@ -112,7 +114,7 @@ prepare_rb(cwgl_ctx_t* ctx, cwgl_backend_Renderbuffer_t* rb, cwgl_enum_t fmt,
     vi.flags = 0;
     vi.image = image;
     vi.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    vi.format = ii.format;
+    vi.format = format;
     vi.components.r = VK_COMPONENT_SWIZZLE_R;
     vi.components.g = VK_COMPONENT_SWIZZLE_G;
     vi.components.b = VK_COMPONENT_SWIZZLE_B;
@@ -131,17 +133,19 @@ prepare_rb(cwgl_ctx_t* ctx, cwgl_backend_Renderbuffer_t* rb, cwgl_enum_t fmt,
     rb->image_view = image_view;
     rb->device_memory = device_memory;
     rb->allocated = 1;
+    rb->format = format;
 }
 
 void
 cwgl_vkpriv_prepare_fb(cwgl_ctx_t* ctx){
     VkResult r;
+    int i;
     uint32_t imagecount;
     cwgl_backend_ctx_t* backend;
     backend = ctx->backend;
-    // FIXME: Init stencil
+    // FIXME: Consider stencil flag
     if(backend->framebuffer_allocated){
-        // FIXME: In case width/height was changed, reallocate it
+        // FIXME: In case width/height and format was changed, reallocate it
         return;
     }
     r = vkGetSwapchainImagesKHR(backend->device, 
@@ -164,9 +168,34 @@ cwgl_vkpriv_prepare_fb(cwgl_ctx_t* ctx){
         printf("Unknown error in vkGetSwapchainImagesKHR\n");
         return;
     }
+    for(i=0;i!=CWGL_FRAMEBUFFER_COUNT;i++){
+        // FIXME: Implement destroy
+        VkImageViewCreateInfo vi;
+
+        vi.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        vi.pNext = NULL;
+        vi.flags = 0;
+        vi.image = backend->cb[i];
+        vi.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        vi.format = backend->cb_format;
+        vi.components.r = VK_COMPONENT_SWIZZLE_R;
+        vi.components.g = VK_COMPONENT_SWIZZLE_G;
+        vi.components.b = VK_COMPONENT_SWIZZLE_B;
+        vi.components.a = VK_COMPONENT_SWIZZLE_A;
+        vi.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        vi.subresourceRange.baseMipLevel = 0;
+        vi.subresourceRange.levelCount = 1;
+        vi.subresourceRange.baseArrayLayer = 0;
+        vi.subresourceRange.layerCount = 1;
+        r = vkCreateImageView(backend->device, &vi, NULL, &backend->cb_view[i]);
+        if(r != VK_SUCCESS){
+            printf("Failed to create fb image view\n");
+            return;
+        }
+    }
 
     backend->depth.allocated = 0;
-    prepare_rb(ctx, &backend->depth, DEPTH_COMPONENT16, 1280, 720);
+    prepare_rb(ctx, &backend->depth, DEPTH_STENCIL, 1280, 720);
     backend->framebuffer_allocated = 1;
 }
 

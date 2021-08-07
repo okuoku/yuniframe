@@ -198,7 +198,7 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
         sci.flags = 0;
         sci.surface = surface;
         sci.minImageCount = 2;
-        sci.imageFormat = VK_FORMAT_B8G8R8A8_UNORM;
+        sci.imageFormat = VK_FORMAT_B8G8R8A8_UNORM; /* match with cb_format below */
         sci.imageColorSpace = 0; /* sRGB, gamma */
         sci.imageExtent.width = 1280;
         sci.imageExtent.height = 720;
@@ -230,6 +230,7 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
         c->device = device;
         c->surface = surface;
         c->swapchain = swapchain;
+        c->cb_format = VK_FORMAT_B8G8R8A8_UNORM;
         /* SHXM */
         c->shxm_ctx = shxm_init();
     }
