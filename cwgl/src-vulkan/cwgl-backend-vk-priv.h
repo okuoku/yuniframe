@@ -38,6 +38,7 @@ struct cwgl_backend_ctx_s {
     uint32_t queue_family_index;
     VkSurfaceKHR surface;
     VkSwapchainKHR swapchain;
+    VkPipelineCache pipeline_cache;
     /* Vulkan framebuffers */
     uint32_t current_image_index;
     VkImage cb[CWGL_FRAMEBUFFER_COUNT];

@@ -37,6 +37,7 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
     VkSwapchainKHR swapchain;
     char** device_extensions;
     VkSemaphoreCreateInfo si;
+    VkPipelineCacheCreateInfo pci;
 
     VkResult r;
     cwgl_backend_ctx_t* c;
@@ -163,6 +164,18 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
             goto initfail_command_pool;
         }
         vkGetDeviceQueue(device, queue_index, 0, &queue);
+        /* Vulkan: Pipeline Cache */
+        pci.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
+        pci.pNext = NULL;
+        pci.flags = 0;
+        pci.initialDataSize = 0;
+        pci.pInitialData = 0;
+        r = vkCreatePipelineCache(device, &pci, NULL, &c->pipeline_cache);
+        if(r != VK_SUCCESS){
+            printf("Failed to create pipeline cache.\n");
+            c->pipeline_cache = NULL;
+        }
+        
         /* Create surface */
         // FIXME: Y-Flip surface?
         cwgl_integ_vkpriv_createsurface(ctx, instance, &surface);
