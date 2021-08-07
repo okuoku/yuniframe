@@ -147,7 +147,7 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
         /* Vulkan: Create command buffer */
         cpi.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         cpi.pNext = NULL;
-        cpi.flags = 0;
+        cpi.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
         cpi.queueFamilyIndex = queue_index;
         r = vkCreateCommandPool(device, &cpi, NULL, &command_pool);
         if(r != VK_SUCCESS){
