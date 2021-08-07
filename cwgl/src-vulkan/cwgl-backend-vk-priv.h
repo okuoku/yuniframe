@@ -40,8 +40,9 @@ struct cwgl_backend_ctx_s {
     VkSwapchainKHR swapchain;
     /* Vulkan framebuffers */
     uint32_t current_image_index;
+    VkImage cb[CWGL_FRAMEBUFFER_COUNT];
     int framebuffer_allocated;
-    cwgl_backend_Renderbuffer_t cb[CWGL_FRAMEBUFFER_COUNT];
+    // FIXME: Implement backbuffer (if required)
     cwgl_backend_Renderbuffer_t depth;
     cwgl_backend_Renderbuffer_t stencil;
     /* Vulkan Queue status */

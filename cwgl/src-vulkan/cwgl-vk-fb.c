@@ -136,6 +136,8 @@ prepare_rb(cwgl_ctx_t* ctx, cwgl_backend_Renderbuffer_t* rb, cwgl_enum_t fmt,
 void
 cwgl_vkpriv_prepare_fb(cwgl_ctx_t* ctx){
     int i;
+    VkResult r;
+    uint32_t imagecount;
     cwgl_backend_ctx_t* backend;
     backend = ctx->backend;
     // FIXME: Init stencil
@@ -143,10 +145,27 @@ cwgl_vkpriv_prepare_fb(cwgl_ctx_t* ctx){
         // FIXME: In case width/height was changed, reallocate it
         return;
     }
-    for(i=0;i!=CWGL_FRAMEBUFFER_COUNT;i++){
-        backend->cb[i].allocated = 0;
-        prepare_rb(ctx, &backend->cb[i], RGBA4, 1280, 720);
+    r = vkGetSwapchainImagesKHR(backend->device, 
+                                backend->swapchain,
+                                &imagecount,
+                                NULL);
+    if(r != VK_SUCCESS){
+        printf("Unknown error in vkGetSwapchainImagesKHR\n");
+        return;
     }
+    if(imagecount != CWGL_FRAMEBUFFER_COUNT){
+        printf("Invalid image count\n");
+        return;
+    }
+    r = vkGetSwapchainImagesKHR(backend->device, 
+                                backend->swapchain,
+                                &imagecount,
+                                backend->cb);
+    if(r != VK_SUCCESS){
+        printf("Unknown error in vkGetSwapchainImagesKHR\n");
+        return;
+    }
+
     backend->depth.allocated = 0;
     prepare_rb(ctx, &backend->depth, DEPTH_COMPONENT16, 1280, 720);
     backend->framebuffer_allocated = 1;
