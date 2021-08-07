@@ -30,6 +30,9 @@ configure_drawstate(cwgl_ctx_t* ctx, cwgl_enum_t primitive){
     s = &ctx->state.glo;
 
     glViewport(s->VIEWPORT[0], s->VIEWPORT[1], s->VIEWPORT[2], s->VIEWPORT[3]);
+    if(point){
+        // FIXME: Set point size here
+    }
     if(line){
         glLineWidth(s->LINE_WIDTH);
     }
