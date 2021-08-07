@@ -15,6 +15,7 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
     uint32_t gpus;
     VkPhysicalDevice* devices;
     VkPhysicalDeviceMemoryProperties memory_properties;
+    VkPhysicalDevice physical_device;
     uint32_t qfs;
     uint32_t i;
     int32_t queue_index;
@@ -23,6 +24,7 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
     VkDeviceCreateInfo di;
     VkDevice device;
     VkQueue queue;
+    VkBool32 valid_surface;
     VkSurfaceKHR surface;
     int instance_extensions_count;
     char** instance_extensions;
@@ -98,6 +100,7 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
             goto initfail_instance;
         }
         /* Vulkan: Search appropriate queue */
+        physical_device = devices[0];
         vkGetPhysicalDeviceQueueFamilyProperties(devices[0], &qfs, NULL);
         qfp = malloc(sizeof(VkQueueFamilyProperties)*qfs);
         vkGetPhysicalDeviceMemoryProperties(devices[0], &memory_properties);
@@ -156,6 +159,17 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
         vkGetDeviceQueue(device, queue_index, 0, &queue);
         /* Create surface */
         cwgl_integ_vkpriv_createsurface(ctx, instance, &surface);
+        /* Validate surface */
+        r = vkGetPhysicalDeviceSurfaceSupportKHR(physical_device,
+                                                 queue_index,
+                                                 surface,
+                                                 &valid_surface);
+        if(r != VK_SUCCESS){
+            goto initfail_command_pool;
+        }
+        if(! valid_surface){
+            goto initfail_command_pool;
+        }
         /* Create Swapchain */
         // FIXME: We assume selected Graphics queue also supports presentation
         // FIXME: Adjust image size and format
