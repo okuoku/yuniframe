@@ -309,7 +309,7 @@ cwgl_backend_ctx_release(cwgl_ctx_t* ctx){
 }
 int
 cwgl_backend_Buffer_release(cwgl_ctx_t* ctx, cwgl_Buffer_t* buffer){
-    // FIXME: Free object here
+    cwgl_vkpriv_destroy_buffer(ctx, buffer->backend);
     free(buffer->backend);
     buffer->backend = NULL;
     return 0;
@@ -330,7 +330,7 @@ cwgl_backend_Program_release(cwgl_ctx_t* ctx, cwgl_Program_t* program){
 }
 int
 cwgl_backend_Texture_release(cwgl_ctx_t* ctx, cwgl_Texture_t* texture){
-    // FIXME: Free object here
+    cwgl_vkpriv_destroy_texture(ctx, texture->backend);
     free(texture->backend);
     texture->backend = NULL;
     return 0;

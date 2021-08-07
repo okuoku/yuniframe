@@ -45,44 +45,62 @@ cwgl_backend_bufferData(cwgl_ctx_t* ctx, cwgl_enum_t target,
     VkMemoryAllocateInfo ai;
     VkResult r;
     int i;
+    int createbuffer;
 
     buffer = current_buffer(ctx, target);
     backend = ctx->backend;
     buffer_backend = buffer->backend;
+    createbuffer = 1;
     if(buffer_backend->allocated){
-        cwgl_vkpriv_graphics_wait(ctx);
-        cwgl_vkpriv_destroy_buffer(ctx, buffer_backend);
+        if(buffer->state.BUFFER_SIZE != size){
+            cwgl_vkpriv_graphics_wait(ctx);
+            cwgl_vkpriv_destroy_buffer(ctx, buffer_backend);
+            createbuffer = 1;
+        }else{
+            createbuffer = 0;
+        }
     }
 
-    /* Allocate buffer */
-    bi.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bi.pNext = NULL;
-    bi.usage = usage == ELEMENT_ARRAY_BUFFER ? VK_BUFFER_USAGE_INDEX_BUFFER_BIT : VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-    bi.flags = 0;
-    bi.size = size;
-    bi.queueFamilyIndexCount = 1;
-    bi.pQueueFamilyIndices = &backend->queue_family_index;
-    bi.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    r = vkCreateBuffer(backend->device, &bi, NULL, &newbuffer);
-    if(r != VK_SUCCESS){
-        printf("FAILed to create buffer\n");
-        return -1;
-    }
-    ai.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    ai.pNext = NULL;
-    i = cwgl_vkpriv_select_memory_type(ctx, UINT32_MAX,
-                                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                                       VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    if(i < 0){
-        printf("Could not find appropriate buffer type\n");
-        return -1;
-    }
-    ai.memoryTypeIndex = i;
-    ai.allocationSize = size;
-    r = vkAllocateMemory(backend->device, &ai, NULL, &device_memory);
-    if(r != VK_SUCCESS){
-        printf("FAILed to allocate memory\n");
-        return -1;
+    if(createbuffer){
+        /* Allocate buffer */
+        bi.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bi.pNext = NULL;
+        bi.usage = usage == ELEMENT_ARRAY_BUFFER ? VK_BUFFER_USAGE_INDEX_BUFFER_BIT : VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+        bi.flags = 0;
+        bi.size = size;
+        bi.queueFamilyIndexCount = 1;
+        bi.pQueueFamilyIndices = &backend->queue_family_index;
+        bi.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        r = vkCreateBuffer(backend->device, &bi, NULL, &newbuffer);
+        if(r != VK_SUCCESS){
+            printf("FAILed to create buffer\n");
+            return -1;
+        }
+        ai.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        ai.pNext = NULL;
+        i = cwgl_vkpriv_select_memory_type(ctx, UINT32_MAX,
+                                           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                                           VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        if(i < 0){
+            printf("Could not find appropriate buffer type\n");
+            return -1;
+        }
+        ai.memoryTypeIndex = i;
+        ai.allocationSize = size;
+        r = vkAllocateMemory(backend->device, &ai, NULL, &device_memory);
+        if(r != VK_SUCCESS){
+            printf("FAILed to allocate memory\n");
+            return -1;
+        }
+        r = vkBindBufferMemory(backend->device,
+                               newbuffer, device_memory, 0);
+        if(r != VK_SUCCESS){
+            printf("FAILed to bind buffer\n");
+            return -1;
+        }
+    }else{
+        newbuffer = buffer_backend->buffer;
+        device_memory = buffer_backend->device_memory;
     }
     r = vkMapMemory(backend->device, device_memory, 0,
                     size, 0, &device_memory_addr);
@@ -92,14 +110,9 @@ cwgl_backend_bufferData(cwgl_ctx_t* ctx, cwgl_enum_t target,
     }
     memcpy(device_memory_addr, data, size);
     vkUnmapMemory(backend->device, device_memory);
-    r = vkBindBufferMemory(backend->device,
-                           newbuffer, device_memory, 0);
-    if(r != VK_SUCCESS){
-        printf("FAILed to bind buffer\n");
-        return -1;
-    }
 
     /* Update buffer info */
+    buffer_backend->allocated = 1;
     buffer_backend->buffer = newbuffer;
     buffer_backend->device_memory = device_memory;
 

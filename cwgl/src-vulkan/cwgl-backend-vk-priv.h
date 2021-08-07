@@ -79,6 +79,8 @@ void cwgl_vkpriv_graphics_submit(cwgl_ctx_t* ctx);
 void cwgl_vkpriv_graphics_wait(cwgl_ctx_t* ctx);
 void cwgl_vkpriv_destroy_texture(cwgl_ctx_t* ctx,
                                  cwgl_backend_Texture_t* texture_backend);
+void cwgl_vkpriv_destroy_buffer(cwgl_ctx_t* ctx,
+                                cwgl_backend_Buffer_t* buffer_backend);
 int32_t cwgl_vkpriv_select_memory_type(cwgl_ctx_t* ctx, uint32_t requirement,
                                        VkMemoryPropertyFlags request);
 
