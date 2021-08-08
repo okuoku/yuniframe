@@ -560,6 +560,7 @@ cwgl_backend_drawElements(cwgl_ctx_t* ctx, cwgl_enum_t mode,
 
 int
 cwgl_backend_clear(cwgl_ctx_t* ctx, uint32_t mask){
+    // FIXME: Consider SCISSOR_TEST and its rect
     // FIXME: Implement texture framebuffer clear
     // FIXME: Implement mipmap/cubemap clear
     /* Outside of renderpass */
@@ -597,7 +598,7 @@ cwgl_backend_clear(cwgl_ctx_t* ctx, uint32_t mask){
         if(is_framebuffer){
             vkCmdClearColorImage(backend->command_buffer,
                                  backend->cb[backend->current_image_index],
-                                 VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR,
+                                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                  &c,
                                  1,
                                  &r);
@@ -620,12 +621,12 @@ cwgl_backend_clear(cwgl_ctx_t* ctx, uint32_t mask){
         r.baseArrayLayer = 0;
         r.layerCount = 1;
         if(is_framebuffer){
-            vkCmdClearColorImage(backend->command_buffer,
-                                 backend->cb[backend->current_image_index],
-                                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                 &d,
-                                 1,
-                                 &r);
+            vkCmdClearDepthStencilImage(backend->command_buffer,
+                                        backend->depth.image,
+                                        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                        &d,
+                                        1,
+                                        &r);
         }else{
             // FIXME: Implement it
         }
