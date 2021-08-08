@@ -7,6 +7,19 @@
 // FIXME: Consider where to decl APIs
 cwgl_string_t* cwgl_priv_alloc_string(cwgl_ctx_t* ctx, const char* str, size_t buflen);
 
+void
+cwgl_vkpriv_destroy_program(cwgl_ctx_t* ctx, cwgl_backend_Program_t* program_backend){
+    cwgl_backend_ctx_t* backend;
+    backend = ctx->backend;
+    // FIXME: Free SHXM object here.
+    cwgl_vkpriv_destroy_buffer(ctx, &program_backend->uniform_buffer);
+    if(program_backend->allocated){
+        vkDestroyShaderModule(backend->device, program_backend->pixel_shader, NULL);
+        vkDestroyShaderModule(backend->device, program_backend->vertex_shader, NULL);
+        program_backend->allocated = 0;
+    }
+}
+
 int
 cwgl_backend_compileShader(cwgl_ctx_t* ctx, cwgl_Shader_t* shader){
     int r;
@@ -101,8 +114,14 @@ cwgl_backend_linkProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
     char* buf;
     cwgl_activeinfo_t* a;
     size_t namelen;
+    cwgl_backend_ctx_t* backend;
+    cwgl_backend_Program_t* program_backend;
     shxm_ctx_t* shxm;
     shxm_program_t* p;
+    VkResult rv;
+    VkShaderModuleCreateInfo mi;
+    backend = ctx->backend;
+    program_backend = program->backend;
     shxm = ctx->backend->shxm_ctx;
     p = program->backend->program;
     // FIXME: Move this to tracker
@@ -165,6 +184,28 @@ cwgl_backend_linkProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
             o += 8;
         }
         program->state.uniform_buffer_size = o;
+
+        /* Generate backend program object */
+        cwgl_vkpriv_destroy_program(ctx, program_backend);
+        mi.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+        mi.pNext = NULL;
+        mi.flags = 0;
+        mi.codeSize = program_backend->program->vertex_ir_len * sizeof(uint32_t);
+        mi.pCode = program_backend->program->vertex_ir;
+        rv = vkCreateShaderModule(backend->device, &mi, NULL, &program_backend->vertex_shader);
+        if(rv != VK_SUCCESS){
+            printf("Failed to load vertex shader module.\n");
+        }
+        mi.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+        mi.pNext = NULL;
+        mi.flags = 0;
+        mi.codeSize = program_backend->program->fragment_ir_len * sizeof(uint32_t);
+        mi.pCode = program_backend->program->fragment_ir;
+        rv = vkCreateShaderModule(backend->device, &mi, NULL, &program_backend->pixel_shader);
+        if(rv != VK_SUCCESS){
+            printf("Failed to load fragment shader module.\n");
+        }
+        program_backend->allocated = 1;
     }
 
     return 0;

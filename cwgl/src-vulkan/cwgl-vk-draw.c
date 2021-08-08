@@ -148,11 +148,37 @@ create_renderpass(cwgl_ctx_t* ctx, VkRenderPass* out_renderpass){
     }
 }
 
-static int
+static void
 configure_shaders(cwgl_ctx_t* ctx, VkPipelineShaderStageCreateInfo* vxi,
                   VkPipelineShaderStageCreateInfo* pxi,
                   VkPipelineVertexInputStateCreateInfo* vii){
-    return -1;
+    cwgl_Program_t* program;
+    cwgl_backend_Program_t* program_backend;
+    program = ctx->state.bin.CURRENT_PROGRAM;
+    program_backend = program->backend;
+    vxi->sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    vxi->pNext = NULL;
+    vxi->flags = 0;
+    vxi->stage = VK_SHADER_STAGE_VERTEX_BIT;
+    vxi->module = program_backend->vertex_shader;
+    vxi->pName = "main";
+    vxi->pSpecializationInfo = NULL;
+
+    pxi->sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    pxi->pNext = NULL;
+    pxi->flags = 0;
+    pxi->stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    pxi->module = program_backend->pixel_shader;
+    pxi->pName = "main";
+    pxi->pSpecializationInfo = NULL;
+
+    vii->sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vii->pNext = NULL;
+    vii->flags = 0;
+    vii->vertexBindingDescriptionCount = 0; //FIXME: TODO
+    vii->pVertexBindingDescriptions = 0;
+    vii->vertexAttributeDescriptionCount = 0; //FIXME: TODO
+    vii->pVertexAttributeDescriptions = 0;
 }
 
 static VkStencilOp
@@ -273,7 +299,6 @@ create_pipeline(cwgl_ctx_t* ctx, cwgl_enum_t primitive,
     int line = 0;
     int point = 0;
     int triangle = 0;
-    int clear = 0;
     cwgl_ctx_global_state_t* s;
     backend = ctx->backend;
     /* Determine draw type */
@@ -286,13 +311,11 @@ create_pipeline(cwgl_ctx_t* ctx, cwgl_enum_t primitive,
         case LINES:
             line = 1;
             break;
+        default:
         case TRIANGLE_STRIP:
         case TRIANGLE_FAN:
         case TRIANGLES:
             triangle = 1;
-            break;
-        default:
-            clear = 1;
             break;
     }
 
@@ -320,130 +343,127 @@ create_pipeline(cwgl_ctx_t* ctx, cwgl_enum_t primitive,
         vsi.pScissors = NULL;
     }
 
-    if(! clear){
-        
-        rsi.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-        rsi.pNext = NULL;
-        rsi.flags = 0;
-        rsi.depthClampEnable = VK_FALSE; // FIXME: ???
-        rsi.rasterizerDiscardEnable = VK_TRUE;
-        if(line){
-            rsi.polygonMode = VK_POLYGON_MODE_LINE;
-        }else if(point){
-            rsi.polygonMode = VK_POLYGON_MODE_POINT;
-        }else{
-            rsi.polygonMode = VK_POLYGON_MODE_FILL;
-        }
-        if(triangle){
-            if(s->CULL_FACE){
-                switch(s->CULL_FACE_MODE){
-                    case FRONT:
-                        rsi.cullMode = VK_CULL_MODE_FRONT_BIT;
-                        break;
-                    case BACK:
-                        rsi.cullMode = VK_CULL_MODE_BACK_BIT;
-                        break;
-                    case FRONT_AND_BACK:
-                        rsi.cullMode = VK_CULL_MODE_FRONT_AND_BACK;
-                        break;
-                    default:
-                        rsi.cullMode = VK_CULL_MODE_NONE;
-                        break;
-                }
-                switch(s->FRONT_FACE){
-                    case CW:
-                        rsi.frontFace = VK_FRONT_FACE_CLOCKWISE;
-                        break;
-                    case CCW:
-                        rsi.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-                        break;
-                    default:
-                        rsi.frontFace = 0; /* CCW */
-                        break;
-                }
-            }
-        }else{
-            rsi.cullMode = VK_CULL_MODE_NONE;
-            rsi.frontFace = 0; /* CCW */
-        }
-        if(s->POLYGON_OFFSET_FILL){
-            rsi.depthBiasEnable = VK_TRUE;
-            // FIXME: Is this OK?
-            rsi.depthBiasConstantFactor = s->POLYGON_OFFSET_UNITS;
-            rsi.depthBiasClamp = 1.0;
-            rsi.depthBiasSlopeFactor = s->POLYGON_OFFSET_FACTOR;
-        }else{
-            rsi.depthBiasEnable = VK_FALSE;
-        }
-        // FIXME: Ignore line width here.
-        rsi.lineWidth = 1.0f;
-        // FIXME: Implement multisample
-        msi.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-        msi.pNext = NULL;
-        msi.flags = 0;
-        msi.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-        msi.sampleShadingEnable = VK_FALSE;
-        msi.minSampleShading = 1.0f;
-        msi.pSampleMask = NULL;
-        msi.alphaToCoverageEnable = s->SAMPLE_ALPHA_TO_COVERAGE ? VK_TRUE : VK_FALSE;
-        msi.alphaToOneEnable = VK_FALSE;
-        dsi.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-        dsi.pNext = NULL;
-        dsi.flags = 0;
-        dsi.depthTestEnable = s->DEPTH_TEST ? VK_TRUE : VK_FALSE;
-        dsi.depthWriteEnable = s->DEPTH_WRITEMASK ? VK_TRUE : VK_FALSE;
-        dsi.depthCompareOp = to_vk_compareop(s->DEPTH_FUNC);
-        dsi.depthBoundsTestEnable = VK_FALSE;
-        dsi.stencilTestEnable = s->STENCIL_TEST ? VK_TRUE : VK_FALSE;
-        dsi.front.failOp = to_vk_stencilop(s->STENCIL_FAIL);
-        dsi.front.passOp = to_vk_stencilop(s->STENCIL_PASS_DEPTH_PASS);
-        dsi.front.depthFailOp = to_vk_stencilop(s->STENCIL_PASS_DEPTH_FAIL);
-        dsi.front.compareOp = to_vk_compareop(s->STENCIL_FUNC);
-        dsi.front.compareMask = s->STENCIL_VALUE_MASK;
-        dsi.front.writeMask = s->STENCIL_WRITEMASK;
-        dsi.front.reference = s->STENCIL_REF;
-        dsi.back.failOp = to_vk_stencilop(s->STENCIL_BACK_FAIL);
-        dsi.back.passOp = to_vk_stencilop(s->STENCIL_BACK_PASS_DEPTH_PASS);
-        dsi.back.depthFailOp = to_vk_stencilop(s->STENCIL_BACK_PASS_DEPTH_FAIL);
-        dsi.back.compareOp = to_vk_compareop(s->STENCIL_BACK_FUNC);
-        dsi.back.compareMask = s->STENCIL_BACK_VALUE_MASK;
-        dsi.back.writeMask = s->STENCIL_BACK_WRITEMASK;
-        dsi.back.reference = s->STENCIL_BACK_REF;
-        dsi.minDepthBounds = 0.0f;
-        dsi.maxDepthBounds = 1.0f;
-        cbi.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-        cbi.pNext = NULL;
-        cbi.flags = 0;
-        cbi.logicOpEnable = VK_FALSE;
-        cbi.logicOp = VK_LOGIC_OP_COPY;
-        cbi.attachmentCount = 1;
-        cbas.blendEnable = s->BLEND ? VK_TRUE : VK_FALSE;
-        cbas.srcColorBlendFactor = to_vk_blendfactor(s->BLEND_SRC_RGB);
-        cbas.dstColorBlendFactor = to_vk_blendfactor(s->BLEND_DST_RGB);
-        cbas.colorBlendOp = to_vk_blendop(s->BLEND_EQUATION_RGB);
-        cbas.srcAlphaBlendFactor = to_vk_blendfactor(s->BLEND_SRC_ALPHA);
-        cbas.dstAlphaBlendFactor = to_vk_blendfactor(s->BLEND_DST_ALPHA);
-        cbas.alphaBlendOp = to_vk_blendop(s->BLEND_EQUATION_ALPHA);
-        cbas.colorWriteMask = 0;
-        if(s->COLOR_WRITEMASK[0]){
-            cbas.colorWriteMask |= VK_COLOR_COMPONENT_R_BIT;
-        }
-        if(s->COLOR_WRITEMASK[1]){
-            cbas.colorWriteMask |= VK_COLOR_COMPONENT_G_BIT;
-        }
-        if(s->COLOR_WRITEMASK[2]){
-            cbas.colorWriteMask |= VK_COLOR_COMPONENT_B_BIT;
-        }
-        if(s->COLOR_WRITEMASK[3]){
-            cbas.colorWriteMask |= VK_COLOR_COMPONENT_A_BIT;
-        }
-        cbi.pAttachments = &cbas;
-        cbi.blendConstants[0] = s->BLEND_COLOR[0];
-        cbi.blendConstants[1] = s->BLEND_COLOR[1];
-        cbi.blendConstants[2] = s->BLEND_COLOR[2];
-        cbi.blendConstants[3] = s->BLEND_COLOR[3];
-
+    rsi.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    rsi.pNext = NULL;
+    rsi.flags = 0;
+    rsi.depthClampEnable = VK_FALSE; // FIXME: ???
+    rsi.rasterizerDiscardEnable = VK_TRUE;
+    if(line){
+        rsi.polygonMode = VK_POLYGON_MODE_LINE;
+    }else if(point){
+        rsi.polygonMode = VK_POLYGON_MODE_POINT;
+    }else{
+        rsi.polygonMode = VK_POLYGON_MODE_FILL;
     }
+    if(triangle){
+        if(s->CULL_FACE){
+            switch(s->CULL_FACE_MODE){
+                case FRONT:
+                    rsi.cullMode = VK_CULL_MODE_FRONT_BIT;
+                    break;
+                case BACK:
+                    rsi.cullMode = VK_CULL_MODE_BACK_BIT;
+                    break;
+                case FRONT_AND_BACK:
+                    rsi.cullMode = VK_CULL_MODE_FRONT_AND_BACK;
+                    break;
+                default:
+                    rsi.cullMode = VK_CULL_MODE_NONE;
+                    break;
+            }
+            switch(s->FRONT_FACE){
+                case CW:
+                    rsi.frontFace = VK_FRONT_FACE_CLOCKWISE;
+                    break;
+                case CCW:
+                    rsi.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+                    break;
+                default:
+                    rsi.frontFace = 0; /* CCW */
+                    break;
+            }
+        }
+    }else{
+        rsi.cullMode = VK_CULL_MODE_NONE;
+        rsi.frontFace = 0; /* CCW */
+    }
+    if(s->POLYGON_OFFSET_FILL){
+        rsi.depthBiasEnable = VK_TRUE;
+        // FIXME: Is this OK?
+        rsi.depthBiasConstantFactor = s->POLYGON_OFFSET_UNITS;
+        rsi.depthBiasClamp = 1.0;
+        rsi.depthBiasSlopeFactor = s->POLYGON_OFFSET_FACTOR;
+    }else{
+        rsi.depthBiasEnable = VK_FALSE;
+    }
+    // FIXME: Ignore line width here.
+    rsi.lineWidth = 1.0f;
+    // FIXME: Implement multisample
+    msi.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    msi.pNext = NULL;
+    msi.flags = 0;
+    msi.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    msi.sampleShadingEnable = VK_FALSE;
+    msi.minSampleShading = 1.0f;
+    msi.pSampleMask = NULL;
+    msi.alphaToCoverageEnable = s->SAMPLE_ALPHA_TO_COVERAGE ? VK_TRUE : VK_FALSE;
+    msi.alphaToOneEnable = VK_FALSE;
+    dsi.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    dsi.pNext = NULL;
+    dsi.flags = 0;
+    dsi.depthTestEnable = s->DEPTH_TEST ? VK_TRUE : VK_FALSE;
+    dsi.depthWriteEnable = s->DEPTH_WRITEMASK ? VK_TRUE : VK_FALSE;
+    dsi.depthCompareOp = to_vk_compareop(s->DEPTH_FUNC);
+    dsi.depthBoundsTestEnable = VK_FALSE;
+    dsi.stencilTestEnable = s->STENCIL_TEST ? VK_TRUE : VK_FALSE;
+    dsi.front.failOp = to_vk_stencilop(s->STENCIL_FAIL);
+    dsi.front.passOp = to_vk_stencilop(s->STENCIL_PASS_DEPTH_PASS);
+    dsi.front.depthFailOp = to_vk_stencilop(s->STENCIL_PASS_DEPTH_FAIL);
+    dsi.front.compareOp = to_vk_compareop(s->STENCIL_FUNC);
+    dsi.front.compareMask = s->STENCIL_VALUE_MASK;
+    dsi.front.writeMask = s->STENCIL_WRITEMASK;
+    dsi.front.reference = s->STENCIL_REF;
+    dsi.back.failOp = to_vk_stencilop(s->STENCIL_BACK_FAIL);
+    dsi.back.passOp = to_vk_stencilop(s->STENCIL_BACK_PASS_DEPTH_PASS);
+    dsi.back.depthFailOp = to_vk_stencilop(s->STENCIL_BACK_PASS_DEPTH_FAIL);
+    dsi.back.compareOp = to_vk_compareop(s->STENCIL_BACK_FUNC);
+    dsi.back.compareMask = s->STENCIL_BACK_VALUE_MASK;
+    dsi.back.writeMask = s->STENCIL_BACK_WRITEMASK;
+    dsi.back.reference = s->STENCIL_BACK_REF;
+    dsi.minDepthBounds = 0.0f;
+    dsi.maxDepthBounds = 1.0f;
+    cbi.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    cbi.pNext = NULL;
+    cbi.flags = 0;
+    cbi.logicOpEnable = VK_FALSE;
+    cbi.logicOp = VK_LOGIC_OP_COPY;
+    cbi.attachmentCount = 1;
+    cbas.blendEnable = s->BLEND ? VK_TRUE : VK_FALSE;
+    cbas.srcColorBlendFactor = to_vk_blendfactor(s->BLEND_SRC_RGB);
+    cbas.dstColorBlendFactor = to_vk_blendfactor(s->BLEND_DST_RGB);
+    cbas.colorBlendOp = to_vk_blendop(s->BLEND_EQUATION_RGB);
+    cbas.srcAlphaBlendFactor = to_vk_blendfactor(s->BLEND_SRC_ALPHA);
+    cbas.dstAlphaBlendFactor = to_vk_blendfactor(s->BLEND_DST_ALPHA);
+    cbas.alphaBlendOp = to_vk_blendop(s->BLEND_EQUATION_ALPHA);
+    cbas.colorWriteMask = 0;
+    if(s->COLOR_WRITEMASK[0]){
+        cbas.colorWriteMask |= VK_COLOR_COMPONENT_R_BIT;
+    }
+    if(s->COLOR_WRITEMASK[1]){
+        cbas.colorWriteMask |= VK_COLOR_COMPONENT_G_BIT;
+    }
+    if(s->COLOR_WRITEMASK[2]){
+        cbas.colorWriteMask |= VK_COLOR_COMPONENT_B_BIT;
+    }
+    if(s->COLOR_WRITEMASK[3]){
+        cbas.colorWriteMask |= VK_COLOR_COMPONENT_A_BIT;
+    }
+    cbi.pAttachments = &cbas;
+    cbi.blendConstants[0] = s->BLEND_COLOR[0];
+    cbi.blendConstants[1] = s->BLEND_COLOR[1];
+    cbi.blendConstants[2] = s->BLEND_COLOR[2];
+    cbi.blendConstants[3] = s->BLEND_COLOR[3];
+
     dyi.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dyi.pNext = NULL;
     dyi.flags = 0;
@@ -452,32 +472,17 @@ create_pipeline(cwgl_ctx_t* ctx, cwgl_enum_t primitive,
     pi.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pi.pNext = NULL;
     pi.flags = 0;
-    if(clear){
-        pi.stageCount = 0;
-        pi.pStages = NULL;
-        pi.pVertexInputState = NULL;
-        pi.pInputAssemblyState = NULL;
-    }else{
-        pi.stageCount = 2;
-        configure_shaders(ctx, &ssci[0], &ssci[1], &vii);
-        pi.pStages = ssci;
-        pi.pVertexInputState = &vii;
-        pi.pInputAssemblyState = &iai;
-    }
+    pi.stageCount = 2;
+    configure_shaders(ctx, &ssci[0], &ssci[1], &vii);
+    pi.pStages = ssci;
+    pi.pVertexInputState = &vii;
+    pi.pInputAssemblyState = &iai;
     pi.pTessellationState = NULL;
     pi.pViewportState = &vsi;
-    if(clear){
-        pi.pRasterizationState = NULL;
-        pi.pMultisampleState = NULL;
-        pi.pDepthStencilState = NULL;
-        pi.pColorBlendState = NULL;
-    }else{
-        pi.pRasterizationState = &rsi;
-        pi.pMultisampleState = &msi;
-        pi.pDepthStencilState = &dsi;
-        pi.pColorBlendState = &cbi;
-    }
-
+    pi.pRasterizationState = &rsi;
+    pi.pMultisampleState = &msi;
+    pi.pDepthStencilState = &dsi;
+    pi.pColorBlendState = &cbi;
     pi.pDynamicState = &dyi;
     pi.layout = layout;
     pi.renderPass = renderpass;
@@ -551,6 +556,49 @@ cwgl_backend_drawArrays(cwgl_ctx_t* ctx, cwgl_enum_t mode,
 int
 cwgl_backend_drawElements(cwgl_ctx_t* ctx, cwgl_enum_t mode,
                           uint32_t count, cwgl_enum_t type, uint32_t offset){
+    VkRenderPass renderpass;
+    VkPipelineLayout layout;
+    VkPipeline pipeline;
+    VkFramebuffer framebuffer;
+    VkResult r;
+    cwgl_backend_ctx_t* backend;
+    cwgl_ctx_global_state_t* s;
+    s = &ctx->state.glo;
+    backend = ctx->backend;
+    create_renderpass(ctx, &renderpass);
+    create_framebuffer(ctx, renderpass, &framebuffer);
+    {
+        VkPipelineLayoutCreateInfo lci;
+        lci.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        lci.pNext = NULL;
+        lci.flags = 0;
+        lci.setLayoutCount = 0;
+        lci.pSetLayouts = NULL;
+        lci.pushConstantRangeCount = 0;
+        lci.pPushConstantRanges = NULL;
+        r = vkCreatePipelineLayout(backend->device,
+                                   &lci,
+                                   NULL,
+                                   &layout);
+        if(r != VK_SUCCESS){
+            printf("Failed to create layout\n");
+        }
+    }
+    create_pipeline(ctx, mode, renderpass, layout, &pipeline);
+    begin_cmd(ctx);
+    begin_renderpass(ctx, renderpass, framebuffer);
+    vkCmdBindPipeline(backend->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+    {
+    }
+    vkCmdEndRenderPass(backend->command_buffer);
+    vkEndCommandBuffer(backend->command_buffer);
+    backend->queue_has_command = 1; // FIXME: Tentative
+    cwgl_vkpriv_graphics_submit(ctx);
+    cwgl_vkpriv_graphics_wait(ctx);
+    vkDestroyFramebuffer(backend->device, framebuffer, NULL);
+    vkDestroyRenderPass(backend->device, renderpass, NULL);
+    vkDestroyPipeline(backend->device, pipeline, NULL);
+    vkDestroyPipelineLayout(backend->device, layout, NULL);
     return 0;
 }
 

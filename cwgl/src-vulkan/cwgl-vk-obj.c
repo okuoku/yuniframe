@@ -282,6 +282,8 @@ cwgl_backend_Program_init(cwgl_ctx_t* ctx, cwgl_Program_t* program){
     cwgl_backend_Program_t* p;
     p = malloc(sizeof(cwgl_backend_Program_t));
     if(p){
+        p->allocated = 0;
+        p->uniform_buffer.allocated = 0;
         p->program = shxm_program_create(ctx->backend->shxm_ctx);
     }
     program->backend = p;
@@ -342,7 +344,7 @@ cwgl_backend_Shader_release(cwgl_ctx_t* ctx, cwgl_Shader_t* shader){
 }
 int
 cwgl_backend_Program_release(cwgl_ctx_t* ctx, cwgl_Program_t* program){
-    // FIXME: Free object here
+    cwgl_vkpriv_destroy_program(ctx, program->backend);
     free(program->backend);
     program->backend = NULL;
     return 0;

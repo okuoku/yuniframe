@@ -67,10 +67,17 @@ struct cwgl_backend_Buffer_s {
 };
 
 struct cwgl_backend_Shader_s {
+    /* SHXM */
     shxm_shader_t* shader;
 };
 
 struct cwgl_backend_Program_s {
+    /* Vulkan */
+    int allocated;
+    VkShaderModule vertex_shader;
+    VkShaderModule pixel_shader;
+    cwgl_backend_Buffer_t uniform_buffer;
+    /* SHXM */
     shxm_program_t* program;
 };
 
@@ -87,6 +94,8 @@ void cwgl_vkpriv_destroy_texture(cwgl_ctx_t* ctx,
                                  cwgl_backend_Texture_t* texture_backend);
 void cwgl_vkpriv_destroy_buffer(cwgl_ctx_t* ctx,
                                 cwgl_backend_Buffer_t* buffer_backend);
+void cwgl_vkpriv_destroy_program(cwgl_ctx_t* ctx,
+                                 cwgl_backend_Program_t* program_backend);
 int32_t cwgl_vkpriv_select_memory_type(cwgl_ctx_t* ctx, uint32_t requirement,
                                        VkMemoryPropertyFlags request);
 

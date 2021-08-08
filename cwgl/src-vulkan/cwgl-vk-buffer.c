@@ -27,9 +27,11 @@ current_buffer(cwgl_ctx_t* ctx, cwgl_enum_t target){
 
 void
 cwgl_vkpriv_destroy_buffer(cwgl_ctx_t* ctx, cwgl_backend_Buffer_t* buffer_backend){
-    vkDestroyBuffer(ctx->backend->device, buffer_backend->buffer, NULL);
-    vkFreeMemory(ctx->backend->device, buffer_backend->device_memory, NULL);
-    buffer_backend->allocated = 0;
+    if(buffer_backend->allocated){
+        vkDestroyBuffer(ctx->backend->device, buffer_backend->buffer, NULL);
+        vkFreeMemory(ctx->backend->device, buffer_backend->device_memory, NULL);
+        buffer_backend->allocated = 0;
+    }
 }
 
 int
