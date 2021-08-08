@@ -79,7 +79,7 @@ create_renderpass(cwgl_ctx_t* ctx, VkRenderPass* out_renderpass){
         ads[0].loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
         ads[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         ads[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        ads[0].stencilStoreOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        ads[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         ads[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         ads[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
@@ -382,6 +382,9 @@ create_pipeline(cwgl_ctx_t* ctx, cwgl_enum_t primitive,
                     rsi.frontFace = 0; /* CCW */
                     break;
             }
+        }else{
+            rsi.cullMode = VK_CULL_MODE_NONE;
+            rsi.frontFace = 0; /* CCW */
         }
     }else{
         rsi.cullMode = VK_CULL_MODE_NONE;
@@ -469,6 +472,37 @@ create_pipeline(cwgl_ctx_t* ctx, cwgl_enum_t primitive,
     dyi.flags = 0;
     dyi.dynamicStateCount = 0;
     dyi.pDynamicStates = NULL;
+
+    iai.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    iai.pNext = NULL;
+    iai.flags = 0;
+    switch(primitive){
+        default:
+        case POINTS:
+            iai.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+            break;
+        case LINE_STRIP:
+            iai.topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+            break;
+        case LINE_LOOP:
+            // FIXME: ???
+            iai.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+            break;
+        case LINES:
+            iai.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+            break;
+        case TRIANGLE_STRIP:
+            iai.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+            break;
+        case TRIANGLE_FAN:
+            iai.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN;
+            break;
+        case TRIANGLES:
+            iai.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+            break;
+    }
+    iai.primitiveRestartEnable = VK_TRUE; // For 3.0
+
     pi.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pi.pNext = NULL;
     pi.flags = 0;
