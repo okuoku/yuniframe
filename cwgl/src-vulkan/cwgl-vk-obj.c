@@ -284,6 +284,9 @@ cwgl_backend_Program_init(cwgl_ctx_t* ctx, cwgl_Program_t* program){
     if(p){
         p->allocated = 0;
         p->uniform_buffer.allocated = 0;
+        p->attribute_registers.allocated = 0;
+        p->attrs = NULL;
+        p->binds = NULL;
         p->program = shxm_program_create(ctx->backend->shxm_ctx);
     }
     program->backend = p;

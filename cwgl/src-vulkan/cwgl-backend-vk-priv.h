@@ -76,7 +76,15 @@ struct cwgl_backend_Program_s {
     int allocated;
     VkShaderModule vertex_shader;
     VkShaderModule pixel_shader;
+    /* Vulkan: Uniforms */
     cwgl_backend_Buffer_t uniform_buffer;
+    /* Vulkan: Vertex attributes */
+    int input_count;
+    cwgl_backend_Buffer_t attribute_registers;
+    VkVertexInputAttributeDescription* attrs; /* input_count */
+    VkVertexInputBindingDescription* binds; /* input_count */
+    int binding_map[CWGL_MAX_VAO_SIZE];
+    int register_binding;
     /* SHXM */
     shxm_program_t* program;
 };

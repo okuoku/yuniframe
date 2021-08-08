@@ -1,6 +1,16 @@
 #include "cwgl-backend-vk-priv.h"
 #include <stdio.h>
 
+// FIXME: Copied from s2
+static cwgl_VertexArrayObject_t*
+current_vao(cwgl_ctx_t* ctx){
+    if(ctx->state.bin.VERTEX_ARRAY_BINDING){
+        return ctx->state.bin.VERTEX_ARRAY_BINDING;
+    }else{
+        return ctx->state.default_vao;
+    }
+}
+
 static int
 create_framebuffer(cwgl_ctx_t* ctx, VkRenderPass renderpass, VkFramebuffer* out_framebuffer){
     int is_framebuffer;
@@ -148,14 +158,204 @@ create_renderpass(cwgl_ctx_t* ctx, VkRenderPass* out_renderpass){
     }
 }
 
+static VkFormat
+to_vk_value_format(int size, cwgl_enum_t type, int normalized){
+    switch(size){
+        default:
+        case 1:
+            switch(type){
+                case BYTE:
+                    if(normalized){
+                        return VK_FORMAT_R8_SNORM;
+                    }else{
+                        return VK_FORMAT_R8_SINT;
+                    }
+                    break;
+                case UNSIGNED_BYTE:
+                    if(normalized){
+                        return VK_FORMAT_R8_UNORM;
+                    }else{
+                        return VK_FORMAT_R8_UINT;
+                    }
+                    break;
+                case SHORT:
+                    if(normalized){
+                        return VK_FORMAT_R16_SNORM;
+                    }else{
+                        return VK_FORMAT_R16_SINT;
+                    }
+                    break;
+                case UNSIGNED_SHORT:
+                    if(normalized){
+                        return VK_FORMAT_R16_UNORM;
+                    }else{
+                        return VK_FORMAT_R16_UINT;
+                    }
+                    break;
+                default:
+                case FLOAT:
+                    return VK_FORMAT_R32_SFLOAT;
+            }
+        case 2:
+            switch(type){
+                case BYTE:
+                    if(normalized){
+                        return VK_FORMAT_R8G8_SNORM;
+                    }else{
+                        return VK_FORMAT_R8G8_SINT;
+                    }
+                    break;
+                case UNSIGNED_BYTE:
+                    if(normalized){
+                        return VK_FORMAT_R8G8_UNORM;
+                    }else{
+                        return VK_FORMAT_R8G8_UINT;
+                    }
+                    break;
+                case SHORT:
+                    if(normalized){
+                        return VK_FORMAT_R16G16_SNORM;
+                    }else{
+                        return VK_FORMAT_R16G16_SINT;
+                    }
+                    break;
+                case UNSIGNED_SHORT:
+                    if(normalized){
+                        return VK_FORMAT_R16G16_UNORM;
+                    }else{
+                        return VK_FORMAT_R16G16_UINT;
+                    }
+                    break;
+                default:
+                case FLOAT:
+                    return VK_FORMAT_R32G32_SFLOAT;
+            }
+        case 3:
+            switch(type){
+                case BYTE:
+                    if(normalized){
+                        return VK_FORMAT_R8G8B8_SNORM;
+                    }else{
+                        return VK_FORMAT_R8G8B8_SINT;
+                    }
+                    break;
+                case UNSIGNED_BYTE:
+                    if(normalized){
+                        return VK_FORMAT_R8G8B8_UNORM;
+                    }else{
+                        return VK_FORMAT_R8G8B8_UINT;
+                    }
+                    break;
+                case SHORT:
+                    if(normalized){
+                        return VK_FORMAT_R16G16B16_SNORM;
+                    }else{
+                        return VK_FORMAT_R16G16B16_SINT;
+                    }
+                    break;
+                case UNSIGNED_SHORT:
+                    if(normalized){
+                        return VK_FORMAT_R16G16B16_UNORM;
+                    }else{
+                        return VK_FORMAT_R16G16B16_UINT;
+                    }
+                    break;
+                default:
+                case FLOAT:
+                    return VK_FORMAT_R32G32B32_SFLOAT;
+            }
+        case 4:
+            switch(type){
+                case BYTE:
+                    if(normalized){
+                        return VK_FORMAT_R8G8B8A8_SNORM;
+                    }else{
+                        return VK_FORMAT_R8G8B8A8_SINT;
+                    }
+                    break;
+                case UNSIGNED_BYTE:
+                    if(normalized){
+                        return VK_FORMAT_R8G8B8A8_UNORM;
+                    }else{
+                        return VK_FORMAT_R8G8B8A8_UINT;
+                    }
+                    break;
+                case SHORT:
+                    if(normalized){
+                        return VK_FORMAT_R16G16B16A16_SNORM;
+                    }else{
+                        return VK_FORMAT_R16G16B16A16_SINT;
+                    }
+                    break;
+                case UNSIGNED_SHORT:
+                    if(normalized){
+                        return VK_FORMAT_R16G16B16A16_UNORM;
+                    }else{
+                        return VK_FORMAT_R16G16B16A16_UINT;
+                    }
+                    break;
+                default:
+                case FLOAT:
+                    return VK_FORMAT_R32G32B32A32_SFLOAT;
+            }
+    }
+}
+
 static void
 configure_shaders(cwgl_ctx_t* ctx, VkPipelineShaderStageCreateInfo* vxi,
                   VkPipelineShaderStageCreateInfo* pxi,
                   VkPipelineVertexInputStateCreateInfo* vii){
+    int i;
+    int ai;
+    int bind_at;
+    int use_attrib_register;
+    int location;
     cwgl_Program_t* program;
     cwgl_backend_Program_t* program_backend;
+    cwgl_VertexArrayObject_t* vao;
+    cwgl_vao_attrib_state_t* attrib;
+    cwgl_activeinfo_t* a;
+
     program = ctx->state.bin.CURRENT_PROGRAM;
     program_backend = program->backend;
+
+    vao = current_vao(ctx);
+    use_attrib_register = 0;
+    bind_at = 0;
+    a = program->state.attributes;
+    /* Pass1: Arrays */
+    for(i=0;i!=CWGL_MAX_VAO_SIZE;i++){
+        ai = program->state.attriblocations[i].active_index;
+        if(ai >= 0){
+            location = a[ai].location;
+            attrib = &vao->attrib[i];
+            if(attrib->VERTEX_ATTRIB_ARRAY_ENABLED){
+                program_backend->attrs[location].location = location;
+                program_backend->attrs[location].format = 
+                    to_vk_value_format(attrib->VERTEX_ATTRIB_ARRAY_SIZE,
+                                       attrib->VERTEX_ATTRIB_ARRAY_TYPE, 
+                                       attrib->VERTEX_ATTRIB_ARRAY_NORMALIZED ? 1 : 0);
+                program_backend->attrs[location].binding = bind_at;
+                program_backend->attrs[location].offset = attrib->VERTEX_ATTRIB_ARRAY_POINTER;
+                program_backend->binding_map[i] = ai;
+                program_backend->binds[bind_at].binding = bind_at;
+                program_backend->binds[bind_at].stride = attrib->VERTEX_ATTRIB_ARRAY_STRIDE;
+                program_backend->binds[bind_at].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+                bind_at++;
+            }else{
+                printf("Ignored attrib register!\n");
+                use_attrib_register = 1;
+            }
+        }
+    }
+    if(use_attrib_register){
+        program_backend->register_binding = bind_at;
+    }else{
+        program_backend->register_binding = -1;
+    }
+    /* Pass2: Registers */
+    // FIXME: Implement it
+
     vxi->sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     vxi->pNext = NULL;
     vxi->flags = 0;
@@ -175,10 +375,11 @@ configure_shaders(cwgl_ctx_t* ctx, VkPipelineShaderStageCreateInfo* vxi,
     vii->sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vii->pNext = NULL;
     vii->flags = 0;
-    vii->vertexBindingDescriptionCount = 0; //FIXME: TODO
-    vii->pVertexBindingDescriptions = 0;
-    vii->vertexAttributeDescriptionCount = 0; //FIXME: TODO
-    vii->pVertexAttributeDescriptions = 0;
+    // FIXME: vii->vertexBindingDescriptionCount = bind_at + use_attrib_register;
+    vii->vertexBindingDescriptionCount = bind_at;
+    vii->pVertexBindingDescriptions = program_backend->binds;
+    vii->vertexAttributeDescriptionCount = program_backend->input_count;
+    vii->pVertexAttributeDescriptions = program_backend->attrs;
 }
 
 static VkStencilOp
