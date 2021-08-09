@@ -1,5 +1,8 @@
 #include "cwgl-backend-vk-priv.h"
 #include <stdio.h>
+#include <string.h>
+
+#include "shxm_private.h"
 
 // FIXME: Copied from s2
 static cwgl_VertexArrayObject_t*
@@ -779,6 +782,106 @@ begin_renderpass(cwgl_ctx_t* ctx, VkRenderPass renderpass, VkFramebuffer framebu
     vkCmdBeginRenderPass(backend->command_buffer, &bi, VK_SUBPASS_CONTENTS_INLINE);
 }
 
+static void
+transfer_uniforms(cwgl_ctx_t* ctx, cwgl_Program_t* program){
+    VkResult r;
+    int i;
+    cwgl_backend_Program_t* program_backend;
+    cwgl_backend_ctx_t* backend;
+    uint8_t* device_memory_addr;
+    shxm_program_t* p;
+    cwgl_activeinfo_t* u;
+    cwgl_uniformcontent_t* uc;
+
+    backend = ctx->backend;
+    program_backend = program->backend;
+    p = program_backend->program;
+    u = program->state.uniforms;
+    uc = program->state.uniformcontents;
+
+    r = vkMapMemory(backend->device, program_backend->uniform_buffer.device_memory,
+                    0, program_backend->program->uniform_size, 0, &device_memory_addr);
+    if(r != VK_SUCCESS){
+        printf("Failed to map uniform buffer\n");
+        return;
+    }
+    /* Fill in Uniforms */
+    for(i=0;i!=program->state.ACTIVE_UNIFORMS;i++){
+        switch(u[i].type){
+            default:
+                /* Do nothing */
+                break;
+            /* UBO Values */
+            case FLOAT:
+                memcpy(device_memory_addr + u[i].offset,
+                       &uc[u[i].offset],
+                       sizeof(float));
+                break;
+            case INT:
+            case BOOL:
+                memcpy(device_memory_addr + u[i].offset,
+                       &uc[u[i].offset],
+                       sizeof(int32_t));
+                break;
+            case FLOAT_VEC2:
+                memcpy(device_memory_addr + u[i].offset,
+                       &uc[u[i].offset],
+                       sizeof(float)*2);
+                break;
+            case INT_VEC2:
+            case BOOL_VEC2:
+                memcpy(device_memory_addr + u[i].offset,
+                       &uc[u[i].offset],
+                       sizeof(int32_t)*2);
+                break;
+            case FLOAT_VEC3:
+                memcpy(device_memory_addr + u[i].offset,
+                       &uc[u[i].offset],
+                       sizeof(float)*3);
+                break;
+            case INT_VEC3:
+            case BOOL_VEC3:
+                memcpy(device_memory_addr + u[i].offset,
+                       &uc[u[i].offset],
+                       sizeof(int32_t)*3);
+                break;
+            case FLOAT_VEC4:
+                memcpy(device_memory_addr + u[i].offset,
+                       &uc[u[i].offset],
+                       sizeof(float)*4);
+                break;
+            case INT_VEC4:
+            case BOOL_VEC4:
+                memcpy(device_memory_addr + u[i].offset,
+                       &uc[u[i].offset],
+                       sizeof(int32_t)*4);
+                break;
+            case FLOAT_MAT2:
+                memcpy(device_memory_addr + u[i].offset,
+                       &uc[u[i].offset],
+                       sizeof(float)*2*2);
+                break;
+            case FLOAT_MAT3:
+                memcpy(device_memory_addr + u[i].offset,
+                       &uc[u[i].offset],
+                       sizeof(float)*3*3);
+                break;
+            case FLOAT_MAT4:
+                memcpy(device_memory_addr + u[i].offset,
+                       &uc[u[i].offset],
+                       sizeof(float)*4*4);
+                break;
+            /* Samplers */
+            case SAMPLER_2D:
+                break;
+            case SAMPLER_CUBE:
+                break;
+        }
+    }
+    vkUnmapMemory(backend->device, program_backend->uniform_buffer.device_memory);
+}
+
+
 int
 cwgl_backend_drawArrays(cwgl_ctx_t* ctx, cwgl_enum_t mode,
                         int32_t first, uint32_t count){
@@ -792,6 +895,7 @@ cwgl_backend_drawElements(cwgl_ctx_t* ctx, cwgl_enum_t mode,
     VkRenderPass renderpass;
     VkPipeline pipeline;
     VkFramebuffer framebuffer;
+    cwgl_VertexArrayObject_t* vao;
     cwgl_Program_t* program;
     cwgl_backend_Program_t* program_backend;
     cwgl_backend_ctx_t* backend;
@@ -800,18 +904,34 @@ cwgl_backend_drawElements(cwgl_ctx_t* ctx, cwgl_enum_t mode,
     backend = ctx->backend;
     program = ctx->state.bin.CURRENT_PROGRAM;
     program_backend = program->backend;
+    transfer_uniforms(ctx, program);
     create_renderpass(ctx, &renderpass);
     create_framebuffer(ctx, renderpass, &framebuffer);
     create_pipeline(ctx, mode, renderpass, program_backend->pipeline_layout, &pipeline);
     begin_cmd(ctx);
     begin_renderpass(ctx, renderpass, framebuffer);
     vkCmdBindPipeline(backend->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+    vkCmdBindDescriptorSets(backend->command_buffer,
+                            VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            program_backend->pipeline_layout,
+                            0,
+                            1,
+                            &program_backend->desc_set,
+                            0,
+                            NULL);
     vkCmdBindVertexBuffers(backend->command_buffer, 
                            0,
                            program_backend->bind_count,
                            program_backend->bind_buffers,
                            program_backend->bind_offsets);
     {
+        vao = current_vao(ctx);
+        vkCmdBindIndexBuffer(backend->command_buffer,
+                             vao->state.ELEMENT_ARRAY_BUFFER_BINDING->backend->buffer,
+                             offset,
+                             VK_INDEX_TYPE_UINT16);
+        vkCmdDrawIndexed(backend->command_buffer,
+                         count, 1, 0, 0, 0);
     }
     vkCmdEndRenderPass(backend->command_buffer);
     vkEndCommandBuffer(backend->command_buffer);
@@ -907,113 +1027,5 @@ cwgl_backend_clear(cwgl_ctx_t* ctx, uint32_t mask){
     cwgl_vkpriv_graphics_wait(ctx);
 
     return 0;
-
-#if 0
-    VkRenderPass renderpass;
-    VkPipelineLayout layout;
-    VkPipeline pipeline;
-    VkFramebuffer framebuffer;
-    VkResult r;
-    cwgl_backend_ctx_t* backend;
-    cwgl_ctx_global_state_t* s;
-    s = &ctx->state.glo;
-    backend = ctx->backend;
-    if(!(mask & (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT))){
-        /* Early cut */
-        return 0;
-    }
-    create_renderpass(ctx, &renderpass);
-    create_framebuffer(ctx, renderpass, &framebuffer);
-    {
-        VkPipelineLayoutCreateInfo lci;
-        lci.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        lci.pNext = NULL;
-        lci.flags = 0;
-        lci.setLayoutCount = 0;
-        lci.pSetLayouts = NULL;
-        lci.pushConstantRangeCount = 0;
-        lci.pPushConstantRanges = NULL;
-        r = vkCreatePipelineLayout(backend->device,
-                                   &lci,
-                                   NULL,
-                                   &layout);
-        if(r != VK_SUCCESS){
-            printf("Failed to create layout\n");
-        }
-
-    }
-    create_pipeline(ctx, -1, renderpass, layout, &pipeline);
-    begin_cmd(ctx);
-    begin_renderpass(ctx, renderpass, framebuffer);
-    vkCmdBindPipeline(backend->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-    {
-        VkClearAttachment c[2];
-        VkClearRect r;
-        VkImageAspectFlags aspect_flag;
-        int attachments;
-        int is_framebuffer;
-        if(ctx->state.bin.FRAMEBUFFER_BINDING){
-            is_framebuffer = 0; // FIXME: Implement this
-            printf("Ignored bound framebuffer!\n");
-        }else{
-            is_framebuffer = 1;
-        }
-
-        if(is_framebuffer){
-            c[0].aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            c[0].colorAttachment = 0;
-            c[0].clearValue.color.float32[0] = s->COLOR_CLEAR_VALUE[0];
-            c[0].clearValue.color.float32[1] = s->COLOR_CLEAR_VALUE[1];
-            c[0].clearValue.color.float32[2] = s->COLOR_CLEAR_VALUE[2];
-            c[0].clearValue.color.float32[3] = s->COLOR_CLEAR_VALUE[3];
-            aspect_flag = 0;
-            if(mask & GL_DEPTH_BUFFER_BIT){
-                aspect_flag |= VK_IMAGE_ASPECT_DEPTH_BIT;
-            }
-            if(mask & GL_STENCIL_BUFFER_BIT){
-                aspect_flag |= VK_IMAGE_ASPECT_STENCIL_BIT;
-            }
-            c[1].aspectMask = aspect_flag;
-            c[1].colorAttachment = 0;
-            c[1].clearValue.depthStencil.depth = s->DEPTH_CLEAR_VALUE;
-            c[1].clearValue.depthStencil.stencil = s->STENCIL_CLEAR_VALUE;
-
-            r.rect.offset.x = 0;
-            r.rect.offset.y = 0;
-            r.rect.extent.width = 1280;
-            r.rect.extent.height = 720;
-        }else{
-            // FIXME: Implement this
-        }
-
-        r.baseArrayLayer = 0;
-        r.layerCount = 0;
-        attachments = 0;
-        if(mask & GL_COLOR_BUFFER_BIT){
-            attachments++;
-        }
-        if(mask & (GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT)){
-            attachments++;
-        }
-
-        vkCmdClearAttachments(backend->command_buffer,
-                              attachments,
-                              (attachments == 1) ? 
-                              (mask & GL_COLOR_BUFFER_BIT) ? c : &c[1] : c,
-                              1,
-                              &r);
-    }
-
-    vkCmdEndRenderPass(backend->command_buffer);
-    vkEndCommandBuffer(backend->command_buffer);
-    backend->queue_has_command = 1; // FIXME: Tentative
-    cwgl_vkpriv_graphics_submit(ctx);
-    cwgl_vkpriv_graphics_wait(ctx);
-    vkDestroyFramebuffer(backend->device, framebuffer, NULL);
-    vkDestroyRenderPass(backend->device, renderpass, NULL);
-    vkDestroyPipeline(backend->device, pipeline, NULL);
-    vkDestroyLayout(backend->device, layout, NULL);
-    return 0;
-#endif
 }
 

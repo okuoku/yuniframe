@@ -81,6 +81,7 @@ struct cwgl_backend_Program_s {
     VkDescriptorSetLayout desc_set_layout;
     VkDescriptorSet desc_set;
     VkPipelineLayout pipeline_layout;
+    size_t uniform_buffer_size; /* Cache */
     cwgl_backend_Buffer_t uniform_buffer;
     /* Vulkan: Vertex attributes */
     int input_count; /* Cache */

@@ -278,6 +278,60 @@ cwgl_backend_linkProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
                 printf("Failed to create pipeline layout\n");
             }
         }
+        /* Allocate uniform buffer */
+        {
+            int memtypeidx;
+            VkBufferCreateInfo bi;
+            VkMemoryAllocateInfo ai;
+            VkWriteDescriptorSet w;
+            VkDescriptorBufferInfo dbi;
+            bi.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+            bi.pNext = NULL;
+            bi.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+            bi.flags = 0;
+            bi.size = p->uniform_size;
+            bi.queueFamilyIndexCount = 1;
+            bi.pQueueFamilyIndices = &backend->queue_family_index;
+            bi.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+            rv = vkCreateBuffer(backend->device, &bi, NULL, &program_backend->uniform_buffer.buffer);
+            if(rv != VK_SUCCESS){
+                printf("Failed to create uniform buffer\n");
+            }
+            ai.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+            ai.pNext = NULL;
+            memtypeidx = cwgl_vkpriv_select_memory_type(ctx, UINT32_MAX,
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+            ai.memoryTypeIndex = memtypeidx;
+            ai.allocationSize = p->uniform_size;
+            if(i < 0){
+                printf("Could not find memtype\n");
+            }
+            rv = vkAllocateMemory(backend->device, &ai, NULL, &program_backend->uniform_buffer.device_memory);
+            if(rv != VK_SUCCESS){
+                printf("Failed to allocate memory\n");
+            }
+            rv = vkBindBufferMemory(backend->device,
+                                    program_backend->uniform_buffer.buffer,
+                                    program_backend->uniform_buffer.device_memory, 0);
+            if(rv != VK_SUCCESS){
+                printf("Failed to bind memory\n");
+            }
+            program_backend->uniform_buffer.allocated = 1;
+            /* Preconfigure uniform buffer to descriptor */
+            w.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            w.pNext = NULL;
+            w.dstSet = program_backend->desc_set;
+            w.descriptorCount = 1;
+            w.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            dbi.buffer = program_backend->uniform_buffer.buffer;
+            dbi.offset = 0;
+            dbi.range = p->uniform_size;
+            w.pBufferInfo = &dbi;
+            w.dstArrayElement = 0;
+            w.dstBinding = 0;
+            vkUpdateDescriptorSets(backend->device, 1, &w, 0, NULL);
+        }
 
         // FIXME: Allocate attribute_registers
         program_backend->input_count = p->input_count;
