@@ -12,10 +12,6 @@ cwgl_vkpriv_destroy_program(cwgl_ctx_t* ctx, cwgl_backend_Program_t* program_bac
     cwgl_backend_ctx_t* backend;
     backend = ctx->backend;
     // FIXME: Free SHXM object here.
-    free(program_backend->attrs);
-    program_backend->attrs = NULL;
-    free(program_backend->binds);
-    program_backend->binds = NULL;
     cwgl_vkpriv_destroy_buffer(ctx, &program_backend->uniform_buffer);
     cwgl_vkpriv_destroy_buffer(ctx, &program_backend->attribute_registers);
     if(program_backend->allocated){
@@ -211,14 +207,7 @@ cwgl_backend_linkProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
             printf("Failed to load fragment shader module.\n");
         }
         // FIXME: Allocate attribute_registers
-        /* Allocate VkVertexInputAttributeDescription */
-        program_backend->attrs = malloc(sizeof(VkVertexInputAttributeDescription) * 
-                                        p->input_count);
-        /* Allocate VkVertexInputBindingDescription */
-        program_backend->binds = malloc(sizeof(VkVertexInputBindingDescription) *
-                                        p->input_count);
         program_backend->input_count = p->input_count;
-
         program_backend->allocated = 1;
     }
 

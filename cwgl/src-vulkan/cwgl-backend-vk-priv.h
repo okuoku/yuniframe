@@ -80,11 +80,13 @@ struct cwgl_backend_Program_s {
     cwgl_backend_Buffer_t uniform_buffer;
     /* Vulkan: Vertex attributes */
     int input_count;
+    int bind_count;
     cwgl_backend_Buffer_t attribute_registers;
-    VkVertexInputAttributeDescription* attrs; /* input_count */
-    VkVertexInputBindingDescription* binds; /* input_count */
+    VkVertexInputAttributeDescription attrs[CWGL_MAX_VAO_SIZE];
+    VkVertexInputBindingDescription binds[CWGL_MAX_VAO_SIZE];
+    VkBuffer bind_buffers[CWGL_MAX_VAO_SIZE];
+    VkDeviceSize bind_offsets[CWGL_MAX_VAO_SIZE];
     int binding_map[CWGL_MAX_VAO_SIZE];
-    int register_binding;
     /* SHXM */
     shxm_program_t* program;
 };

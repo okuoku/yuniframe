@@ -341,6 +341,8 @@ configure_shaders(cwgl_ctx_t* ctx, VkPipelineShaderStageCreateInfo* vxi,
                 program_backend->binds[bind_at].binding = bind_at;
                 program_backend->binds[bind_at].stride = attrib->VERTEX_ATTRIB_ARRAY_STRIDE;
                 program_backend->binds[bind_at].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+                program_backend->bind_buffers[bind_at] = attrib->VERTEX_ATTRIB_ARRAY_BUFFER_BINDING->backend->buffer;
+                program_backend->bind_offsets[bind_at] = 0;
                 bind_at++;
             }else{
                 printf("Ignored attrib register!\n");
@@ -348,12 +350,9 @@ configure_shaders(cwgl_ctx_t* ctx, VkPipelineShaderStageCreateInfo* vxi,
             }
         }
     }
-    if(use_attrib_register){
-        program_backend->register_binding = bind_at;
-    }else{
-        program_backend->register_binding = -1;
-    }
+    program_backend->bind_count = bind_at;
     /* Pass2: Registers */
+    // FIXME: program_backend->bind_count = bind_at + use_attrib_register;
     // FIXME: Implement it
 
     vxi->sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -796,10 +795,14 @@ cwgl_backend_drawElements(cwgl_ctx_t* ctx, cwgl_enum_t mode,
     VkPipeline pipeline;
     VkFramebuffer framebuffer;
     VkResult r;
+    cwgl_Program_t* program;
+    cwgl_backend_Program_t* program_backend;
     cwgl_backend_ctx_t* backend;
     cwgl_ctx_global_state_t* s;
     s = &ctx->state.glo;
     backend = ctx->backend;
+    program = ctx->state.bin.CURRENT_PROGRAM;
+    program_backend = program->backend;
     create_renderpass(ctx, &renderpass);
     create_framebuffer(ctx, renderpass, &framebuffer);
     {
@@ -823,6 +826,11 @@ cwgl_backend_drawElements(cwgl_ctx_t* ctx, cwgl_enum_t mode,
     begin_cmd(ctx);
     begin_renderpass(ctx, renderpass, framebuffer);
     vkCmdBindPipeline(backend->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+    vkCmdBindVertexBuffers(backend->command_buffer, 
+                           0,
+                           program_backend->bind_count,
+                           program_backend->bind_buffers,
+                           program_backend->bind_offsets);
     {
     }
     vkCmdEndRenderPass(backend->command_buffer);
