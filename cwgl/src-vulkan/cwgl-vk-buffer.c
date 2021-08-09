@@ -67,7 +67,7 @@ cwgl_backend_bufferData(cwgl_ctx_t* ctx, cwgl_enum_t target,
         /* Allocate buffer */
         bi.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         bi.pNext = NULL;
-        bi.usage = usage == ELEMENT_ARRAY_BUFFER ? VK_BUFFER_USAGE_INDEX_BUFFER_BIT : VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+        bi.usage = target == ELEMENT_ARRAY_BUFFER ? VK_BUFFER_USAGE_INDEX_BUFFER_BIT : VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
         bi.flags = 0;
         bi.size = size;
         bi.queueFamilyIndexCount = 1;
