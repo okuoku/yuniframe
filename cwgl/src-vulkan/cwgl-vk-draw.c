@@ -337,7 +337,6 @@ configure_shaders(cwgl_ctx_t* ctx, VkPipelineShaderStageCreateInfo* vxi,
                                        attrib->VERTEX_ATTRIB_ARRAY_NORMALIZED ? 1 : 0);
                 program_backend->attrs[location].binding = bind_at;
                 program_backend->attrs[location].offset = attrib->VERTEX_ATTRIB_ARRAY_POINTER;
-                program_backend->binding_map[i] = ai;
                 program_backend->binds[bind_at].binding = bind_at;
                 program_backend->binds[bind_at].stride = attrib->VERTEX_ATTRIB_ARRAY_STRIDE;
                 program_backend->binds[bind_at].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
@@ -791,10 +790,8 @@ int
 cwgl_backend_drawElements(cwgl_ctx_t* ctx, cwgl_enum_t mode,
                           uint32_t count, cwgl_enum_t type, uint32_t offset){
     VkRenderPass renderpass;
-    VkPipelineLayout layout;
     VkPipeline pipeline;
     VkFramebuffer framebuffer;
-    VkResult r;
     cwgl_Program_t* program;
     cwgl_backend_Program_t* program_backend;
     cwgl_backend_ctx_t* backend;
@@ -805,24 +802,7 @@ cwgl_backend_drawElements(cwgl_ctx_t* ctx, cwgl_enum_t mode,
     program_backend = program->backend;
     create_renderpass(ctx, &renderpass);
     create_framebuffer(ctx, renderpass, &framebuffer);
-    {
-        VkPipelineLayoutCreateInfo lci;
-        lci.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        lci.pNext = NULL;
-        lci.flags = 0;
-        lci.setLayoutCount = 0;
-        lci.pSetLayouts = NULL;
-        lci.pushConstantRangeCount = 0;
-        lci.pPushConstantRanges = NULL;
-        r = vkCreatePipelineLayout(backend->device,
-                                   &lci,
-                                   NULL,
-                                   &layout);
-        if(r != VK_SUCCESS){
-            printf("Failed to create layout\n");
-        }
-    }
-    create_pipeline(ctx, mode, renderpass, layout, &pipeline);
+    create_pipeline(ctx, mode, renderpass, program_backend->pipeline_layout, &pipeline);
     begin_cmd(ctx);
     begin_renderpass(ctx, renderpass, framebuffer);
     vkCmdBindPipeline(backend->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
@@ -841,7 +821,6 @@ cwgl_backend_drawElements(cwgl_ctx_t* ctx, cwgl_enum_t mode,
     vkDestroyFramebuffer(backend->device, framebuffer, NULL);
     vkDestroyRenderPass(backend->device, renderpass, NULL);
     vkDestroyPipeline(backend->device, pipeline, NULL);
-    vkDestroyPipelineLayout(backend->device, layout, NULL);
     return 0;
 }
 

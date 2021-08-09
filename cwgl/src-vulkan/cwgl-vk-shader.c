@@ -17,6 +17,10 @@ cwgl_vkpriv_destroy_program(cwgl_ctx_t* ctx, cwgl_backend_Program_t* program_bac
     if(program_backend->allocated){
         vkDestroyShaderModule(backend->device, program_backend->pixel_shader, NULL);
         vkDestroyShaderModule(backend->device, program_backend->vertex_shader, NULL);
+        vkDestroyPipelineLayout(backend->device, program_backend->pipeline_layout, NULL);
+        vkDestroyDescriptorSetLayout(backend->device, program_backend->desc_set_layout, NULL);
+        vkResetDescriptorPool(backend->device, program_backend->desc_pool, 0);
+        vkDestroyDescriptorPool(backend->device, program_backend->desc_pool, NULL);
         program_backend->allocated = 0;
     }
 }
@@ -206,6 +210,75 @@ cwgl_backend_linkProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
         if(rv != VK_SUCCESS){
             printf("Failed to load fragment shader module.\n");
         }
+        /* Generate descriptors and layouts */
+        {
+            VkDescriptorPoolCreateInfo dpi;
+            VkDescriptorPoolSize two[2]; /* Uniform, and opaques */
+            VkDescriptorSetAllocateInfo dai;
+            VkDescriptorSetLayoutCreateInfo dli;
+            VkDescriptorSetLayoutBinding dlb[32+1]; /* 32 opaques and 1 UBO */
+            VkPipelineLayoutCreateInfo pli;
+            if(p->opaque_count > 32){
+                printf("Too many opaque fields\n");
+                return -1;
+            }
+            two[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            two[0].descriptorCount = 1; /* No UBO atm */
+            two[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            two[1].descriptorCount = p->opaque_count;
+            dpi.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+            dpi.pNext = NULL;
+            dpi.flags = 0;
+            dpi.maxSets = 1;
+            dpi.poolSizeCount = 2;
+            dpi.pPoolSizes = two;
+            rv = vkCreateDescriptorPool(backend->device, &dpi, NULL, &program_backend->desc_pool);
+            if(rv != VK_SUCCESS){
+                printf("Failed to create descriptor pool\n");
+            }
+            dlb[0].binding = 0;
+            dlb[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            dlb[0].descriptorCount = 1;
+            dlb[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+            dlb[0].pImmutableSamplers = NULL;
+            for(i=0;i!=p->opaque_count;i++){
+                dlb[i+1].binding = i+1;
+                dlb[i+1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                dlb[i+1].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+                dlb[i+1].descriptorCount = 1;
+                dlb[i+1].pImmutableSamplers = NULL;
+            }
+            dli.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+            dli.pNext = NULL;
+            dli.flags = 0;
+            dli.bindingCount = p->opaque_count + 1;
+            dli.pBindings = dlb;
+            rv = vkCreateDescriptorSetLayout(backend->device, &dli, NULL, &program_backend->desc_set_layout);
+            if(rv != VK_SUCCESS){
+                printf("Failed to create descriptor set layout\n");
+            }
+            dai.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+            dai.pNext = NULL;
+            dai.descriptorPool = program_backend->desc_pool;
+            dai.descriptorSetCount = 1;
+            dai.pSetLayouts = &program_backend->desc_set_layout;
+            rv = vkAllocateDescriptorSets(backend->device, &dai, &program_backend->desc_set);
+            if(rv != VK_SUCCESS){
+                printf("Failed to create descriptor set\n");
+            }
+            pli.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+            pli.pNext = NULL;
+            pli.flags = 0;
+            pli.pushConstantRangeCount = 0;
+            pli.pPushConstantRanges = NULL;
+            pli.setLayoutCount = 1;
+            pli.pSetLayouts = &program_backend->desc_set_layout;
+            rv = vkCreatePipelineLayout(backend->device, &pli, NULL, &program_backend->pipeline_layout);
+            if(rv != VK_SUCCESS){
+                printf("Failed to create pipeline layout\n");
+            }
+        }
+
         // FIXME: Allocate attribute_registers
         program_backend->input_count = p->input_count;
         program_backend->allocated = 1;

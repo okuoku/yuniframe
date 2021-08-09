@@ -77,16 +77,19 @@ struct cwgl_backend_Program_s {
     VkShaderModule vertex_shader;
     VkShaderModule pixel_shader;
     /* Vulkan: Uniforms */
+    VkDescriptorPool desc_pool;
+    VkDescriptorSetLayout desc_set_layout;
+    VkDescriptorSet desc_set;
+    VkPipelineLayout pipeline_layout;
     cwgl_backend_Buffer_t uniform_buffer;
     /* Vulkan: Vertex attributes */
-    int input_count;
+    int input_count; /* Cache */
     int bind_count;
     cwgl_backend_Buffer_t attribute_registers;
     VkVertexInputAttributeDescription attrs[CWGL_MAX_VAO_SIZE];
     VkVertexInputBindingDescription binds[CWGL_MAX_VAO_SIZE];
-    VkBuffer bind_buffers[CWGL_MAX_VAO_SIZE];
-    VkDeviceSize bind_offsets[CWGL_MAX_VAO_SIZE];
-    int binding_map[CWGL_MAX_VAO_SIZE];
+    VkBuffer bind_buffers[CWGL_MAX_VAO_SIZE]; /* Cache */
+    VkDeviceSize bind_offsets[CWGL_MAX_VAO_SIZE]; /* Cache */
     /* SHXM */
     shxm_program_t* program;
 };
