@@ -177,7 +177,6 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
         }
         
         /* Create surface */
-        // FIXME: Y-Flip surface?
         cwgl_integ_vkpriv_createsurface(ctx, instance, &surface);
         /* Validate surface */
         r = vkGetPhysicalDeviceSurfaceSupportKHR(physical_device,

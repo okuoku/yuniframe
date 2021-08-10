@@ -56,8 +56,8 @@ update_texture(cwgl_ctx_t* ctx, cwgl_Texture_t* texture){
         case NEAREST_MIPMAP_LINEAR:
         case LINEAR_MIPMAP_LINEAR:
             // FIXME: Debug
-            si.minFilter = VK_FILTER_NEAREST;
-            si.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+            si.minFilter = VK_FILTER_LINEAR;
+            si.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
             break;
     }
     switch(texture->state.TEXTURE_MAG_FILTER){
@@ -65,7 +65,7 @@ update_texture(cwgl_ctx_t* ctx, cwgl_Texture_t* texture){
         case NEAREST:
         case LINEAR:
             // FIXME: Debug
-            si.magFilter = VK_FILTER_NEAREST;
+            si.magFilter = VK_FILTER_LINEAR;
             break;
     }
     switch(texture->state.TEXTURE_WRAP_S){
@@ -197,8 +197,6 @@ create_renderpass(cwgl_ctx_t* ctx, VkRenderPass* out_renderpass){
         ads[1].format = backend->depth.format;
         ads[1].flags = 0;
         ads[1].samples = VK_SAMPLE_COUNT_1_BIT;
-        ads[1].loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-        ads[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         ads[1].loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
         ads[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         ads[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
@@ -1155,6 +1153,7 @@ cwgl_backend_clear(cwgl_ctx_t* ctx, uint32_t mask){
             // FIXME: Implement it
         }
     }
+    //mask |= (GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     if(mask & (GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT)){
         d.depth = s->DEPTH_CLEAR_VALUE;
         d.stencil = s->STENCIL_CLEAR_VALUE;
@@ -1170,8 +1169,8 @@ cwgl_backend_clear(cwgl_ctx_t* ctx, uint32_t mask){
         r.baseArrayLayer = 0;
         r.layerCount = 1;
         if(is_framebuffer){
-            cmd_barrier(ctx, backend->cb[backend->current_image_index],
-                        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            cmd_barrier(ctx, backend->depth.image,
+                        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                         r.aspectMask);
             vkCmdClearDepthStencilImage(backend->command_buffer,
@@ -1180,9 +1179,9 @@ cwgl_backend_clear(cwgl_ctx_t* ctx, uint32_t mask){
                                         &d,
                                         1,
                                         &r);
-            cmd_barrier(ctx, backend->cb[backend->current_image_index],
-                        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            cmd_barrier(ctx, backend->depth.image,
                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
                         r.aspectMask);
         }else{
             // FIXME: Implement it
