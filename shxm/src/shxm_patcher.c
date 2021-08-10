@@ -606,6 +606,24 @@ patch_locations(struct patchctx_s* cur, shxm_util_buf_t* decorations){
 }
 
 static int
+nopout_relaxed_precs(uint32_t* ir, int irlen){
+    int i;
+    uint32_t op;
+    uint32_t len;
+    for(i=5 /* First instr */;i<irlen;){
+        op = ir[i] & 0xffff;
+        len = ir[i] >> 16;
+        if(op == 71 && ir[i+2] == 0){
+            /* OpDecorate, RelaxedPrecision */
+            printf("Patched loc = %d\n",i);
+            nopout(&ir[i]);
+        }
+        i += len;
+    }
+    return 0;
+}
+
+static int
 calc_main_skip(uint32_t* ir, int start){
     uint32_t idx;
     uint32_t op;
@@ -668,6 +686,8 @@ shxm_private_patch_spirv(shxm_ctx_t* ctx,
     }
     memcpy(temp_ir, source_ir, sizeof(uint32_t)*source_ir_len);
     temp_ir_len = source_ir_len;
+
+    nopout_relaxed_precs(temp_ir, source_ir_len);
 
     cur.phase = phase;
     cur.prog = prog;
