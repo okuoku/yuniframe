@@ -625,9 +625,9 @@ create_pipeline(cwgl_ctx_t* ctx, cwgl_enum_t primitive,
     vsi.viewportCount = 1;
     vsi.pViewports = &vp;
     vp.x = s->VIEWPORT[0];
-    vp.y = s->VIEWPORT[1];
+    vp.y = s->VIEWPORT[3] - s->VIEWPORT[1];
     vp.width = s->VIEWPORT[2];
-    vp.height = s->VIEWPORT[3];
+    vp.height = -s->VIEWPORT[3];
     vp.minDepth = s->DEPTH_RANGE[0];
     vp.maxDepth = s->DEPTH_RANGE[1];
     if(s->SCISSOR_TEST){
