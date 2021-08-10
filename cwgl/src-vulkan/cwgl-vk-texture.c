@@ -4,6 +4,12 @@
 
 void 
 cwgl_vkpriv_destroy_texture(cwgl_ctx_t* ctx, cwgl_backend_Texture_t* texture_backend){
+    if(texture_backend->sampler_allocated){
+        vkDestroySampler(ctx->backend->device, texture_backend->sampler, NULL);
+        texture_backend->sampler_allocated = 0;
+    }
+    // FIXME: Pull allocated check here
+    vkDestroyImageView(ctx->backend->device, texture_backend->view, NULL);
     vkDestroyImage(ctx->backend->device, texture_backend->image, NULL);
     vkFreeMemory(ctx->backend->device, texture_backend->device_memory, NULL);
     texture_backend->allocated = 0;
@@ -123,6 +129,7 @@ cwgl_backend_texImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target,
     VkMemoryAllocateInfo ai;
     VkImage image;
     VkDeviceMemory device_memory;
+    VkFormat vkformat;
     void* temp_device_memory_addr;
     backend = ctx->backend;
     texture = current_texture(ctx, target);
@@ -185,7 +192,8 @@ cwgl_backend_texImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target,
     ii.pNext = NULL;
     ii.flags = 0;
     ii.imageType = VK_IMAGE_TYPE_2D;
-    ii.format = to_vulkan_format(format, type);
+    vkformat = to_vulkan_format(format, type);
+    ii.format = vkformat;
     ii.extent.width = width;
     ii.extent.height = height;
     ii.extent.depth = 1;
@@ -284,6 +292,31 @@ cwgl_backend_texImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target,
         backend->queue_has_command = 1; // FIXME: Tentative
         cwgl_vkpriv_graphics_submit(ctx);
         cwgl_vkpriv_graphics_wait(ctx);
+    }
+    /* Generate ImageView */
+    { /* Tentative */
+        VkImageViewCreateInfo vci;
+        vci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        vci.pNext = NULL;
+        vci.flags = 0;
+        vci.image = image;
+        vci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        vci.format = vkformat;
+        vci.components.r = VK_COMPONENT_SWIZZLE_R;
+        vci.components.g = VK_COMPONENT_SWIZZLE_G;
+        vci.components.b = VK_COMPONENT_SWIZZLE_B;
+        vci.components.a = VK_COMPONENT_SWIZZLE_A;
+        vci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        // FIXME: Support mipmap etc.
+        vci.subresourceRange.baseMipLevel = 0;
+        vci.subresourceRange.levelCount = 1;
+        vci.subresourceRange.baseArrayLayer = 0;
+        vci.subresourceRange.layerCount = 1;
+        r = vkCreateImageView(backend->device, &vci, NULL, 
+                              &texture_backend->view);
+        if(r != VK_SUCCESS){
+            printf("Failed to create imageview");
+        }
     }
     /* Destroy temp_buffer */
     texture_backend->allocated = 1;

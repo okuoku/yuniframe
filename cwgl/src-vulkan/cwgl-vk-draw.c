@@ -14,6 +14,103 @@ current_vao(cwgl_ctx_t* ctx){
     }
 }
 
+static cwgl_Texture_t*
+current_texture(cwgl_ctx_t* ctx, int id, cwgl_enum_t slot){
+    cwgl_Texture_t* t;
+    cwgl_texture_unit_state_t* s;
+    s = ctx->state.bin.texture_unit;
+    if(id > 32){
+        return NULL;
+    }
+    switch(slot){
+        case TEXTURE_2D:
+            return s[id].TEXTURE_BINDING_2D;
+        case TEXTURE_CUBE_MAP:
+            return s[id].TEXTURE_BINDING_CUBE_MAP;
+    }
+    return NULL;
+}
+
+static int
+update_texture(cwgl_ctx_t* ctx, cwgl_Texture_t* texture){
+    cwgl_backend_Texture_t* texture_backend;
+    cwgl_backend_ctx_t* backend;
+    VkSamplerCreateInfo si;
+    VkResult r;
+    texture_backend = texture->backend;
+    backend = ctx->backend;
+    if(texture_backend->sampler_allocated){
+        // FIXME: Update only if changed
+        vkDestroySampler(backend->device, texture_backend->sampler, NULL);
+    }
+
+    si.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    si.pNext = NULL;
+    si.flags = 0;
+    switch(texture->state.TEXTURE_MIN_FILTER){
+        default:
+        case NEAREST:
+        case LINEAR:
+        case NEAREST_MIPMAP_NEAREST:
+        case LINEAR_MIPMAP_NEAREST:
+        case NEAREST_MIPMAP_LINEAR:
+        case LINEAR_MIPMAP_LINEAR:
+            // FIXME: Debug
+            si.minFilter = VK_FILTER_NEAREST;
+            si.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+            break;
+    }
+    switch(texture->state.TEXTURE_MAG_FILTER){
+        default:
+        case NEAREST:
+        case LINEAR:
+            // FIXME: Debug
+            si.magFilter = VK_FILTER_NEAREST;
+            break;
+    }
+    switch(texture->state.TEXTURE_WRAP_S){
+        default:
+        case CLAMP_TO_EDGE:
+            si.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+            break;
+        case MIRRORED_REPEAT:
+            si.addressModeU = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+            break;
+        case REPEAT:
+            si.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+            break;
+    }
+    switch(texture->state.TEXTURE_WRAP_T){
+        default:
+        case CLAMP_TO_EDGE:
+            si.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+            break;
+        case MIRRORED_REPEAT:
+            si.addressModeV = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+            break;
+        case REPEAT:
+            si.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+            break;
+    }
+    si.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    si.mipLodBias = 0.0f;
+    si.anisotropyEnable = VK_FALSE;
+    si.maxAnisotropy = VK_FALSE;
+    si.compareEnable = VK_FALSE;
+    si.compareOp = 0;
+    si.minLod = 0;
+    si.maxLod = 0;
+    si.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
+    si.unnormalizedCoordinates = VK_FALSE;
+    r = vkCreateSampler(backend->device, &si, NULL, &texture_backend->sampler);
+    if(r != VK_SUCCESS){
+        printf("Failed to create sampler");
+        return -1;
+    }
+    texture_backend->sampler_allocated = 1;
+    return 0;
+}
+
 static int
 create_framebuffer(cwgl_ctx_t* ctx, VkRenderPass renderpass, VkFramebuffer* out_framebuffer){
     int is_framebuffer;
@@ -549,7 +646,7 @@ create_pipeline(cwgl_ctx_t* ctx, cwgl_enum_t primitive,
     rsi.pNext = NULL;
     rsi.flags = 0;
     rsi.depthClampEnable = VK_FALSE; // FIXME: ???
-    rsi.rasterizerDiscardEnable = VK_TRUE;
+    rsi.rasterizerDiscardEnable = VK_FALSE;
     if(line){
         rsi.polygonMode = VK_POLYGON_MODE_LINE;
     }else if(point){
@@ -596,7 +693,7 @@ create_pipeline(cwgl_ctx_t* ctx, cwgl_enum_t primitive,
         rsi.depthBiasEnable = VK_TRUE;
         // FIXME: Is this OK?
         rsi.depthBiasConstantFactor = s->POLYGON_OFFSET_UNITS;
-        rsi.depthBiasClamp = 1.0;
+        rsi.depthBiasClamp = 0.0; /* Dynamic state VK_DYNAMIC_STATE_DEPTH_BIAS */
         rsi.depthBiasSlopeFactor = s->POLYGON_OFFSET_FACTOR;
     }else{
         rsi.depthBiasEnable = VK_FALSE;
@@ -703,7 +800,7 @@ create_pipeline(cwgl_ctx_t* ctx, cwgl_enum_t primitive,
             iai.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
             break;
     }
-    iai.primitiveRestartEnable = VK_TRUE; // For 3.0
+    iai.primitiveRestartEnable = VK_FALSE; // FIXME: For WebGL2
 
     pi.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pi.pNext = NULL;
@@ -873,8 +970,32 @@ transfer_uniforms(cwgl_ctx_t* ctx, cwgl_Program_t* program){
                 break;
             /* Samplers */
             case SAMPLER_2D:
+                {
+                    VkDescriptorImageInfo di;
+                    VkWriteDescriptorSet ws;
+                    cwgl_Texture_t* texture;
+                    int32_t sampler_id;
+                    sampler_id = uc[u[i].offset].asInt;
+                    texture = current_texture(ctx, sampler_id, TEXTURE_2D);
+                    update_texture(ctx, texture);
+                    di.sampler = texture->backend->sampler;
+                    di.imageView = texture->backend->view;
+                    di.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+                    ws.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                    ws.pNext = NULL;
+                    ws.dstSet = program_backend->desc_set;
+                    ws.dstBinding = 1; // FIXME: TODO
+                    ws.dstArrayElement = 0;
+                    ws.descriptorCount = 1;
+                    ws.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                    ws.pImageInfo = &di;
+                    ws.pBufferInfo = NULL;
+                    ws.pTexelBufferView = NULL;
+                    vkUpdateDescriptorSets(backend->device, 1, &ws, 0, NULL);
+                }
                 break;
             case SAMPLER_CUBE:
+                // FIXME: Implement it
                 break;
         }
     }

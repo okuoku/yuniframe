@@ -295,6 +295,7 @@ cwgl_backend_Texture_init(cwgl_ctx_t* ctx, cwgl_Texture_t* texture){
     cwgl_backend_Texture_t* t;
     t = malloc(sizeof(cwgl_backend_Texture_t));
     if(t){
+        t->sampler_allocated = 0;
         t->allocated = 0;
     }
     texture->backend = t;

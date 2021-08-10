@@ -81,7 +81,6 @@ struct cwgl_backend_Program_s {
     VkDescriptorSetLayout desc_set_layout;
     VkDescriptorSet desc_set;
     VkPipelineLayout pipeline_layout;
-    size_t uniform_buffer_size; /* Cache */
     cwgl_backend_Buffer_t uniform_buffer;
     /* Vulkan: Vertex attributes */
     int input_count; /* Cache */
@@ -97,8 +96,13 @@ struct cwgl_backend_Program_s {
 
 struct cwgl_backend_Texture_s {
     int allocated;
+    /* Image data */
     VkImage image;
     VkDeviceMemory device_memory;
+    VkImageView view;
+    /* Combined sampler (Updated during render kick) */
+    int sampler_allocated;
+    VkSampler sampler;
 };
 
 void cwgl_vkpriv_prepare_fb(cwgl_ctx_t* ctx);
