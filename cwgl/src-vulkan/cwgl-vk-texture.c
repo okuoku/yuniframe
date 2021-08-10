@@ -293,6 +293,41 @@ cwgl_backend_texImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target,
         cwgl_vkpriv_graphics_submit(ctx);
         cwgl_vkpriv_graphics_wait(ctx);
     }
+
+    /* Translate imageformat */
+    { /* Tentative */
+        VkCommandBufferBeginInfo bi0;
+        VkImageMemoryBarrier ibi;
+        bi0.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        bi0.pNext = NULL;
+        bi0.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        bi0.pInheritanceInfo = NULL;
+        vkBeginCommandBuffer(backend->command_buffer, &bi0);
+        ibi.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        ibi.pNext = NULL;
+        ibi.srcAccessMask = 0; /* Nothing */
+        ibi.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        ibi.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        ibi.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        ibi.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        ibi.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        ibi.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        ibi.subresourceRange.baseMipLevel = 0;
+        ibi.subresourceRange.levelCount = 1;
+        ibi.subresourceRange.baseArrayLayer = 0;
+        ibi.subresourceRange.layerCount = 1;
+        ibi.image = image;
+        vkCmdPipelineBarrier(backend->command_buffer,
+                             VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                             VK_PIPELINE_STAGE_TRANSFER_BIT,
+                             0, 0, NULL, 0,
+                             NULL, 1, &ibi);
+        vkEndCommandBuffer(backend->command_buffer);
+        backend->queue_has_command = 1; // FIXME: Tentative
+        cwgl_vkpriv_graphics_submit(ctx);
+        cwgl_vkpriv_graphics_wait(ctx);
+    }
+
     /* Generate ImageView */
     { /* Tentative */
         VkImageViewCreateInfo vci;
