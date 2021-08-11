@@ -3,6 +3,7 @@
 
 #include "spirv-tools/optimizer.hpp"
 
+#include <cstring>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
