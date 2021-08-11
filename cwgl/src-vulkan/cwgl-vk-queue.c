@@ -27,10 +27,10 @@ cwgl_vkpriv_graphics_submit(cwgl_ctx_t* ctx){
         si.pNext = NULL;
         si.commandBufferCount = 1;
         si.pCommandBuffers = &backend->command_buffer;
+        wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
         if(backend->need_wait_fb){
             si.waitSemaphoreCount = 1;
             si.pWaitSemaphores = &backend->sem_fb;
-            wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
             si.pWaitDstStageMask = &wait_stage;
             backend->need_wait_fb = 0;
         }else{
