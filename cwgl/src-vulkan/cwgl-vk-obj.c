@@ -202,7 +202,7 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
         sci.imageExtent.width = 1280;
         sci.imageExtent.height = 720;
         sci.imageArrayLayers = 1;
-        sci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+        sci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
         sci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
         sci.queueFamilyIndexCount = 0;
         sci.pQueueFamilyIndices = NULL;
