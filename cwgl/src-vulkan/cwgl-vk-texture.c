@@ -337,10 +337,11 @@ cwgl_backend_texImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target,
         vci.image = image;
         vci.viewType = VK_IMAGE_VIEW_TYPE_2D;
         vci.format = vkformat;
-        vci.components.r = VK_COMPONENT_SWIZZLE_R;
-        vci.components.g = VK_COMPONENT_SWIZZLE_G;
-        vci.components.b = VK_COMPONENT_SWIZZLE_B;
-        vci.components.a = VK_COMPONENT_SWIZZLE_A;
+        vci.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        vci.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        vci.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        vci.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+        
         vci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         // FIXME: Support mipmap etc.
         vci.subresourceRange.baseMipLevel = 0;
