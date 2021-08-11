@@ -42,6 +42,7 @@ cwgl_backend_bufferData(cwgl_ctx_t* ctx, cwgl_enum_t target,
     cwgl_backend_Buffer_t* buffer_backend;
     VkBuffer newbuffer;
     VkDeviceMemory device_memory;
+    VkMemoryRequirements memory_requirements;
     void* device_memory_addr;
     VkBufferCreateInfo bi;
     VkMemoryAllocateInfo ai;
@@ -78,9 +79,12 @@ cwgl_backend_bufferData(cwgl_ctx_t* ctx, cwgl_enum_t target,
             printf("FAILed to create buffer\n");
             return -1;
         }
+        vkGetBufferMemoryRequirements(backend->device,
+                                      newbuffer,
+                                      &memory_requirements);
         ai.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         ai.pNext = NULL;
-        i = cwgl_vkpriv_select_memory_type(ctx, UINT32_MAX,
+        i = cwgl_vkpriv_select_memory_type(ctx, memory_requirements.memoryTypeBits,
                                            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                                            VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
         if(i < 0){
@@ -88,7 +92,7 @@ cwgl_backend_bufferData(cwgl_ctx_t* ctx, cwgl_enum_t target,
             return -1;
         }
         ai.memoryTypeIndex = i;
-        ai.allocationSize = size;
+        ai.allocationSize = memory_requirements.size;
         r = vkAllocateMemory(backend->device, &ai, NULL, &device_memory);
         if(r != VK_SUCCESS){
             printf("FAILed to allocate memory\n");

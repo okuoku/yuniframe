@@ -285,6 +285,7 @@ cwgl_backend_linkProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
             VkMemoryAllocateInfo ai;
             VkWriteDescriptorSet w;
             VkDescriptorBufferInfo dbi;
+            VkMemoryRequirements mr;
             bi.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
             bi.pNext = NULL;
             bi.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
@@ -297,13 +298,16 @@ cwgl_backend_linkProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
             if(rv != VK_SUCCESS){
                 printf("Failed to create uniform buffer\n");
             }
+            vkGetBufferMemoryRequirements(backend->device,
+                                          program_backend->uniform_buffer.buffer,
+                                          &mr);
             ai.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
             ai.pNext = NULL;
-            memtypeidx = cwgl_vkpriv_select_memory_type(ctx, UINT32_MAX,
+            memtypeidx = cwgl_vkpriv_select_memory_type(ctx, mr.memoryTypeBits,
                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                 VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
             ai.memoryTypeIndex = memtypeidx;
-            ai.allocationSize = p->uniform_size;
+            ai.allocationSize = mr.size;
             if(i < 0){
                 printf("Could not find memtype\n");
             }

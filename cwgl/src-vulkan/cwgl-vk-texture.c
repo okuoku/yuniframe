@@ -155,9 +155,12 @@ cwgl_backend_texImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target,
         printf("FAILed to create temp_buffer\n");
         return -1;
     }
+    vkGetBufferMemoryRequirements(backend->device,
+                                  temp_buffer,
+                                  &memory_requirements);
     temp_ai.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     temp_ai.pNext = NULL;
-    i = cwgl_vkpriv_select_memory_type(ctx, UINT32_MAX,
+    i = cwgl_vkpriv_select_memory_type(ctx, memory_requirements.memoryTypeBits,
                                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
                                        VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     if(i < 0){
@@ -165,7 +168,7 @@ cwgl_backend_texImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target,
         return -1;
     }
     temp_ai.memoryTypeIndex = i;
-    temp_ai.allocationSize = buflen;
+    temp_ai.allocationSize = memory_requirements.size;
     r = vkAllocateMemory(backend->device, &temp_ai, NULL, &temp_device_memory);
     if(r != VK_SUCCESS){
         printf("FAILed to allocate temp_buffer\n");
