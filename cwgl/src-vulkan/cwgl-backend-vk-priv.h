@@ -103,6 +103,7 @@ struct cwgl_backend_Texture_s {
     /* Combined sampler (Updated during render kick) */
     int sampler_allocated;
     VkSampler sampler;
+    cwgl_texture_state_t cached_tracker_state;
 };
 
 void cwgl_vkpriv_prepare_fb(cwgl_ctx_t* ctx);

@@ -40,10 +40,18 @@ update_texture(cwgl_ctx_t* ctx, cwgl_Texture_t* texture){
     texture_backend = texture->backend;
     backend = ctx->backend;
     if(texture_backend->sampler_allocated){
-        // FIXME: Update only if changed
-        vkDestroySampler(backend->device, texture_backend->sampler, NULL);
+        if(! memcmp(&texture_backend->cached_tracker_state,
+                    &texture->state,
+                    sizeof(cwgl_texture_state_t))){
+            /* Cache hit */
+            return 0;
+        }else{
+            vkDestroySampler(backend->device, texture_backend->sampler, NULL);
+            texture_backend->sampler_allocated = 0;
+        }
     }
 
+    texture_backend->cached_tracker_state = texture->state;
     si.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
     si.pNext = NULL;
     si.flags = 0;
