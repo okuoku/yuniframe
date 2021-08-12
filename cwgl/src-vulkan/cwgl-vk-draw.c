@@ -614,14 +614,13 @@ create_pipeline(cwgl_ctx_t* ctx, cwgl_enum_t primitive,
     VkPipelineInputAssemblyStateCreateInfo iai;
 
     VkPipelineViewportStateCreateInfo vsi;
-    VkViewport vp;
-    VkRect2D sci;
     VkPipelineRasterizationStateCreateInfo rsi;
     VkPipelineMultisampleStateCreateInfo msi;
     VkPipelineDepthStencilStateCreateInfo dsi;
     VkPipelineColorBlendStateCreateInfo cbi;
     VkPipelineColorBlendAttachmentState cbas;
     VkPipelineDynamicStateCreateInfo dyi;
+    VkDynamicState dys[2];
     cwgl_backend_ctx_t* backend;
     VkResult r;
     int line = 0;
@@ -652,24 +651,9 @@ create_pipeline(cwgl_ctx_t* ctx, cwgl_enum_t primitive,
     vsi.pNext = NULL;
     vsi.flags = 0;
     vsi.viewportCount = 1;
-    vsi.pViewports = &vp;
-    vp.x = s->VIEWPORT[0];
-    vp.y = s->VIEWPORT[3] - s->VIEWPORT[1];
-    vp.width = s->VIEWPORT[2];
-    vp.height = -s->VIEWPORT[3];
-    vp.minDepth = s->DEPTH_RANGE[0];
-    vp.maxDepth = s->DEPTH_RANGE[1];
-    if(s->SCISSOR_TEST){
-        vsi.scissorCount = 1;
-        vsi.pScissors = &sci;
-        sci.offset.x = s->SCISSOR_BOX[0];
-        sci.offset.y = (s->VIEWPORT[3] - s->SCISSOR_BOX[1]) - s->SCISSOR_BOX[3];
-        sci.extent.width = s->SCISSOR_BOX[2];
-        sci.extent.height = s->SCISSOR_BOX[3];
-    }else{
-        vsi.scissorCount = 0;
-        vsi.pScissors = NULL;
-    }
+    vsi.pScissors = NULL;
+    vsi.scissorCount = 1;
+    vsi.pViewports = NULL;
 
     rsi.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rsi.pNext = NULL;
@@ -798,11 +782,14 @@ create_pipeline(cwgl_ctx_t* ctx, cwgl_enum_t primitive,
     cbi.blendConstants[2] = s->BLEND_COLOR[2];
     cbi.blendConstants[3] = s->BLEND_COLOR[3];
 
+    dys[0] = VK_DYNAMIC_STATE_VIEWPORT;
+    dys[1] = VK_DYNAMIC_STATE_SCISSOR;
+
     dyi.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dyi.pNext = NULL;
     dyi.flags = 0;
-    dyi.dynamicStateCount = 0;
-    dyi.pDynamicStates = NULL;
+    dyi.dynamicStateCount = 2;
+    dyi.pDynamicStates = dys;
 
     iai.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     iai.pNext = NULL;
@@ -1084,6 +1071,33 @@ cwgl_backend_drawElements(cwgl_ctx_t* ctx, cwgl_enum_t mode,
                            program_backend->bind_count,
                            program_backend->bind_buffers,
                            program_backend->bind_offsets);
+    /* Setup Viewport and Scissor */
+    {
+        VkViewport vp;
+        VkRect2D sc;
+        vp.x = s->VIEWPORT[0];
+        vp.y = s->VIEWPORT[3] - s->VIEWPORT[1];
+        vp.width = s->VIEWPORT[2];
+        vp.height = -s->VIEWPORT[3];
+        vp.minDepth = s->DEPTH_RANGE[0];
+        vp.maxDepth = s->DEPTH_RANGE[1];
+        if(s->SCISSOR_TEST){
+            sc.offset.x = s->SCISSOR_BOX[0];
+            sc.offset.y = (s->VIEWPORT[3] - s->SCISSOR_BOX[1]) - s->SCISSOR_BOX[3];
+            sc.extent.width = s->SCISSOR_BOX[2];
+            sc.extent.height = s->SCISSOR_BOX[3];
+        }else{
+            sc.offset.x = 0;
+            sc.offset.y = 0;
+            sc.extent.width = s->VIEWPORT[2];
+            sc.extent.height = s->VIEWPORT[3];
+        }
+        vkCmdSetViewport(backend->command_buffer,
+                         0, 1, &vp);
+        vkCmdSetScissor(backend->command_buffer,
+                        0, 1, &sc);
+    }
+    /* Draw */
     {
         vao = current_vao(ctx);
         vkCmdBindIndexBuffer(backend->command_buffer,
