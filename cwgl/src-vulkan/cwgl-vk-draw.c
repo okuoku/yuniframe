@@ -430,10 +430,19 @@ to_vk_value_format(int size, cwgl_enum_t type, int normalized){
     }
 }
 
+struct cwgl_backend_pipeline_vtxbinds_s {
+    VkBuffer bind_buffers[CWGL_MAX_VAO_SIZE]; /* Cache */
+    VkDeviceSize bind_offsets[CWGL_MAX_VAO_SIZE]; /* Cache */
+};
+
+typedef struct cwgl_backend_pipeline_vtxbinds_s cwgl_backend_pipeline_vtxbinds_t;
+
 static void
 configure_shaders(cwgl_ctx_t* ctx, VkPipelineShaderStageCreateInfo* vxi,
                   VkPipelineShaderStageCreateInfo* pxi,
-                  VkPipelineVertexInputStateCreateInfo* vii){
+                  VkPipelineVertexInputStateCreateInfo* vii,
+                  cwgl_backend_pipeline_identity_t* id,
+                  cwgl_backend_pipeline_vtxbinds_t* vtx){
     int i;
     int ai;
     int bind_at;
@@ -459,18 +468,18 @@ configure_shaders(cwgl_ctx_t* ctx, VkPipelineShaderStageCreateInfo* vxi,
             location = a[ai].location;
             attrib = &vao->attrib[i];
             if(attrib->VERTEX_ATTRIB_ARRAY_ENABLED){
-                program_backend->attrs[location].location = location;
-                program_backend->attrs[location].format = 
+                id->attrs[location].location = location;
+                id->attrs[location].format = 
                     to_vk_value_format(attrib->VERTEX_ATTRIB_ARRAY_SIZE,
                                        attrib->VERTEX_ATTRIB_ARRAY_TYPE, 
                                        attrib->VERTEX_ATTRIB_ARRAY_NORMALIZED ? 1 : 0);
-                program_backend->attrs[location].binding = bind_at;
-                program_backend->attrs[location].offset = attrib->VERTEX_ATTRIB_ARRAY_POINTER;
-                program_backend->binds[bind_at].binding = bind_at;
-                program_backend->binds[bind_at].stride = attrib->VERTEX_ATTRIB_ARRAY_STRIDE;
-                program_backend->binds[bind_at].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-                program_backend->bind_buffers[bind_at] = attrib->VERTEX_ATTRIB_ARRAY_BUFFER_BINDING->backend->buffer;
-                program_backend->bind_offsets[bind_at] = 0;
+                id->attrs[location].binding = bind_at;
+                id->attrs[location].offset = 0;
+                id->binds[bind_at].binding = bind_at;
+                id->binds[bind_at].stride = attrib->VERTEX_ATTRIB_ARRAY_STRIDE;
+                id->binds[bind_at].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+                vtx->bind_buffers[bind_at] = attrib->VERTEX_ATTRIB_ARRAY_BUFFER_BINDING->backend->buffer;
+                vtx->bind_offsets[bind_at] = attrib->VERTEX_ATTRIB_ARRAY_POINTER;
                 bind_at++;
             }else{
                 printf("Ignored attrib register!\n");
@@ -478,7 +487,7 @@ configure_shaders(cwgl_ctx_t* ctx, VkPipelineShaderStageCreateInfo* vxi,
             }
         }
     }
-    program_backend->bind_count = bind_at;
+    id->bind_count = bind_at;
     /* Pass2: Registers */
     // FIXME: program_backend->bind_count = bind_at + use_attrib_register;
     // FIXME: Implement it
@@ -504,9 +513,9 @@ configure_shaders(cwgl_ctx_t* ctx, VkPipelineShaderStageCreateInfo* vxi,
     vii->flags = 0;
     // FIXME: vii->vertexBindingDescriptionCount = bind_at + use_attrib_register;
     vii->vertexBindingDescriptionCount = bind_at;
-    vii->pVertexBindingDescriptions = program_backend->binds;
+    vii->pVertexBindingDescriptions = id->binds;
     vii->vertexAttributeDescriptionCount = program_backend->input_count;
-    vii->pVertexAttributeDescriptions = program_backend->attrs;
+    vii->pVertexAttributeDescriptions = id->attrs;
 }
 
 static VkStencilOp
@@ -804,7 +813,9 @@ static int
 create_pipeline(cwgl_ctx_t* ctx, cwgl_enum_t primitive, 
                 VkRenderPass renderpass, 
                 VkPipelineLayout layout,
-                VkPipeline* out_pipeline){
+                VkPipeline* out_pipeline,
+                cwgl_backend_pipeline_identity_t* out_id,
+                cwgl_backend_pipeline_vtxbinds_t* out_vtx){
     VkGraphicsPipelineCreateInfo pi;
     VkPipelineShaderStageCreateInfo ssci[2];
     VkPipelineVertexInputStateCreateInfo vii;
@@ -814,11 +825,10 @@ create_pipeline(cwgl_ctx_t* ctx, cwgl_enum_t primitive,
     VkPipelineDynamicStateCreateInfo dyi;
     VkDynamicState dys[2];
     cwgl_backend_ctx_t* backend;
-    cwgl_backend_pipeline_identity_t id;
     VkResult r;
     backend = ctx->backend;
 
-    fill_pipeline_identity(ctx, primitive, &id);
+    fill_pipeline_identity(ctx, primitive, out_id);
 
     vsi.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
     vsi.pNext = NULL;
@@ -834,11 +844,11 @@ create_pipeline(cwgl_ctx_t* ctx, cwgl_enum_t primitive,
     cbi.logicOpEnable = VK_FALSE;
     cbi.logicOp = VK_LOGIC_OP_COPY;
     cbi.attachmentCount = 1;
-    cbi.pAttachments = &id.cbas_color;
-    cbi.blendConstants[0] = id.blend_color[0];
-    cbi.blendConstants[1] = id.blend_color[1];
-    cbi.blendConstants[2] = id.blend_color[2];
-    cbi.blendConstants[3] = id.blend_color[3];
+    cbi.pAttachments = &out_id->cbas_color;
+    cbi.blendConstants[0] = out_id->blend_color[0];
+    cbi.blendConstants[1] = out_id->blend_color[1];
+    cbi.blendConstants[2] = out_id->blend_color[2];
+    cbi.blendConstants[3] = out_id->blend_color[3];
 
     dys[0] = VK_DYNAMIC_STATE_VIEWPORT;
     dys[1] = VK_DYNAMIC_STATE_SCISSOR;
@@ -854,15 +864,15 @@ create_pipeline(cwgl_ctx_t* ctx, cwgl_enum_t primitive,
     pi.pNext = NULL;
     pi.flags = 0;
     pi.stageCount = 2;
-    configure_shaders(ctx, &ssci[0], &ssci[1], &vii);
+    configure_shaders(ctx, &ssci[0], &ssci[1], &vii, out_id, out_vtx);
     pi.pStages = ssci;
     pi.pVertexInputState = &vii;
-    pi.pInputAssemblyState = &id.iai;
+    pi.pInputAssemblyState = &out_id->iai;
     pi.pTessellationState = NULL;
     pi.pViewportState = &vsi;
-    pi.pRasterizationState = &id.rsi;
-    pi.pMultisampleState = &id.msi;
-    pi.pDepthStencilState = &id.dsi;
+    pi.pRasterizationState = &out_id->rsi;
+    pi.pMultisampleState = &out_id->msi;
+    pi.pDepthStencilState = &out_id->dsi;
     pi.pColorBlendState = &cbi;
     pi.pDynamicState = &dyi;
     pi.layout = layout;
@@ -1071,6 +1081,8 @@ cwgl_backend_drawElements(cwgl_ctx_t* ctx, cwgl_enum_t mode,
     cwgl_backend_Program_t* program_backend;
     cwgl_backend_ctx_t* backend;
     cwgl_ctx_global_state_t* s;
+    cwgl_backend_pipeline_vtxbinds_t vtxbinds;
+    cwgl_backend_pipeline_identity_t id;
     s = &ctx->state.glo;
     backend = ctx->backend;
     program = ctx->state.bin.CURRENT_PROGRAM;
@@ -1083,7 +1095,7 @@ cwgl_backend_drawElements(cwgl_ctx_t* ctx, cwgl_enum_t mode,
     transfer_uniforms(ctx, program);
     renderpass = framebuffer_backend->renderpass;
     framebuffer = framebuffer_backend->framebuffer;
-    create_pipeline(ctx, mode, renderpass, program_backend->pipeline_layout, &pipeline);
+    create_pipeline(ctx, mode, renderpass, program_backend->pipeline_layout, &pipeline, &id, &vtxbinds);
     begin_cmd(ctx);
     begin_renderpass(ctx, renderpass, framebuffer);
     vkCmdBindPipeline(backend->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
@@ -1097,9 +1109,9 @@ cwgl_backend_drawElements(cwgl_ctx_t* ctx, cwgl_enum_t mode,
                             NULL);
     vkCmdBindVertexBuffers(backend->command_buffer, 
                            0,
-                           program_backend->bind_count,
-                           program_backend->bind_buffers,
-                           program_backend->bind_offsets);
+                           id.bind_count,
+                           vtxbinds.bind_buffers,
+                           vtxbinds.bind_offsets);
     /* Setup Viewport and Scissor */
     {
         VkViewport vp;

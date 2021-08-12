@@ -39,7 +39,7 @@ struct cwgl_backend_Framebuffer_s {
 typedef struct cwgl_backend_fb_state_s cwgl_backend_fb_state_t;
 
 struct cwgl_backend_pipeline_identity_s {
-    /* Cache data */
+    /* Cache data for global context */
     uint64_t framebuffer_ident;
     uint64_t program_ident;
     float blend_color[4]; // FIXME: Dynamic?
@@ -48,6 +48,10 @@ struct cwgl_backend_pipeline_identity_s {
     VkPipelineDepthStencilStateCreateInfo dsi;
     VkPipelineInputAssemblyStateCreateInfo iai;
     VkPipelineColorBlendAttachmentState cbas_color; /* for color attachment */
+    /* Cache data for vertex attr fetching */
+    int bind_count;
+    VkVertexInputAttributeDescription attrs[CWGL_MAX_VAO_SIZE];
+    VkVertexInputBindingDescription binds[CWGL_MAX_VAO_SIZE];
 };
 
 typedef struct cwgl_backend_pipeline_identity_s cwgl_backend_pipeline_identity_t;
@@ -118,12 +122,7 @@ struct cwgl_backend_Program_s {
     cwgl_backend_Buffer_t uniform_buffer;
     /* Vulkan: Vertex attributes */
     int input_count; /* Cache */
-    int bind_count;
     cwgl_backend_Buffer_t attribute_registers;
-    VkVertexInputAttributeDescription attrs[CWGL_MAX_VAO_SIZE];
-    VkVertexInputBindingDescription binds[CWGL_MAX_VAO_SIZE];
-    VkBuffer bind_buffers[CWGL_MAX_VAO_SIZE]; /* Cache */
-    VkDeviceSize bind_offsets[CWGL_MAX_VAO_SIZE]; /* Cache */
     /* SHXM */
     shxm_program_t* program;
 };
