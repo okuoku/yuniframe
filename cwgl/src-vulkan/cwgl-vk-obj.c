@@ -11,7 +11,11 @@ uint64_t
 cwgl_vkpriv_newident(cwgl_ctx_t* ctx){
     uint64_t c;
     c = ctx->backend->ident_age;
-    ctx->backend->ident_age++;
+    if(ctx->backend->ident_age == UINT64_MAX){
+        ctx->backend->ident_age = 1;
+    }else{
+        ctx->backend->ident_age++;
+    }
     return c;
 }
 

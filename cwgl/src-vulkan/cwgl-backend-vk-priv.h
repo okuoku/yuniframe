@@ -131,6 +131,7 @@ void cwgl_vkpriv_destroy_program(cwgl_ctx_t* ctx,
 int32_t cwgl_vkpriv_select_memory_type(cwgl_ctx_t* ctx, uint32_t requirement,
                                        VkMemoryPropertyFlags request);
 
+#define CWGL_VK_INVALID_IDENT 0
 uint64_t cwgl_vkpriv_newident(cwgl_ctx_t* ctx);
 
 #endif
