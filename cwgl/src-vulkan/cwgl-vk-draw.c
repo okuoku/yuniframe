@@ -258,12 +258,29 @@ update_framebuffer(cwgl_ctx_t* ctx, cwgl_backend_Framebuffer_t* framebuffer_back
         return;
     }
     if(framebuffer_backend->allocated){
+        if(framebuffer_backend->texture_ident != CWGL_VK_INVALID_IDENT){
+            // FIXME: TODO
+        }
+        if(framebuffer_backend->renderbuffer_ident != CWGL_VK_INVALID_IDENT){
+            if(is_framebuffer){
+                if(framebuffer_backend->renderbuffer_ident == backend->framebuffer_ident){
+                    /* Use cached object */
+                    return;
+                }
+            }else{
+                // FIXME: TODO
+            }
+        }
         vkDestroyFramebuffer(backend->device, framebuffer_backend->framebuffer, NULL);
         vkDestroyRenderPass(backend->device, framebuffer_backend->renderpass, NULL);
         framebuffer_backend->allocated = 0;
+        framebuffer_backend->texture_ident = CWGL_VK_INVALID_IDENT;
+        framebuffer_backend->renderbuffer_ident = CWGL_VK_INVALID_IDENT;
     }
     create_renderpass(ctx, is_framebuffer, &renderpass);
     create_framebuffer(ctx, is_framebuffer, renderpass, &framebuffer);
+    framebuffer_backend->renderbuffer_ident = backend->framebuffer_ident; // FIXME: TODO
+    framebuffer_backend->texture_ident = CWGL_VK_INVALID_IDENT; // FIXME: TODO
     framebuffer_backend->framebuffer = framebuffer;
     framebuffer_backend->renderpass = renderpass;
     framebuffer_backend->allocated = 1;
@@ -1046,8 +1063,8 @@ cwgl_backend_drawElements(cwgl_ctx_t* ctx, cwgl_enum_t mode,
     framebuffer_backend = is_framebuffer ?
         &backend->default_fb :
         ctx->state.bin.FRAMEBUFFER_BINDING->backend;
-    transfer_uniforms(ctx, program);
     update_framebuffer(ctx, framebuffer_backend, is_framebuffer);
+    transfer_uniforms(ctx, program);
     renderpass = framebuffer_backend->renderpass;
     framebuffer = framebuffer_backend->framebuffer;
     create_pipeline(ctx, mode, renderpass, program_backend->pipeline_layout, &pipeline);

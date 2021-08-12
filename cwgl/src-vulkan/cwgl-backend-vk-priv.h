@@ -28,6 +28,8 @@ struct cwgl_backend_Renderbuffer_s {
 struct cwgl_backend_Framebuffer_s {
     int allocated;
     uint64_t ident;
+    uint64_t texture_ident;
+    uint64_t renderbuffer_ident;
     VkRenderPass renderpass;
     VkFramebuffer framebuffer;
     uint32_t width; /* Cache */
