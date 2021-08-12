@@ -1026,8 +1026,13 @@ transfer_opaques(cwgl_ctx_t* ctx, cwgl_Program_t* program){
                 break;
             /* Samplers */
             case SAMPLER_2D:
+            case SAMPLER_CUBE:
                 sampler_id = uc[u[i].offset].asInt;
-                texture = current_texture(ctx, sampler_id, TEXTURE_2D);
+                if(u[i].type == SAMPLER_2D){
+                    texture = current_texture(ctx, sampler_id, TEXTURE_2D);
+                }else{
+                    texture = current_texture(ctx, sampler_id, TEXTURE_CUBE_MAP);
+                }
                 update_texture(ctx, texture);
                 di.sampler = texture->backend->sampler;
                 di.imageView = texture->backend->view;
@@ -1035,7 +1040,7 @@ transfer_opaques(cwgl_ctx_t* ctx, cwgl_Program_t* program){
                 ws.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                 ws.pNext = NULL;
                 ws.dstSet = program_backend->desc_set;
-                ws.dstBinding = 1; // FIXME: TODO
+                ws.dstBinding = u[i].location;
                 ws.dstArrayElement = 0;
                 ws.descriptorCount = 1;
                 ws.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -1043,9 +1048,6 @@ transfer_opaques(cwgl_ctx_t* ctx, cwgl_Program_t* program){
                 ws.pBufferInfo = NULL;
                 ws.pTexelBufferView = NULL;
                 vkUpdateDescriptorSets(backend->device, 1, &ws, 0, NULL);
-                break;
-            case SAMPLER_CUBE:
-                // FIXME: Implement it
                 break;
         }
     }
@@ -1077,7 +1079,6 @@ transfer_uniforms(cwgl_ctx_t* ctx, cwgl_Program_t* program){
     memcpy(device_memory_addr, program->state.uniformcontents,
            program_backend->program->uniform_size);
     vkUnmapMemory(backend->device, program_backend->uniform_buffer.device_memory);
-
 }
 
 

@@ -170,7 +170,7 @@ cwgl_backend_linkProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
             a[i].name = cwgl_priv_alloc_string(ctx, p->uniform[i].slot->name,
                                                namelen);
             a[i].offset = p->uniform[i].offset;
-            a[i].location = p->uniform[i].offset; // FIXME: ??
+            a[i].location = 0; /* Unused */
         }
         o = p->uniform_size;
         o = (o + 7) & ~7;
@@ -183,8 +183,9 @@ cwgl_backend_linkProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
             a[b+i].size = to_activesize(p->opaque[i].slot->array_length);
             a[b+i].name = cwgl_priv_alloc_string(ctx, p->opaque[i].slot->name,
                                                namelen);
-            a[b+i].offset = o; // FIXME: ??
-            a[b+i].location = p->uniform[i].offset; // FIXME: ??
+            a[b+i].offset = o;
+            /* Pass binding No. with location field */
+            a[b+i].location = p->opaque[i].binding;
             o += 8;
         }
         program->state.uniform_buffer_size = o;

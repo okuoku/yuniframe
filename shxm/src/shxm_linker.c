@@ -677,6 +677,7 @@ bind_uniforms(shxm_program_t* prog){
     int i;
     int idx[2];
     int phase;
+    /* Zero is for implicit UBO */
     idx[0] = idx[1] = 1;
     for(i=0;i!=prog->opaque_count;i++){
         phase = prog->opaque[i].phase;
