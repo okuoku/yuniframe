@@ -811,11 +811,16 @@ fill_pipeline_identity(cwgl_ctx_t* ctx,
 
 static int
 create_pipeline(cwgl_ctx_t* ctx, cwgl_enum_t primitive, 
-                VkRenderPass renderpass, 
-                VkPipelineLayout layout,
-                VkPipeline* out_pipeline,
-                cwgl_backend_pipeline_identity_t* out_id,
+                cwgl_backend_Framebuffer_t* fb,
+                cwgl_backend_Program_t* prog,
+                cwgl_backend_pipeline_t** out_ppipe,
                 cwgl_backend_pipeline_vtxbinds_t* out_vtx){
+    VkPipeline pipeline;
+    VkRenderPass renderpass; 
+    VkPipelineLayout layout;
+    cwgl_backend_pipeline_identity_t id = {0};
+    cwgl_backend_pipeline_t* p;
+
     VkGraphicsPipelineCreateInfo pi;
     VkPipelineShaderStageCreateInfo ssci[2];
     VkPipelineVertexInputStateCreateInfo vii;
@@ -828,7 +833,14 @@ create_pipeline(cwgl_ctx_t* ctx, cwgl_enum_t primitive,
     VkResult r;
     backend = ctx->backend;
 
-    fill_pipeline_identity(ctx, primitive, out_id);
+    fill_pipeline_identity(ctx, primitive, &id);
+    configure_shaders(ctx, &ssci[0], &ssci[1], &vii, &id, out_vtx);
+
+    id.framebuffer_ident = fb->ident;
+    id.program_ident = prog->ident;
+
+    renderpass = fb->renderpass;
+    layout = prog->pipeline_layout;
 
     vsi.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
     vsi.pNext = NULL;
@@ -844,11 +856,11 @@ create_pipeline(cwgl_ctx_t* ctx, cwgl_enum_t primitive,
     cbi.logicOpEnable = VK_FALSE;
     cbi.logicOp = VK_LOGIC_OP_COPY;
     cbi.attachmentCount = 1;
-    cbi.pAttachments = &out_id->cbas_color;
-    cbi.blendConstants[0] = out_id->blend_color[0];
-    cbi.blendConstants[1] = out_id->blend_color[1];
-    cbi.blendConstants[2] = out_id->blend_color[2];
-    cbi.blendConstants[3] = out_id->blend_color[3];
+    cbi.pAttachments = &id.cbas_color;
+    cbi.blendConstants[0] = id.blend_color[0];
+    cbi.blendConstants[1] = id.blend_color[1];
+    cbi.blendConstants[2] = id.blend_color[2];
+    cbi.blendConstants[3] = id.blend_color[3];
 
     dys[0] = VK_DYNAMIC_STATE_VIEWPORT;
     dys[1] = VK_DYNAMIC_STATE_SCISSOR;
@@ -859,20 +871,18 @@ create_pipeline(cwgl_ctx_t* ctx, cwgl_enum_t primitive,
     dyi.dynamicStateCount = 2;
     dyi.pDynamicStates = dys;
 
-
     pi.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pi.pNext = NULL;
     pi.flags = 0;
     pi.stageCount = 2;
-    configure_shaders(ctx, &ssci[0], &ssci[1], &vii, out_id, out_vtx);
     pi.pStages = ssci;
     pi.pVertexInputState = &vii;
-    pi.pInputAssemblyState = &out_id->iai;
+    pi.pInputAssemblyState = &id.iai;
     pi.pTessellationState = NULL;
     pi.pViewportState = &vsi;
-    pi.pRasterizationState = &out_id->rsi;
-    pi.pMultisampleState = &out_id->msi;
-    pi.pDepthStencilState = &out_id->dsi;
+    pi.pRasterizationState = &id.rsi;
+    pi.pMultisampleState = &id.msi;
+    pi.pDepthStencilState = &id.dsi;
     pi.pColorBlendState = &cbi;
     pi.pDynamicState = &dyi;
     pi.layout = layout;
@@ -886,11 +896,17 @@ create_pipeline(cwgl_ctx_t* ctx, cwgl_enum_t primitive,
                                   1,
                                   &pi,
                                   NULL,
-                                  out_pipeline);
+                                  &pipeline);
     if(r != VK_SUCCESS){
         printf("Failed to create pipeline\n");
         return -1;
     }
+    p = &backend->pipelines[0];
+    *out_ppipe = p;
+    p->allocated = 1;
+    p->pipeline = pipeline;
+    memset(&p->cache, 0, sizeof(cwgl_backend_pipeline_identity_t));
+    p->cache = id;
     return 0;
 }
 
@@ -1072,7 +1088,6 @@ int
 cwgl_backend_drawElements(cwgl_ctx_t* ctx, cwgl_enum_t mode,
                           uint32_t count, cwgl_enum_t type, uint32_t offset){
     VkRenderPass renderpass;
-    VkPipeline pipeline;
     VkFramebuffer framebuffer;
     int is_framebuffer;
     cwgl_backend_Framebuffer_t* framebuffer_backend;
@@ -1082,7 +1097,7 @@ cwgl_backend_drawElements(cwgl_ctx_t* ctx, cwgl_enum_t mode,
     cwgl_backend_ctx_t* backend;
     cwgl_ctx_global_state_t* s;
     cwgl_backend_pipeline_vtxbinds_t vtxbinds;
-    cwgl_backend_pipeline_identity_t id;
+    cwgl_backend_pipeline_t* pipeline_backend;
     s = &ctx->state.glo;
     backend = ctx->backend;
     program = ctx->state.bin.CURRENT_PROGRAM;
@@ -1095,10 +1110,10 @@ cwgl_backend_drawElements(cwgl_ctx_t* ctx, cwgl_enum_t mode,
     transfer_uniforms(ctx, program);
     renderpass = framebuffer_backend->renderpass;
     framebuffer = framebuffer_backend->framebuffer;
-    create_pipeline(ctx, mode, renderpass, program_backend->pipeline_layout, &pipeline, &id, &vtxbinds);
+    create_pipeline(ctx, mode, framebuffer_backend, program_backend, &pipeline_backend, &vtxbinds);
     begin_cmd(ctx);
     begin_renderpass(ctx, renderpass, framebuffer);
-    vkCmdBindPipeline(backend->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+    vkCmdBindPipeline(backend->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_backend->pipeline);
     vkCmdBindDescriptorSets(backend->command_buffer,
                             VK_PIPELINE_BIND_POINT_GRAPHICS,
                             program_backend->pipeline_layout,
@@ -1109,7 +1124,7 @@ cwgl_backend_drawElements(cwgl_ctx_t* ctx, cwgl_enum_t mode,
                             NULL);
     vkCmdBindVertexBuffers(backend->command_buffer, 
                            0,
-                           id.bind_count,
+                           pipeline_backend->cache.bind_count,
                            vtxbinds.bind_buffers,
                            vtxbinds.bind_offsets);
     /* Setup Viewport and Scissor */
@@ -1153,7 +1168,7 @@ cwgl_backend_drawElements(cwgl_ctx_t* ctx, cwgl_enum_t mode,
     backend->queue_has_command = 1; // FIXME: Tentative
     cwgl_vkpriv_graphics_submit(ctx);
     cwgl_vkpriv_graphics_wait(ctx);
-    vkDestroyPipeline(backend->device, pipeline, NULL);
+    vkDestroyPipeline(backend->device, pipeline_backend->pipeline, NULL);
     return 0;
 }
 

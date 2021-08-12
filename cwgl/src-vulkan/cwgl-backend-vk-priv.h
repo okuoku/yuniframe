@@ -36,8 +36,6 @@ struct cwgl_backend_Framebuffer_s {
     uint32_t height; /* Cache */
 };
 
-typedef struct cwgl_backend_fb_state_s cwgl_backend_fb_state_t;
-
 struct cwgl_backend_pipeline_identity_s {
     /* Cache data for global context */
     uint64_t framebuffer_ident;
@@ -58,9 +56,11 @@ typedef struct cwgl_backend_pipeline_identity_s cwgl_backend_pipeline_identity_t
 
 struct cwgl_backend_pipeline_s {
     int allocated;
-    uint64_t ident;
+    VkPipeline pipeline;
     cwgl_backend_pipeline_identity_t cache;
 };
+
+typedef struct cwgl_backend_pipeline_s cwgl_backend_pipeline_t;
 
 struct cwgl_backend_ctx_s {
     /* Vulkan */
@@ -93,6 +93,8 @@ struct cwgl_backend_ctx_s {
     uint64_t ident_age;
     /* SHXM */
     shxm_ctx_t* shxm_ctx;
+    /* Pipeline cache */
+    cwgl_backend_pipeline_t pipelines[1];
 };
 
 typedef struct buffer_patch_request_s buffer_patch_request_t;
