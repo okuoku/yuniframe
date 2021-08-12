@@ -21,7 +21,9 @@ to_vulkan_rb_format(cwgl_enum_t fmt){
         case DEPTH_COMPONENT16:
             return VK_FORMAT_D16_UNORM;
         case DEPTH_STENCIL:
-            return VK_FORMAT_D24_UNORM_S8_UINT;
+            // FIXME: Use D24 where applicable
+            return VK_FORMAT_D32_SFLOAT_S8_UINT;
+            //return VK_FORMAT_D24_UNORM_S8_UINT;
         case STENCIL_INDEX8:
             return VK_FORMAT_S8_UINT;
         default:
