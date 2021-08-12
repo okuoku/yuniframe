@@ -603,31 +603,22 @@ to_vk_blendop(cwgl_enum_t op){
     }
 }
 
-static int
-create_pipeline(cwgl_ctx_t* ctx, cwgl_enum_t primitive, 
-                VkRenderPass renderpass, 
-                VkPipelineLayout layout,
-                VkPipeline* out_pipeline){
-    VkGraphicsPipelineCreateInfo pi;
-    VkPipelineShaderStageCreateInfo ssci[2];
-    VkPipelineVertexInputStateCreateInfo vii;
-    VkPipelineInputAssemblyStateCreateInfo iai;
+static void
+fill_pipeline_identity(cwgl_ctx_t* ctx,
+                       cwgl_enum_t primitive,
+                       cwgl_backend_pipeline_identity_t* id){
 
-    VkPipelineViewportStateCreateInfo vsi;
-    VkPipelineRasterizationStateCreateInfo rsi;
-    VkPipelineMultisampleStateCreateInfo msi;
-    VkPipelineDepthStencilStateCreateInfo dsi;
-    VkPipelineColorBlendStateCreateInfo cbi;
-    VkPipelineColorBlendAttachmentState cbas;
-    VkPipelineDynamicStateCreateInfo dyi;
-    VkDynamicState dys[2];
-    cwgl_backend_ctx_t* backend;
-    VkResult r;
+    VkPipelineRasterizationStateCreateInfo rsi = {0};
+    VkPipelineMultisampleStateCreateInfo msi = {0};
+    VkPipelineDepthStencilStateCreateInfo dsi = {0};
+    VkPipelineInputAssemblyStateCreateInfo iai = {0};
+    VkPipelineColorBlendAttachmentState cbas_color = {0};
+
+    cwgl_ctx_global_state_t* s;
     int line = 0;
     int point = 0;
     int triangle = 0;
-    cwgl_ctx_global_state_t* s;
-    backend = ctx->backend;
+
     /* Determine draw type */
     switch(primitive){
         case POINTS:
@@ -647,13 +638,6 @@ create_pipeline(cwgl_ctx_t* ctx, cwgl_enum_t primitive,
     }
 
     s = &ctx->state.glo;
-    vsi.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-    vsi.pNext = NULL;
-    vsi.flags = 0;
-    vsi.viewportCount = 1;
-    vsi.pScissors = NULL;
-    vsi.scissorCount = 1;
-    vsi.pViewports = NULL;
 
     rsi.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rsi.pNext = NULL;
@@ -716,6 +700,7 @@ create_pipeline(cwgl_ctx_t* ctx, cwgl_enum_t primitive,
     }
     // FIXME: Ignore line width here.
     rsi.lineWidth = 1.0f;
+
     // FIXME: Implement multisample
     msi.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     msi.pNext = NULL;
@@ -726,6 +711,7 @@ create_pipeline(cwgl_ctx_t* ctx, cwgl_enum_t primitive,
     msi.pSampleMask = NULL;
     msi.alphaToCoverageEnable = s->SAMPLE_ALPHA_TO_COVERAGE ? VK_TRUE : VK_FALSE;
     msi.alphaToOneEnable = VK_FALSE;
+
     dsi.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     dsi.pNext = NULL;
     dsi.flags = 0;
@@ -750,46 +736,32 @@ create_pipeline(cwgl_ctx_t* ctx, cwgl_enum_t primitive,
     dsi.back.reference = s->STENCIL_BACK_REF;
     dsi.minDepthBounds = 0.0f;
     dsi.maxDepthBounds = 1.0f;
-    cbi.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-    cbi.pNext = NULL;
-    cbi.flags = 0;
-    cbi.logicOpEnable = VK_FALSE;
-    cbi.logicOp = VK_LOGIC_OP_COPY;
-    cbi.attachmentCount = 1;
-    cbas.blendEnable = s->BLEND ? VK_TRUE : VK_FALSE;
-    cbas.srcColorBlendFactor = to_vk_blendfactor(s->BLEND_SRC_RGB);
-    cbas.dstColorBlendFactor = to_vk_blendfactor(s->BLEND_DST_RGB);
-    cbas.colorBlendOp = to_vk_blendop(s->BLEND_EQUATION_RGB);
-    cbas.srcAlphaBlendFactor = to_vk_blendfactor(s->BLEND_SRC_ALPHA);
-    cbas.dstAlphaBlendFactor = to_vk_blendfactor(s->BLEND_DST_ALPHA);
-    cbas.alphaBlendOp = to_vk_blendop(s->BLEND_EQUATION_ALPHA);
-    cbas.colorWriteMask = 0;
+
+    cbas_color.blendEnable = s->BLEND ? VK_TRUE : VK_FALSE;
+    cbas_color.srcColorBlendFactor = to_vk_blendfactor(s->BLEND_SRC_RGB);
+    cbas_color.dstColorBlendFactor = to_vk_blendfactor(s->BLEND_DST_RGB);
+    cbas_color.colorBlendOp = to_vk_blendop(s->BLEND_EQUATION_RGB);
+    cbas_color.srcAlphaBlendFactor = to_vk_blendfactor(s->BLEND_SRC_ALPHA);
+    cbas_color.dstAlphaBlendFactor = to_vk_blendfactor(s->BLEND_DST_ALPHA);
+    cbas_color.alphaBlendOp = to_vk_blendop(s->BLEND_EQUATION_ALPHA);
+    cbas_color.colorWriteMask = 0;
     if(s->COLOR_WRITEMASK[0]){
-        cbas.colorWriteMask |= VK_COLOR_COMPONENT_R_BIT;
+        cbas_color.colorWriteMask |= VK_COLOR_COMPONENT_R_BIT;
     }
     if(s->COLOR_WRITEMASK[1]){
-        cbas.colorWriteMask |= VK_COLOR_COMPONENT_G_BIT;
+        cbas_color.colorWriteMask |= VK_COLOR_COMPONENT_G_BIT;
     }
     if(s->COLOR_WRITEMASK[2]){
-        cbas.colorWriteMask |= VK_COLOR_COMPONENT_B_BIT;
+        cbas_color.colorWriteMask |= VK_COLOR_COMPONENT_B_BIT;
     }
     if(s->COLOR_WRITEMASK[3]){
-        cbas.colorWriteMask |= VK_COLOR_COMPONENT_A_BIT;
+        cbas_color.colorWriteMask |= VK_COLOR_COMPONENT_A_BIT;
     }
-    cbi.pAttachments = &cbas;
-    cbi.blendConstants[0] = s->BLEND_COLOR[0];
-    cbi.blendConstants[1] = s->BLEND_COLOR[1];
-    cbi.blendConstants[2] = s->BLEND_COLOR[2];
-    cbi.blendConstants[3] = s->BLEND_COLOR[3];
 
-    dys[0] = VK_DYNAMIC_STATE_VIEWPORT;
-    dys[1] = VK_DYNAMIC_STATE_SCISSOR;
-
-    dyi.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    dyi.pNext = NULL;
-    dyi.flags = 0;
-    dyi.dynamicStateCount = 2;
-    dyi.pDynamicStates = dys;
+    id->blend_color[0] = s->BLEND_COLOR[0];
+    id->blend_color[1] = s->BLEND_COLOR[1];
+    id->blend_color[2] = s->BLEND_COLOR[2];
+    id->blend_color[3] = s->BLEND_COLOR[3];
 
     iai.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     iai.pNext = NULL;
@@ -821,6 +793,63 @@ create_pipeline(cwgl_ctx_t* ctx, cwgl_enum_t primitive,
     }
     iai.primitiveRestartEnable = VK_FALSE; // FIXME: For WebGL2
 
+    id->rsi = rsi;
+    id->msi = msi;
+    id->dsi = dsi;
+    id->iai = iai;
+    id->cbas_color = cbas_color;
+}
+
+static int
+create_pipeline(cwgl_ctx_t* ctx, cwgl_enum_t primitive, 
+                VkRenderPass renderpass, 
+                VkPipelineLayout layout,
+                VkPipeline* out_pipeline){
+    VkGraphicsPipelineCreateInfo pi;
+    VkPipelineShaderStageCreateInfo ssci[2];
+    VkPipelineVertexInputStateCreateInfo vii;
+
+    VkPipelineViewportStateCreateInfo vsi;
+    VkPipelineColorBlendStateCreateInfo cbi;
+    VkPipelineDynamicStateCreateInfo dyi;
+    VkDynamicState dys[2];
+    cwgl_backend_ctx_t* backend;
+    cwgl_backend_pipeline_identity_t id;
+    VkResult r;
+    backend = ctx->backend;
+
+    fill_pipeline_identity(ctx, primitive, &id);
+
+    vsi.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    vsi.pNext = NULL;
+    vsi.flags = 0;
+    vsi.viewportCount = 1;
+    vsi.pScissors = NULL;
+    vsi.scissorCount = 1;
+    vsi.pViewports = NULL;
+
+    cbi.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    cbi.pNext = NULL;
+    cbi.flags = 0;
+    cbi.logicOpEnable = VK_FALSE;
+    cbi.logicOp = VK_LOGIC_OP_COPY;
+    cbi.attachmentCount = 1;
+    cbi.pAttachments = &id.cbas_color;
+    cbi.blendConstants[0] = id.blend_color[0];
+    cbi.blendConstants[1] = id.blend_color[1];
+    cbi.blendConstants[2] = id.blend_color[2];
+    cbi.blendConstants[3] = id.blend_color[3];
+
+    dys[0] = VK_DYNAMIC_STATE_VIEWPORT;
+    dys[1] = VK_DYNAMIC_STATE_SCISSOR;
+
+    dyi.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dyi.pNext = NULL;
+    dyi.flags = 0;
+    dyi.dynamicStateCount = 2;
+    dyi.pDynamicStates = dys;
+
+
     pi.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pi.pNext = NULL;
     pi.flags = 0;
@@ -828,12 +857,12 @@ create_pipeline(cwgl_ctx_t* ctx, cwgl_enum_t primitive,
     configure_shaders(ctx, &ssci[0], &ssci[1], &vii);
     pi.pStages = ssci;
     pi.pVertexInputState = &vii;
-    pi.pInputAssemblyState = &iai;
+    pi.pInputAssemblyState = &id.iai;
     pi.pTessellationState = NULL;
     pi.pViewportState = &vsi;
-    pi.pRasterizationState = &rsi;
-    pi.pMultisampleState = &msi;
-    pi.pDepthStencilState = &dsi;
+    pi.pRasterizationState = &id.rsi;
+    pi.pMultisampleState = &id.msi;
+    pi.pDepthStencilState = &id.dsi;
     pi.pColorBlendState = &cbi;
     pi.pDynamicState = &dyi;
     pi.layout = layout;

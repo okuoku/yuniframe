@@ -38,6 +38,26 @@ struct cwgl_backend_Framebuffer_s {
 
 typedef struct cwgl_backend_fb_state_s cwgl_backend_fb_state_t;
 
+struct cwgl_backend_pipeline_identity_s {
+    /* Cache data */
+    uint64_t framebuffer_ident;
+    uint64_t program_ident;
+    float blend_color[4]; // FIXME: Dynamic?
+    VkPipelineRasterizationStateCreateInfo rsi;
+    VkPipelineMultisampleStateCreateInfo msi;
+    VkPipelineDepthStencilStateCreateInfo dsi;
+    VkPipelineInputAssemblyStateCreateInfo iai;
+    VkPipelineColorBlendAttachmentState cbas_color; /* for color attachment */
+};
+
+typedef struct cwgl_backend_pipeline_identity_s cwgl_backend_pipeline_identity_t;
+
+struct cwgl_backend_pipeline_s {
+    int allocated;
+    uint64_t ident;
+    cwgl_backend_pipeline_identity_t cache;
+};
+
 struct cwgl_backend_ctx_s {
     /* Vulkan */
     VkInstance instance;
