@@ -1000,9 +1000,60 @@ begin_renderpass(cwgl_ctx_t* ctx, VkRenderPass renderpass, VkFramebuffer framebu
 }
 
 static void
+transfer_opaques(cwgl_ctx_t* ctx, cwgl_Program_t* program){
+    cwgl_backend_Program_t* program_backend;
+    cwgl_backend_ctx_t* backend;
+    shxm_program_t* p;
+    cwgl_activeinfo_t* u;
+    cwgl_uniformcontent_t* uc;
+
+    VkDescriptorImageInfo di;
+    VkWriteDescriptorSet ws;
+    cwgl_Texture_t* texture;
+    int32_t sampler_id;
+    int i;
+
+    backend = ctx->backend;
+    program_backend = program->backend;
+    p = program_backend->program;
+    u = program->state.uniforms;
+    uc = program->state.uniformcontents;
+    /* Fill in Opaques */
+    for(i=0;i!=program->state.ACTIVE_UNIFORMS;i++){
+        switch(u[i].type){
+            default:
+                /* Do nothing */
+                break;
+            /* Samplers */
+            case SAMPLER_2D:
+                sampler_id = uc[u[i].offset].asInt;
+                texture = current_texture(ctx, sampler_id, TEXTURE_2D);
+                update_texture(ctx, texture);
+                di.sampler = texture->backend->sampler;
+                di.imageView = texture->backend->view;
+                di.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                ws.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                ws.pNext = NULL;
+                ws.dstSet = program_backend->desc_set;
+                ws.dstBinding = 1; // FIXME: TODO
+                ws.dstArrayElement = 0;
+                ws.descriptorCount = 1;
+                ws.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                ws.pImageInfo = &di;
+                ws.pBufferInfo = NULL;
+                ws.pTexelBufferView = NULL;
+                vkUpdateDescriptorSets(backend->device, 1, &ws, 0, NULL);
+                break;
+            case SAMPLER_CUBE:
+                // FIXME: Implement it
+                break;
+        }
+    }
+}
+
+static void
 transfer_uniforms(cwgl_ctx_t* ctx, cwgl_Program_t* program){
     VkResult r;
-    int i;
     cwgl_backend_Program_t* program_backend;
     cwgl_backend_ctx_t* backend;
     uint8_t* device_memory_addr;
@@ -1023,103 +1074,10 @@ transfer_uniforms(cwgl_ctx_t* ctx, cwgl_Program_t* program){
         return;
     }
     /* Fill in Uniforms */
-    for(i=0;i!=program->state.ACTIVE_UNIFORMS;i++){
-        switch(u[i].type){
-            default:
-                /* Do nothing */
-                break;
-            /* UBO Values */
-            case FLOAT:
-                memcpy(device_memory_addr + u[i].offset,
-                       &uc[u[i].offset],
-                       sizeof(float));
-                break;
-            case INT:
-            case BOOL:
-                memcpy(device_memory_addr + u[i].offset,
-                       &uc[u[i].offset],
-                       sizeof(int32_t));
-                break;
-            case FLOAT_VEC2:
-                memcpy(device_memory_addr + u[i].offset,
-                       &uc[u[i].offset],
-                       sizeof(float)*2);
-                break;
-            case INT_VEC2:
-            case BOOL_VEC2:
-                memcpy(device_memory_addr + u[i].offset,
-                       &uc[u[i].offset],
-                       sizeof(int32_t)*2);
-                break;
-            case FLOAT_VEC3:
-                memcpy(device_memory_addr + u[i].offset,
-                       &uc[u[i].offset],
-                       sizeof(float)*3);
-                break;
-            case INT_VEC3:
-            case BOOL_VEC3:
-                memcpy(device_memory_addr + u[i].offset,
-                       &uc[u[i].offset],
-                       sizeof(int32_t)*3);
-                break;
-            case FLOAT_VEC4:
-                memcpy(device_memory_addr + u[i].offset,
-                       &uc[u[i].offset],
-                       sizeof(float)*4);
-                break;
-            case INT_VEC4:
-            case BOOL_VEC4:
-                memcpy(device_memory_addr + u[i].offset,
-                       &uc[u[i].offset],
-                       sizeof(int32_t)*4);
-                break;
-            case FLOAT_MAT2:
-                memcpy(device_memory_addr + u[i].offset,
-                       &uc[u[i].offset],
-                       sizeof(float)*2*2);
-                break;
-            case FLOAT_MAT3:
-                memcpy(device_memory_addr + u[i].offset,
-                       &uc[u[i].offset],
-                       sizeof(float)*3*3);
-                break;
-            case FLOAT_MAT4:
-                memcpy(device_memory_addr + u[i].offset,
-                       &uc[u[i].offset],
-                       sizeof(float)*4*4);
-                break;
-            /* Samplers */
-            case SAMPLER_2D:
-                {
-                    VkDescriptorImageInfo di;
-                    VkWriteDescriptorSet ws;
-                    cwgl_Texture_t* texture;
-                    int32_t sampler_id;
-                    sampler_id = uc[u[i].offset].asInt;
-                    texture = current_texture(ctx, sampler_id, TEXTURE_2D);
-                    update_texture(ctx, texture);
-                    di.sampler = texture->backend->sampler;
-                    di.imageView = texture->backend->view;
-                    di.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                    ws.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                    ws.pNext = NULL;
-                    ws.dstSet = program_backend->desc_set;
-                    ws.dstBinding = 1; // FIXME: TODO
-                    ws.dstArrayElement = 0;
-                    ws.descriptorCount = 1;
-                    ws.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-                    ws.pImageInfo = &di;
-                    ws.pBufferInfo = NULL;
-                    ws.pTexelBufferView = NULL;
-                    vkUpdateDescriptorSets(backend->device, 1, &ws, 0, NULL);
-                }
-                break;
-            case SAMPLER_CUBE:
-                // FIXME: Implement it
-                break;
-        }
-    }
+    memcpy(device_memory_addr, program->state.uniformcontents,
+           program_backend->program->uniform_size);
     vkUnmapMemory(backend->device, program_backend->uniform_buffer.device_memory);
+
 }
 
 
@@ -1152,8 +1110,9 @@ cwgl_backend_drawElements(cwgl_ctx_t* ctx, cwgl_enum_t mode,
     framebuffer_backend = is_framebuffer ?
         &backend->default_fb :
         ctx->state.bin.FRAMEBUFFER_BINDING->backend;
-    update_framebuffer(ctx, framebuffer_backend, is_framebuffer);
     transfer_uniforms(ctx, program);
+    transfer_opaques(ctx, program);
+    update_framebuffer(ctx, framebuffer_backend, is_framebuffer);
     renderpass = framebuffer_backend->renderpass;
     framebuffer = framebuffer_backend->framebuffer;
     create_pipeline(ctx, mode, framebuffer_backend, program_backend, &pipeline_backend, &vtxbinds);
