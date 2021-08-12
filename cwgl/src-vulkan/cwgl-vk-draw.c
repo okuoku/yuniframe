@@ -640,7 +640,7 @@ create_pipeline(cwgl_ctx_t* ctx, cwgl_enum_t primitive,
         vsi.scissorCount = 1;
         vsi.pScissors = &sci;
         sci.offset.x = s->SCISSOR_BOX[0];
-        sci.offset.y = s->SCISSOR_BOX[1];
+        sci.offset.y = (s->VIEWPORT[3] - s->SCISSOR_BOX[1]) - s->SCISSOR_BOX[3];
         sci.extent.width = s->SCISSOR_BOX[2];
         sci.extent.height = s->SCISSOR_BOX[3];
     }else{
