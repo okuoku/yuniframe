@@ -120,22 +120,12 @@ update_texture(cwgl_ctx_t* ctx, cwgl_Texture_t* texture){
 }
 
 static int
-create_framebuffer(cwgl_ctx_t* ctx, VkRenderPass renderpass, VkFramebuffer* out_framebuffer){
-    int is_framebuffer;
+create_framebuffer(cwgl_ctx_t* ctx, int is_framebuffer, VkRenderPass renderpass, VkFramebuffer* out_framebuffer){
     VkResult r;
     VkFramebufferCreateInfo fi;
     cwgl_backend_ctx_t* backend;
     VkImageView as[2];
     backend = ctx->backend;
-
-    if(ctx->state.bin.FRAMEBUFFER_BINDING){
-        is_framebuffer = 0;
-        // FIXME: Implement this
-        printf("Ignored bound framebuffer!\n");
-    }else{
-        is_framebuffer = 1;
-    }
-
 
     fi.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
     fi.pNext = NULL;
@@ -164,9 +154,8 @@ create_framebuffer(cwgl_ctx_t* ctx, VkRenderPass renderpass, VkFramebuffer* out_
 }
 
 static int
-create_renderpass(cwgl_ctx_t* ctx, VkRenderPass* out_renderpass){
+create_renderpass(cwgl_ctx_t* ctx, int is_framebuffer, VkRenderPass* out_renderpass){
     VkResult r;
-    int is_framebuffer;
     int has_color;
     int has_depthstencil;
     VkAttachmentDescription ads[2];
@@ -179,13 +168,6 @@ create_renderpass(cwgl_ctx_t* ctx, VkRenderPass* out_renderpass){
     backend = ctx->backend;
     has_color = 0;
     has_depthstencil = 0;
-    if(ctx->state.bin.FRAMEBUFFER_BINDING){
-        is_framebuffer = 0;
-        // FIXME: Implement this
-        printf("Ignored bound framebuffer!\n");
-    }else{
-        is_framebuffer = 1;
-    }
 
     if(is_framebuffer){
         has_color = 1;
@@ -262,6 +244,30 @@ create_renderpass(cwgl_ctx_t* ctx, VkRenderPass* out_renderpass){
     }else{
         return 0;
     }
+}
+
+static void
+update_framebuffer(cwgl_ctx_t* ctx, cwgl_backend_Framebuffer_t* framebuffer_backend, 
+                   int is_framebuffer){
+    VkRenderPass renderpass;
+    VkFramebuffer framebuffer;
+    cwgl_backend_ctx_t* backend;
+    backend = ctx->backend;
+    if(! is_framebuffer){
+        printf("Ignored bound framebuffer!\n");
+        return;
+    }
+    if(framebuffer_backend->allocated){
+        vkDestroyFramebuffer(backend->device, framebuffer_backend->framebuffer, NULL);
+        vkDestroyRenderPass(backend->device, framebuffer_backend->renderpass, NULL);
+        framebuffer_backend->allocated = 0;
+    }
+    create_renderpass(ctx, is_framebuffer, &renderpass);
+    create_framebuffer(ctx, is_framebuffer, renderpass, &framebuffer);
+    framebuffer_backend->framebuffer = framebuffer;
+    framebuffer_backend->renderpass = renderpass;
+    framebuffer_backend->allocated = 1;
+    framebuffer_backend->ident = cwgl_vkpriv_newident(ctx);
 }
 
 static VkFormat
@@ -1025,6 +1031,8 @@ cwgl_backend_drawElements(cwgl_ctx_t* ctx, cwgl_enum_t mode,
     VkRenderPass renderpass;
     VkPipeline pipeline;
     VkFramebuffer framebuffer;
+    int is_framebuffer;
+    cwgl_backend_Framebuffer_t* framebuffer_backend;
     cwgl_VertexArrayObject_t* vao;
     cwgl_Program_t* program;
     cwgl_backend_Program_t* program_backend;
@@ -1034,9 +1042,14 @@ cwgl_backend_drawElements(cwgl_ctx_t* ctx, cwgl_enum_t mode,
     backend = ctx->backend;
     program = ctx->state.bin.CURRENT_PROGRAM;
     program_backend = program->backend;
+    is_framebuffer = ctx->state.bin.FRAMEBUFFER_BINDING ? 0 : 1;
+    framebuffer_backend = is_framebuffer ?
+        &backend->default_fb :
+        ctx->state.bin.FRAMEBUFFER_BINDING->backend;
     transfer_uniforms(ctx, program);
-    create_renderpass(ctx, &renderpass);
-    create_framebuffer(ctx, renderpass, &framebuffer);
+    update_framebuffer(ctx, framebuffer_backend, is_framebuffer);
+    renderpass = framebuffer_backend->renderpass;
+    framebuffer = framebuffer_backend->framebuffer;
     create_pipeline(ctx, mode, renderpass, program_backend->pipeline_layout, &pipeline);
     begin_cmd(ctx);
     begin_renderpass(ctx, renderpass, framebuffer);
@@ -1068,8 +1081,6 @@ cwgl_backend_drawElements(cwgl_ctx_t* ctx, cwgl_enum_t mode,
     backend->queue_has_command = 1; // FIXME: Tentative
     cwgl_vkpriv_graphics_submit(ctx);
     cwgl_vkpriv_graphics_wait(ctx);
-    vkDestroyFramebuffer(backend->device, framebuffer, NULL);
-    vkDestroyRenderPass(backend->device, renderpass, NULL);
     vkDestroyPipeline(backend->device, pipeline, NULL);
     return 0;
 }

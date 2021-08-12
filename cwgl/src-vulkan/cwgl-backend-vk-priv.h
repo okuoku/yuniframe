@@ -16,14 +16,22 @@
 
 struct cwgl_backend_Renderbuffer_s {
     int allocated;
+    uint64_t ident;
     VkImage image;
     VkImageView image_view;
     VkDeviceMemory device_memory;
     VkFormat format;
+    uint32_t width; /* Cache */
+    uint32_t height; /* Cache */
 };
 
 struct cwgl_backend_Framebuffer_s {
-    int dummy;
+    int allocated;
+    uint64_t ident;
+    VkRenderPass renderpass;
+    VkFramebuffer framebuffer;
+    uint32_t width; /* Cache */
+    uint32_t height; /* Cache */
 };
 
 typedef struct cwgl_backend_fb_state_s cwgl_backend_fb_state_t;
@@ -46,14 +54,17 @@ struct cwgl_backend_ctx_s {
     VkImageView cb_view[CWGL_FRAMEBUFFER_COUNT];
     VkFormat cb_format;
     int framebuffer_allocated;
+    uint64_t framebuffer_ident;
     VkSemaphore sem_fb;
     int need_wait_fb;
     // FIXME: Implement backbuffer (if required)
+    cwgl_backend_Framebuffer_t default_fb;
     cwgl_backend_Renderbuffer_t depth;
-    VkImageView depth_view;
     /* Vulkan Queue status */
     int queue_active;
     int queue_has_command;
+    /* Object ident */
+    uint64_t ident_age;
     /* SHXM */
     shxm_ctx_t* shxm_ctx;
 };
@@ -74,6 +85,7 @@ struct cwgl_backend_Shader_s {
 struct cwgl_backend_Program_s {
     /* Vulkan */
     int allocated;
+    uint64_t ident;
     VkShaderModule vertex_shader;
     VkShaderModule pixel_shader;
     /* Vulkan: Uniforms */
@@ -96,6 +108,7 @@ struct cwgl_backend_Program_s {
 
 struct cwgl_backend_Texture_s {
     int allocated;
+    uint64_t ident;
     /* Image data */
     VkImage image;
     VkDeviceMemory device_memory;
@@ -117,5 +130,7 @@ void cwgl_vkpriv_destroy_program(cwgl_ctx_t* ctx,
                                  cwgl_backend_Program_t* program_backend);
 int32_t cwgl_vkpriv_select_memory_type(cwgl_ctx_t* ctx, uint32_t requirement,
                                        VkMemoryPropertyFlags request);
+
+uint64_t cwgl_vkpriv_newident(cwgl_ctx_t* ctx);
 
 #endif

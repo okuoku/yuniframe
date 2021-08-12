@@ -7,6 +7,14 @@
 int cwgl_integ_vkpriv_getextensions(cwgl_ctx_t* ctx, int* out_count, const char** out_extensions);
 int cwgl_integ_vkpriv_createsurface(cwgl_ctx_t* ctx, VkInstance instance, VkSurfaceKHR* surface);
 
+uint64_t
+cwgl_vkpriv_newident(cwgl_ctx_t* ctx){
+    uint64_t c;
+    c = ctx->backend->ident_age;
+    ctx->backend->ident_age++;
+    return c;
+}
+
 int
 cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
     VkInstance instance;
@@ -57,6 +65,7 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
         c->queue_active = 0;
         c->queue_has_command = 0;
         c->framebuffer_allocated = 0;
+        c->default_fb.allocated = 0;
 
         /* Pass1: Get extensions count */
         cwgl_integ_vkpriv_getextensions(ctx, 
@@ -230,6 +239,7 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
         c->surface = surface;
         c->swapchain = swapchain;
         c->cb_format = VK_FORMAT_B8G8R8A8_UNORM;
+        c->ident_age = 1;
         /* SHXM */
         c->shxm_ctx = shxm_init();
     }
@@ -317,7 +327,7 @@ cwgl_backend_Framebuffer_init(cwgl_ctx_t* ctx,
     cwgl_backend_Framebuffer_t* f;
     f = malloc(sizeof(cwgl_backend_Framebuffer_t));
     if(f){
-        // FIXME: Init content here
+        f->allocated = 0;
     }
     framebuffer->backend = f;
     return 0;

@@ -339,7 +339,9 @@ cwgl_backend_linkProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
 
         // FIXME: Allocate attribute_registers
         program_backend->input_count = p->input_count;
+        program_backend->ident = cwgl_vkpriv_newident(ctx);
         program_backend->allocated = 1;
+        program_backend->ident = cwgl_vkpriv_newident(ctx);
     }
 
     return 0;

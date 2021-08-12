@@ -136,6 +136,9 @@ prepare_rb(cwgl_ctx_t* ctx, cwgl_backend_Renderbuffer_t* rb, cwgl_enum_t fmt,
     rb->device_memory = device_memory;
     rb->allocated = 1;
     rb->format = format;
+    rb->ident = cwgl_vkpriv_newident(ctx);
+    rb->width = width;
+    rb->height = height;
 }
 
 void
@@ -199,6 +202,7 @@ cwgl_vkpriv_prepare_fb(cwgl_ctx_t* ctx){
     backend->depth.allocated = 0;
     prepare_rb(ctx, &backend->depth, DEPTH_STENCIL, 1280, 720);
     backend->framebuffer_allocated = 1;
+    backend->framebuffer_ident = cwgl_vkpriv_newident(ctx);
 }
 
 int

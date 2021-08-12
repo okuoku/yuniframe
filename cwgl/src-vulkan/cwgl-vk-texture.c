@@ -361,6 +361,7 @@ cwgl_backend_texImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target,
     texture_backend->allocated = 1;
     texture_backend->image = image;
     texture_backend->device_memory = device_memory;
+    texture_backend->ident = cwgl_vkpriv_newident(ctx);
     vkDestroyBuffer(backend->device, temp_buffer, NULL);
     vkFreeMemory(backend->device, temp_device_memory, NULL);
 
