@@ -1,6 +1,7 @@
 #include "cwgl-backend-vk-priv.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "shxm_private.h"
 
@@ -29,7 +30,6 @@ int
 cwgl_backend_compileShader(cwgl_ctx_t* ctx, cwgl_Shader_t* shader){
     int r;
     size_t srcsize;
-    size_t infosize;
     char* buf;
     shxm_ctx_t* shxm;
     shxm_shader_t* s;
@@ -116,7 +116,6 @@ cwgl_backend_linkProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
     int b;
     int o;
     int r;
-    char* buf;
     cwgl_activeinfo_t* a;
     size_t namelen;
     cwgl_backend_ctx_t* backend;

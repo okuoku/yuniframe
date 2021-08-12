@@ -150,7 +150,7 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
         di.queueCreateInfoCount = 1;
         di.pQueueCreateInfos = &qi;
         di.enabledExtensionCount = 1;
-        const char* swapchain_extension = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
+        char* swapchain_extension = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
         device_extensions = &swapchain_extension;
         di.ppEnabledExtensionNames = device_extensions;
         di.enabledLayerCount = 0;

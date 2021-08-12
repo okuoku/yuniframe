@@ -16,7 +16,6 @@ current_vao(cwgl_ctx_t* ctx){
 
 static cwgl_Texture_t*
 current_texture(cwgl_ctx_t* ctx, int id, cwgl_enum_t slot){
-    cwgl_Texture_t* t;
     cwgl_texture_unit_state_t* s;
     s = ctx->state.bin.texture_unit;
     if(id > 32){
@@ -972,7 +971,6 @@ begin_cmd(cwgl_ctx_t* ctx){
 
 static void
 begin_renderpass(cwgl_ctx_t* ctx, VkRenderPass renderpass, VkFramebuffer framebuffer){
-    VkResult r;
     VkRenderPassBeginInfo bi;
     cwgl_backend_ctx_t* backend;
     int is_framebuffer;
