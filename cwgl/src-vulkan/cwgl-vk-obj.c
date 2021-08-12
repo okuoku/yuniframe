@@ -233,6 +233,10 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
         si.flags = 0;
         vkCreateSemaphore(device, &si, NULL, &c->sem_fb);
 
+        for(i=0;i!=CWGL_PIPELINE_CACHE_SIZE;i++){
+            c->pipelines[i].allocated = 0;
+        }
+
         c->queue = queue;
         c->memory_properties = memory_properties;
         c->queue_family_index = queue_index;

@@ -809,12 +809,56 @@ fill_pipeline_identity(cwgl_ctx_t* ctx,
     id->cbas_color = cbas_color;
 }
 
+static cwgl_backend_pipeline_t*
+lookup_pipeline(cwgl_backend_ctx_t* backend,
+                cwgl_backend_pipeline_identity_t* query,
+                int* out_hit){
+    int first_idx;
+    uint64_t first_ident = UINT64_MAX;
+    int i;
+    for(i=0;i!=CWGL_PIPELINE_CACHE_SIZE;i++){
+        if(backend->pipelines[i].allocated){
+            if(! memcmp(&backend->pipelines[i].cache, query,
+                        sizeof(cwgl_backend_pipeline_identity_t))){
+                break;
+            }else{
+                if(first_ident > backend->pipelines[i].ident){
+                    first_ident = backend->pipelines[i].ident;
+                    first_idx = i;
+                }
+            }
+        }else{
+            /* Pick as free area */
+            first_ident = 0;
+            first_idx = i;
+        }
+    }
+    if(i==CWGL_PIPELINE_CACHE_SIZE){
+        *out_hit = 0;
+        if(backend->pipelines[first_idx].allocated){
+            vkDestroyPipeline(backend->device,
+                              backend->pipelines[first_idx].pipeline,
+                              NULL);
+            printf("Pipeline destroy at %d\n",first_idx);
+        }else{
+            printf("Pipeline new at %d\n",first_idx);
+        }
+        *out_hit = 0;
+        return &backend->pipelines[first_idx];
+    }else{
+        //printf("Pipeline cache hit at %d\n", i);
+        *out_hit = 1;
+        return &backend->pipelines[i];
+    }
+}
+
 static int
 create_pipeline(cwgl_ctx_t* ctx, cwgl_enum_t primitive, 
                 cwgl_backend_Framebuffer_t* fb,
                 cwgl_backend_Program_t* prog,
                 cwgl_backend_pipeline_t** out_ppipe,
                 cwgl_backend_pipeline_vtxbinds_t* out_vtx){
+    int cache_hit = 0;
     VkPipeline pipeline;
     VkRenderPass renderpass; 
     VkPipelineLayout layout;
@@ -835,9 +879,14 @@ create_pipeline(cwgl_ctx_t* ctx, cwgl_enum_t primitive,
 
     fill_pipeline_identity(ctx, primitive, &id);
     configure_shaders(ctx, &ssci[0], &ssci[1], &vii, &id, out_vtx);
-
     id.framebuffer_ident = fb->ident;
     id.program_ident = prog->ident;
+
+    p = lookup_pipeline(backend, &id, &cache_hit);
+    *out_ppipe = p;
+    if(cache_hit){
+        return 0;
+    }
 
     renderpass = fb->renderpass;
     layout = prog->pipeline_layout;
@@ -901,9 +950,8 @@ create_pipeline(cwgl_ctx_t* ctx, cwgl_enum_t primitive,
         printf("Failed to create pipeline\n");
         return -1;
     }
-    p = &backend->pipelines[0];
-    *out_ppipe = p;
     p->allocated = 1;
+    p->ident = cwgl_vkpriv_newident(ctx);
     p->pipeline = pipeline;
     memset(&p->cache, 0, sizeof(cwgl_backend_pipeline_identity_t));
     p->cache = id;
@@ -1168,7 +1216,6 @@ cwgl_backend_drawElements(cwgl_ctx_t* ctx, cwgl_enum_t mode,
     backend->queue_has_command = 1; // FIXME: Tentative
     cwgl_vkpriv_graphics_submit(ctx);
     cwgl_vkpriv_graphics_wait(ctx);
-    vkDestroyPipeline(backend->device, pipeline_backend->pipeline, NULL);
     return 0;
 }
 

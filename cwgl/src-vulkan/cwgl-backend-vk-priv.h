@@ -56,11 +56,14 @@ typedef struct cwgl_backend_pipeline_identity_s cwgl_backend_pipeline_identity_t
 
 struct cwgl_backend_pipeline_s {
     int allocated;
+    uint64_t ident;
     VkPipeline pipeline;
     cwgl_backend_pipeline_identity_t cache;
 };
 
 typedef struct cwgl_backend_pipeline_s cwgl_backend_pipeline_t;
+
+#define CWGL_PIPELINE_CACHE_SIZE 16
 
 struct cwgl_backend_ctx_s {
     /* Vulkan */
@@ -94,7 +97,7 @@ struct cwgl_backend_ctx_s {
     /* SHXM */
     shxm_ctx_t* shxm_ctx;
     /* Pipeline cache */
-    cwgl_backend_pipeline_t pipelines[1];
+    cwgl_backend_pipeline_t pipelines[CWGL_PIPELINE_CACHE_SIZE];
 };
 
 typedef struct buffer_patch_request_s buffer_patch_request_t;
