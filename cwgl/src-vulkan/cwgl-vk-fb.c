@@ -271,10 +271,131 @@ cwgl_backend_renderbufferStorage(cwgl_ctx_t* ctx, cwgl_enum_t target,
 
 int
 cwgl_backend_configure_framebuffer(cwgl_ctx_t* ctx, cwgl_enum_t* out_state){
-    // FIXME: Do we need this? (Do we have any incomplete combination..?)
     cwgl_enum_t state;
-
+    cwgl_Framebuffer_t* fb;
+    cwgl_backend_ctx_t* backend;
+    cwgl_backend_Framebuffer_t* fb_backend;
+    cwgl_framebuffer_attachment_state_t* color0;
+    cwgl_framebuffer_attachment_state_t* depth;
+    cwgl_framebuffer_attachment_state_t* stencil;
+    int has_depth = 0;
+    int has_stencil = 0;
+    backend = ctx->backend;
+    // FIXME: Check texture/renderbuffer dimentions
     state = FRAMEBUFFER_COMPLETE;
+    fb = ctx->state.bin.FRAMEBUFFER_BINDING;
+
+
+    if(! fb){
+        /* No valid tracker Texture objects for these */
+        backend->render_to_fb = 1;
+    }else{
+        /* Update Framebuffer object using bound Texture/Renderbuffers */
+        backend->render_to_fb = 0;
+        fb_backend = fb->backend;
+        fb_backend->configuration_ident = cwgl_vkpriv_newident(ctx);
+        color0 = &fb->state.COLOR_ATTACHMENT0;
+        fb_backend->rb_color0 = NULL;
+        fb_backend->texture_color0 = NULL;
+        fb_backend->rb_depth_stencil = NULL;
+        fb_backend->texture_depth_stencil = NULL;
+        if(color0){
+            fb_backend->has_color0 = 1;
+            fb_backend->color_type0 = color0->FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE;
+            switch(fb_backend->color_type0){
+                default:
+                    break;
+                case RENDERBUFFER:
+                    fb_backend->rb_color0 = color0->FRAMEBUFFER_ATTACHMENT_OBJECT_NAME.asRenderbuffer->backend;
+                    break;
+                case TEXTURE:
+                    fb_backend->texture_color0 = color0->FRAMEBUFFER_ATTACHMENT_OBJECT_NAME.asTexture->backend;
+                    break;
+            }
+        }else{
+            fb_backend->has_color0 = 0;
+            fb_backend->color_type0 = NONE;
+        }
+        depth = &fb->state.DEPTH_ATTACHMENT;
+        stencil = &fb->state.STENCIL_ATTACHMENT;
+        if(depth->FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE == RENDERBUFFER ||
+           depth->FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE == TEXTURE){
+            has_depth = 1;
+        }
+        if(stencil->FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE == RENDERBUFFER ||
+           stencil->FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE == TEXTURE){
+            has_stencil = 1;
+        }
+        /* Check validity */
+        if(has_depth && has_stencil){
+            if(depth->FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE !=
+               stencil->FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE){
+                printf("???: Different object type for depth-stencil\n");
+            }
+            if(depth->FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE == RENDERBUFFER){
+                if(depth->FRAMEBUFFER_ATTACHMENT_OBJECT_NAME.asTexture
+                   != stencil->FRAMEBUFFER_ATTACHMENT_OBJECT_NAME.asTexture){
+                    printf("???: Different framebuffer for depth-stencil\n");
+                }
+            }else{
+                if(depth->FRAMEBUFFER_ATTACHMENT_OBJECT_NAME.asRenderbuffer
+                   != stencil->FRAMEBUFFER_ATTACHMENT_OBJECT_NAME.asRenderbuffer){
+                    printf("???: Different Renderbuffer for depth-stencil\n");
+                }
+            }
+        }
+        if(has_stencil){
+            fb_backend->has_stencil = 1;
+            fb_backend->depth_stencil_type = stencil->FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE;
+            switch(fb_backend->depth_stencil_type){
+                default:
+                    break;
+                case RENDERBUFFER:
+                    fb_backend->rb_depth_stencil =
+                        stencil->FRAMEBUFFER_ATTACHMENT_OBJECT_NAME.asRenderbuffer->backend;
+                    break;
+                case TEXTURE:
+                    fb_backend->texture_depth_stencil =
+                        stencil->FRAMEBUFFER_ATTACHMENT_OBJECT_NAME.asTexture->backend;
+                    break;
+            }
+        }
+        if(has_depth){ /* Prefer depth over stencil (if error case) */
+            fb_backend->has_depth = 1;
+            fb_backend->depth_stencil_type = depth->FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE;
+            switch(fb_backend->depth_stencil_type){
+                default:
+                    break;
+                case RENDERBUFFER:
+                    fb_backend->rb_depth_stencil =
+                        depth->FRAMEBUFFER_ATTACHMENT_OBJECT_NAME.asRenderbuffer->backend;
+                    break;
+                case TEXTURE:
+                    fb_backend->texture_depth_stencil =
+                        depth->FRAMEBUFFER_ATTACHMENT_OBJECT_NAME.asTexture->backend;
+                    break;
+            }
+        }
+        fb_backend->has_depth = has_depth;
+        fb_backend->has_stencil = has_stencil;
+        // FIXME: Read correct framebuffer status
+        fb->state.RED_BITS = 8;
+        fb->state.GREEN_BITS = 8;
+        fb->state.BLUE_BITS = 8;
+        fb->state.ALPHA_BITS = 8;
+        if(has_depth){
+            fb->state.DEPTH_BITS = 24;
+        }else{
+            fb->state.DEPTH_BITS = 0;
+        }
+        if(has_stencil){
+            fb->state.STENCIL_BITS = 8;
+        }else{
+            fb->state.STENCIL_BITS = 0;
+        }
+        fb->state.IMPLEMENTATION_COLOR_READ_TYPE = 0; // FIXME: ???
+        fb->state.IMPLEMENTATION_COLOR_READ_FORMAT = 0; // FIXME: ???
+    }
 
     if(out_state){
         *out_state = state;

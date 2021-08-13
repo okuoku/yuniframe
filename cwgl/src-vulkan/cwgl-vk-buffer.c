@@ -132,6 +132,7 @@ cwgl_backend_bufferData(cwgl_ctx_t* ctx, cwgl_enum_t target,
 int
 cwgl_backend_bufferSubData(cwgl_ctx_t* ctx, cwgl_enum_t target,
                            uint32_t offset, void* data, size_t buflen){
+    // FIXME: Implement this
     return 0;
 }
 

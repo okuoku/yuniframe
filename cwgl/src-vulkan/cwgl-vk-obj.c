@@ -237,6 +237,7 @@ cwgl_backend_ctx_init(cwgl_ctx_t* ctx){
             c->pipelines[i].allocated = 0;
         }
 
+        c->render_to_fb = 1;
         c->queue = queue;
         c->memory_properties = memory_properties;
         c->queue_family_index = queue_index;

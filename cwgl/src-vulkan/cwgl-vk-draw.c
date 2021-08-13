@@ -119,12 +119,18 @@ update_texture(cwgl_ctx_t* ctx, cwgl_Texture_t* texture){
 }
 
 static int
-create_framebuffer(cwgl_ctx_t* ctx, int is_framebuffer, VkRenderPass renderpass, VkFramebuffer* out_framebuffer){
+create_framebuffer(cwgl_ctx_t* ctx, 
+                   const cwgl_backend_Framebuffer_t* framebuffer_backend,
+                   int is_framebuffer, VkRenderPass renderpass, 
+                   VkFramebuffer* out_framebuffer){
     VkResult r;
     VkFramebufferCreateInfo fi;
     cwgl_backend_ctx_t* backend;
     VkImageView as[2];
     backend = ctx->backend;
+    int has_color0;
+    int has_depthstencil;
+
 
     fi.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
     fi.pNext = NULL;
@@ -135,12 +141,35 @@ create_framebuffer(cwgl_ctx_t* ctx, int is_framebuffer, VkRenderPass renderpass,
         as[0] = backend->cb_view[backend->current_image_index];
         as[1] = backend->depth.image_view;
         fi.pAttachments = as;
-        fi.width = 1280;
-        fi.height = 720;
-        fi.layers = 1;
     }else{
-        // FIXME: Implement this
+        if(framebuffer_backend->rb_color0){
+            as[0] = framebuffer_backend->rb_color0->image_view;
+            has_color0 = 1;
+        }
+        if(framebuffer_backend->texture_color0){
+            as[0] = framebuffer_backend->texture_color0->view;
+            has_color0 = 1;
+        }
+        if(framebuffer_backend->rb_depth_stencil){
+            as[1] = framebuffer_backend->rb_depth_stencil->image_view;
+            has_depthstencil = 1;
+        }
+        if(framebuffer_backend->texture_depth_stencil){
+            as[1] = framebuffer_backend->texture_depth_stencil->view;
+            has_depthstencil = 1;
+        }
+        fi.pAttachments = NULL;
+        if(has_color0){
+            fi.pAttachments = as;
+        }else if(has_depthstencil){
+            fi.pAttachments = &as[1];
+        }
+        fi.attachmentCount = has_color0 + has_depthstencil;
+
     }
+    fi.width = framebuffer_backend->width;
+    fi.height = framebuffer_backend->height;
+    fi.layers = 1;
     r = vkCreateFramebuffer(backend->device,
                             &fi,
                             NULL,
@@ -153,10 +182,14 @@ create_framebuffer(cwgl_ctx_t* ctx, int is_framebuffer, VkRenderPass renderpass,
 }
 
 static int
-create_renderpass(cwgl_ctx_t* ctx, int is_framebuffer, VkRenderPass* out_renderpass){
+create_renderpass(cwgl_ctx_t* ctx, 
+                  const cwgl_backend_Framebuffer_t* framebuffer_backend,
+                  int is_framebuffer, VkRenderPass* out_renderpass){
     VkResult r;
-    int has_color;
-    int has_depthstencil;
+    int has_color = 0;
+    int has_depth = 0;
+    int has_stencil = 0;
+    int has_depthstencil = 0;
     VkAttachmentDescription ads[2];
     VkAttachmentReference cr;
     VkAttachmentReference dr;
@@ -165,61 +198,83 @@ create_renderpass(cwgl_ctx_t* ctx, int is_framebuffer, VkRenderPass* out_renderp
     VkSubpassDependency dep;
     cwgl_backend_ctx_t* backend;
     backend = ctx->backend;
-    has_color = 0;
-    has_depthstencil = 0;
 
     if(is_framebuffer){
         has_color = 1;
+        has_depth = 1;
+        has_stencil = 1;
         has_depthstencil = 1;
-        /* Configure color attachment */
-        ads[0].format = backend->cb_format;
-        ads[0].flags = 0;
-        ads[0].samples = VK_SAMPLE_COUNT_1_BIT;
-        ads[0].loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-        ads[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        ads[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        ads[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        ads[0].initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        ads[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-        /* Configure depth+stencil attachment */
-        ads[1].format = backend->depth.format;
-        ads[1].flags = 0;
-        ads[1].samples = VK_SAMPLE_COUNT_1_BIT;
-        ads[1].loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-        ads[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        ads[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-        ads[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
-        ads[1].initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-        ads[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-        /* Configure subpass */
-        cr.attachment = 0;
-        cr.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        dr.attachment = 1;
-        dr.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-        sp.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        sp.flags = 0;
-        sp.inputAttachmentCount = 0;
-        sp.pInputAttachments = NULL;
-        sp.colorAttachmentCount = 1;
-        sp.pColorAttachments = &cr;
-        sp.pResolveAttachments = NULL;
-        sp.pDepthStencilAttachment = &dr;
-        sp.preserveAttachmentCount = 0;
-        sp.pPreserveAttachments = NULL;
-
-        dep.srcSubpass = VK_SUBPASS_EXTERNAL;
-        dep.dstSubpass = 0;
-        dep.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dep.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dep.srcAccessMask = 0;
-        dep.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        dep.dependencyFlags = 0;
     }else{
-        // FIXME: Implement this
+        has_color = framebuffer_backend->has_color0;
+        has_depth = framebuffer_backend->has_depth;
+        has_stencil = framebuffer_backend->has_stencil;
+        has_depthstencil = (has_depth || has_stencil) ? 1 : 0;
     }
+
+    /* Configure color attachment */
+    if(is_framebuffer){
+        ads[0].format = backend->cb_format;
+    }else{
+        if(framebuffer_backend->texture_color0){
+            ads[0].format = framebuffer_backend->texture_color0->format;
+        }
+        if(framebuffer_backend->rb_color0){
+            ads[0].format = framebuffer_backend->rb_color0->format;
+        }
+    }
+    ads[0].flags = 0;
+    ads[0].samples = VK_SAMPLE_COUNT_1_BIT;
+    ads[0].loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    ads[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    ads[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    ads[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    ads[0].initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    ads[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    /* Configure depth+stencil attachment */
+    if(is_framebuffer){
+        ads[1].format = backend->depth.format;
+    }else{
+        if(framebuffer_backend->texture_depth_stencil){
+            ads[1].format = framebuffer_backend->texture_depth_stencil->format;
+        }
+        if(framebuffer_backend->rb_depth_stencil){
+            ads[1].format = framebuffer_backend->rb_depth_stencil->format;
+        }
+    }
+    ads[1].flags = 0;
+    ads[1].samples = VK_SAMPLE_COUNT_1_BIT;
+    ads[1].loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    ads[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    ads[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    ads[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
+    ads[1].initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    ads[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    /* Configure subpass */
+    cr.attachment = 0;
+    cr.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    dr.attachment = 1;
+    dr.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    sp.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    sp.flags = 0;
+    sp.inputAttachmentCount = 0;
+    sp.pInputAttachments = NULL;
+    sp.colorAttachmentCount = 1;
+    sp.pColorAttachments = &cr;
+    sp.pResolveAttachments = NULL;
+    sp.pDepthStencilAttachment = &dr;
+    sp.preserveAttachmentCount = 0;
+    sp.pPreserveAttachments = NULL;
+
+    dep.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dep.dstSubpass = 0;
+    dep.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dep.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dep.srcAccessMask = 0;
+    dep.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    dep.dependencyFlags = 0;
 
     ri.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     ri.pNext = NULL;
@@ -246,43 +301,95 @@ create_renderpass(cwgl_ctx_t* ctx, int is_framebuffer, VkRenderPass* out_renderp
 }
 
 static void
-update_framebuffer(cwgl_ctx_t* ctx, cwgl_backend_Framebuffer_t* framebuffer_backend, 
+update_framebuffer(cwgl_ctx_t* ctx, 
+                   cwgl_backend_Framebuffer_t* framebuffer_backend, 
                    int is_framebuffer){
+    uint64_t next_color_texture_ident0 = 0;
+    uint64_t next_color_renderbuffer_ident0 = 0;
+    uint64_t next_depth_stencil_texture_ident = 0;
+    uint64_t next_depth_stencil_renderbuffer_ident = 0;
+    uint32_t next_width = 0;
+    uint32_t next_height = 0;
+    int need_update = 0;
     VkRenderPass renderpass;
     VkFramebuffer framebuffer;
     cwgl_backend_ctx_t* backend;
     backend = ctx->backend;
-    if(! is_framebuffer){
-        printf("Ignored bound framebuffer!\n");
-        return;
+    if(is_framebuffer){
+        next_color_renderbuffer_ident0 = backend->framebuffer_ident;
+        next_depth_stencil_renderbuffer_ident = backend->depth.ident;
+        next_width = 1280;
+        next_height = 720;
+    }else{
+        if(framebuffer_backend->current_ident == framebuffer_backend->configuration_ident){
+            /* Early cut */
+            // FIXME: Too optimized..?
+            return;
+        }
+        if(framebuffer_backend->rb_color0){
+            next_color_renderbuffer_ident0 = framebuffer_backend->rb_color0->ident;
+            next_width = framebuffer_backend->rb_color0->width;
+            next_height = framebuffer_backend->rb_color0->height;
+        }
+        if(framebuffer_backend->rb_depth_stencil){
+            next_depth_stencil_renderbuffer_ident = framebuffer_backend->rb_depth_stencil->ident;
+            next_width = framebuffer_backend->rb_depth_stencil->width;
+            next_height = framebuffer_backend->rb_depth_stencil->height;
+        }
+        if(framebuffer_backend->texture_color0){
+            next_color_texture_ident0 = framebuffer_backend->texture_color0->ident;
+            next_width = framebuffer_backend->texture_color0->width;
+            next_height = framebuffer_backend->texture_color0->height;
+        }
+        if(framebuffer_backend->texture_depth_stencil){
+            next_depth_stencil_texture_ident = framebuffer_backend->texture_depth_stencil->ident;
+            next_width = framebuffer_backend->texture_depth_stencil->width;
+            next_height = framebuffer_backend->texture_depth_stencil->height;
+        }
     }
+
     if(framebuffer_backend->allocated){
-        if(framebuffer_backend->texture_ident != CWGL_VK_INVALID_IDENT){
-            // FIXME: TODO
+        if(framebuffer_backend->color_texture_ident0 != 
+           next_color_texture_ident0){
+            need_update = 1;
         }
-        if(framebuffer_backend->renderbuffer_ident != CWGL_VK_INVALID_IDENT){
-            if(is_framebuffer){
-                if(framebuffer_backend->renderbuffer_ident == backend->framebuffer_ident){
-                    /* Use cached object */
-                    return;
-                }
-            }else{
-                // FIXME: TODO
-            }
+        if(framebuffer_backend->color_renderbuffer_ident0 !=
+           next_color_renderbuffer_ident0){
+            need_update = 1;
         }
+        if(framebuffer_backend->depth_stencil_texture_ident !=
+           next_depth_stencil_texture_ident){
+            need_update = 1;
+        }
+        if(framebuffer_backend->depth_stencil_renderbuffer_ident !=
+           next_depth_stencil_renderbuffer_ident){
+            need_update = 1;
+        }
+        if(! framebuffer_backend->allocated){
+            need_update = 1;
+        }
+        if(! need_update){
+            /* Early cut */
+            framebuffer_backend->current_ident = framebuffer_backend->configuration_ident;
+            return;
+        }
+
         vkDestroyFramebuffer(backend->device, framebuffer_backend->framebuffer, NULL);
         vkDestroyRenderPass(backend->device, framebuffer_backend->renderpass, NULL);
         framebuffer_backend->allocated = 0;
-        framebuffer_backend->texture_ident = CWGL_VK_INVALID_IDENT;
-        framebuffer_backend->renderbuffer_ident = CWGL_VK_INVALID_IDENT;
     }
-    create_renderpass(ctx, is_framebuffer, &renderpass);
-    create_framebuffer(ctx, is_framebuffer, renderpass, &framebuffer);
-    framebuffer_backend->renderbuffer_ident = backend->framebuffer_ident; // FIXME: TODO
-    framebuffer_backend->texture_ident = CWGL_VK_INVALID_IDENT; // FIXME: TODO
+    framebuffer_backend->width = next_width;
+    framebuffer_backend->height = next_height;
+    create_renderpass(ctx, framebuffer_backend, is_framebuffer, &renderpass);
+    create_framebuffer(ctx, framebuffer_backend, is_framebuffer, renderpass, &framebuffer);
+    framebuffer_backend->color_texture_ident0 = next_color_texture_ident0;
+    framebuffer_backend->color_renderbuffer_ident0 = next_color_renderbuffer_ident0;
+    framebuffer_backend->depth_stencil_texture_ident = next_depth_stencil_texture_ident;
+    framebuffer_backend->depth_stencil_renderbuffer_ident = next_depth_stencil_renderbuffer_ident;
     framebuffer_backend->framebuffer = framebuffer;
     framebuffer_backend->renderpass = renderpass;
     framebuffer_backend->allocated = 1;
+    framebuffer_backend->current_ident = framebuffer_backend->configuration_ident;
     framebuffer_backend->ident = cwgl_vkpriv_newident(ctx);
 }
 

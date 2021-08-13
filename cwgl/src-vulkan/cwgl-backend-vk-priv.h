@@ -28,12 +28,26 @@ struct cwgl_backend_Renderbuffer_s {
 struct cwgl_backend_Framebuffer_s {
     int allocated;
     uint64_t ident;
-    uint64_t texture_ident;
-    uint64_t renderbuffer_ident;
+    uint64_t color_texture_ident0;
+    uint64_t color_renderbuffer_ident0;
+    uint64_t depth_stencil_texture_ident;
+    uint64_t depth_stencil_renderbuffer_ident;
     VkRenderPass renderpass;
     VkFramebuffer framebuffer;
     uint32_t width; /* Cache */
     uint32_t height; /* Cache */
+    uint64_t current_ident; /* Applied config */
+    /* Configuration, updated in cwgl_backend_configure_framebuffer */
+    uint64_t configuration_ident;
+    int has_color0;
+    int has_depth;
+    int has_stencil;
+    cwgl_enum_t color_type0;
+    cwgl_enum_t depth_stencil_type;
+    cwgl_backend_Renderbuffer_t* rb_color0;
+    cwgl_backend_Renderbuffer_t* rb_depth_stencil;
+    cwgl_backend_Texture_t* texture_color0;
+    cwgl_backend_Texture_t* texture_depth_stencil;
 };
 
 struct cwgl_backend_pipeline_identity_s {
@@ -86,6 +100,8 @@ struct cwgl_backend_ctx_s {
     uint64_t framebuffer_ident;
     VkSemaphore sem_fb;
     int need_wait_fb;
+    int render_to_fb;
+
     // FIXME: Implement backbuffer (if required)
     cwgl_backend_Framebuffer_t default_fb;
     cwgl_backend_Renderbuffer_t depth;
@@ -139,6 +155,9 @@ struct cwgl_backend_Texture_s {
     VkImage image;
     VkDeviceMemory device_memory;
     VkImageView view;
+    VkFormat format;
+    uint32_t width; /* Cache */
+    uint32_t height; /* Cache */
     /* Combined sampler (Updated during render kick) */
     int sampler_allocated;
     VkSampler sampler;

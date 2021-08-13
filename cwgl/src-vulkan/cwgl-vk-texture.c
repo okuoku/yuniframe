@@ -362,6 +362,9 @@ cwgl_backend_texImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target,
     texture_backend->image = image;
     texture_backend->device_memory = device_memory;
     texture_backend->ident = cwgl_vkpriv_newident(ctx);
+    texture_backend->width = width;
+    texture_backend->height = height;
+    texture_backend->format = vkformat;
     vkDestroyBuffer(backend->device, temp_buffer, NULL);
     vkFreeMemory(backend->device, temp_device_memory, NULL);
 
@@ -373,6 +376,7 @@ cwgl_backend_copyTexImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target,
                             int32_t level, cwgl_enum_t internalformat,
                             int32_t x, int32_t y,
                             uint32_t width, uint32_t height, int32_t border){
+    // FIXME: Implement this
     return 0;
 }
 
@@ -382,6 +386,7 @@ cwgl_backend_texSubImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target,
                            uint32_t width, uint32_t height,
                            cwgl_enum_t format, cwgl_enum_t type,
                            const void* buf, size_t buflen){
+    // FIXME: Implement this
     return 0;
 }
 
@@ -390,6 +395,7 @@ cwgl_backend_copyTexSubImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target,
                                int32_t level, int32_t xoffset, int32_t yoffset,
                                int32_t x, int32_t y,
                                uint32_t width, uint32_t height){
+    // FIXME: Implement this
     return 0;
 }
 
