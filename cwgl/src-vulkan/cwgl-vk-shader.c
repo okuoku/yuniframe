@@ -49,7 +49,7 @@ cwgl_backend_compileShader(cwgl_ctx_t* ctx, cwgl_Shader_t* shader){
     buf = malloc(srcsize);
     cwgl_string_read(ctx, shader->state.source,
                      buf, srcsize);
-    shxm_shader_source(shxm, s, buf, srcsize-1);
+    shxm_shader_source(shxm, s, buf, srcsize);
     free(buf);
     r = shxm_shader_compile(shxm, s);
     shader->state.COMPILE_STATUS = (r == 0) ? CWGL_TRUE: CWGL_FALSE;
