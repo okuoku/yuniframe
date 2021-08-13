@@ -271,8 +271,10 @@ patch_uniform_to_private(struct patchctx_s* cur, shxm_util_buf_t* defs){
     int id;
     int curid;
     uint32_t op[4];
+    uint32_t* ir;
     struct idpatchparam_s* param;
     shxm_uniform_t* uniform;
+    /* Phase1: Convert direct loads */
     for(u=0;u!=cur->prog->uniform_count;u++){
         uniform = &cur->prog->uniform[u];
         id = uniform->slot->id[cur->phase];
@@ -316,6 +318,30 @@ patch_uniform_to_private(struct patchctx_s* cur, shxm_util_buf_t* defs){
             }
         }
     }
+    /* Phase2: Replace pointers against replaced uniform */
+    for(id=0;id!=cur->intr->ent_count;id++){
+        if(cur->intr->ent[id].op == 32 /* OpTypePointer */){
+            ir = &cur->ir[cur->intr->ent[id].offs];
+            if(ir[2] == 0 /* UniformConstant */){
+                curid = ir[3];
+                /* Check for non-opaque types */
+                if((cur->intr->ent[curid].op != 26 /* OpTypeSampler*/) &&
+                   (cur->intr->ent[curid].op != 27 /* OpTypeSampledImage */)){
+                    /* NOPout and Inject OpTypePointer-Private type */
+                    op[0] = 32; /* OpTypePointer */
+                    op[1] = ir[1];
+                    op[2] = 6; /* Private */
+                    op[3] = curid;
+                    nopout(ir);
+                    if(shxm_private_util_buf_write_op(defs, op, 4)){
+                        return 1;
+                    }
+                }
+            }
+
+        }
+    }
+
     return 0;
 }
 
