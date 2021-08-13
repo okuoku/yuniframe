@@ -1077,32 +1077,21 @@ begin_cmd(cwgl_ctx_t* ctx){
 }
 
 static void
-begin_renderpass(cwgl_ctx_t* ctx, VkRenderPass renderpass, VkFramebuffer framebuffer){
+begin_renderpass(cwgl_ctx_t* ctx, cwgl_backend_Framebuffer_t* framebuffer_backend,
+                 VkRenderPass renderpass, VkFramebuffer framebuffer){
     VkRenderPassBeginInfo bi;
     cwgl_backend_ctx_t* backend;
-    int is_framebuffer;
-    if(ctx->state.bin.FRAMEBUFFER_BINDING){
-        is_framebuffer = 0;
-        // FIXME: Implement this
-        printf("Ignored bound framebuffer!\n");
-    }else{
-        is_framebuffer = 1;
-    }
     backend = ctx->backend;
     bi.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     bi.pNext = NULL;
     bi.renderPass = renderpass;
     bi.framebuffer = framebuffer;
-    if(is_framebuffer){
-        bi.renderArea.offset.x = 0;
-        bi.renderArea.offset.y = 0;
-        bi.renderArea.extent.width = 1280;
-        bi.renderArea.extent.height = 720;
-        bi.clearValueCount = 0;
-        bi.pClearValues = 0;
-    }else{
-        // FIXME: Implement this
-    }
+    bi.renderArea.offset.x = 0;
+    bi.renderArea.offset.y = 0;
+    bi.renderArea.extent.width = framebuffer_backend->width;
+    bi.renderArea.extent.height = framebuffer_backend->height;
+    bi.clearValueCount = 0;
+    bi.pClearValues = 0;
     vkCmdBeginRenderPass(backend->command_buffer, &bi, VK_SUBPASS_CONTENTS_INLINE);
 }
 
@@ -1225,7 +1214,7 @@ cwgl_backend_drawElements(cwgl_ctx_t* ctx, cwgl_enum_t mode,
     framebuffer = framebuffer_backend->framebuffer;
     create_pipeline(ctx, mode, framebuffer_backend, program_backend, &pipeline_backend, &vtxbinds);
     begin_cmd(ctx);
-    begin_renderpass(ctx, renderpass, framebuffer);
+    begin_renderpass(ctx, framebuffer_backend, renderpass, framebuffer);
     vkCmdBindPipeline(backend->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_backend->pipeline);
     vkCmdBindDescriptorSets(backend->command_buffer,
                             VK_PIPELINE_BIND_POINT_GRAPHICS,
