@@ -141,53 +141,56 @@ cwgl_backend_texImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target,
         cwgl_vkpriv_graphics_wait(ctx);
         cwgl_vkpriv_destroy_texture(ctx, texture_backend);
     }
-    /* Allocate temporary buffer */
-    temp_bi.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    temp_bi.pNext = NULL;
-    temp_bi.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-    temp_bi.size = buflen;
-    temp_bi.queueFamilyIndexCount = 1;
-    temp_bi.pQueueFamilyIndices = &backend->queue_family_index;
-    temp_bi.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    temp_bi.flags = 0;
-    r = vkCreateBuffer(backend->device, &temp_bi, NULL, &temp_buffer);
-    if(r != VK_SUCCESS){
-        printf("FAILed to create temp_buffer\n");
-        return -1;
-    }
-    vkGetBufferMemoryRequirements(backend->device,
-                                  temp_buffer,
-                                  &memory_requirements);
-    temp_ai.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    temp_ai.pNext = NULL;
-    i = cwgl_vkpriv_select_memory_type(ctx, memory_requirements.memoryTypeBits,
-                                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
-                                       VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    if(i < 0){
-        printf("Could not find appropriate buffer type\n");
-        return -1;
-    }
-    temp_ai.memoryTypeIndex = i;
-    temp_ai.allocationSize = memory_requirements.size;
-    r = vkAllocateMemory(backend->device, &temp_ai, NULL, &temp_device_memory);
-    if(r != VK_SUCCESS){
-        printf("FAILed to allocate temp_buffer\n");
-        return -1;
-    }
-    /* Upload bits to temporary buffer */
-    r = vkMapMemory(backend->device, temp_device_memory, 0,
-                    buflen, 0, &temp_device_memory_addr);
-    if(r != VK_SUCCESS){
-        printf("FAILed to map temp_buffer\n");
-        return -1;
-    }
-    memcpy(temp_device_memory_addr, buf, buflen);
-    vkUnmapMemory(backend->device, temp_device_memory);
-    r = vkBindBufferMemory(backend->device, 
-                           temp_buffer, temp_device_memory, 0);
-    if(r != VK_SUCCESS){
-        printf("FAILed to bind temp_buffer\n");
-        return -1;
+    /* Load initial content */
+    if(buf && buflen){
+        /* Allocate temporary buffer */
+        temp_bi.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        temp_bi.pNext = NULL;
+        temp_bi.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        temp_bi.size = buflen;
+        temp_bi.queueFamilyIndexCount = 1;
+        temp_bi.pQueueFamilyIndices = &backend->queue_family_index;
+        temp_bi.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        temp_bi.flags = 0;
+        r = vkCreateBuffer(backend->device, &temp_bi, NULL, &temp_buffer);
+        if(r != VK_SUCCESS){
+            printf("FAILed to create temp_buffer\n");
+            return -1;
+        }
+        vkGetBufferMemoryRequirements(backend->device,
+                                      temp_buffer,
+                                      &memory_requirements);
+        temp_ai.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        temp_ai.pNext = NULL;
+        i = cwgl_vkpriv_select_memory_type(ctx, memory_requirements.memoryTypeBits,
+                                           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
+                                           VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        if(i < 0){
+            printf("Could not find appropriate buffer type\n");
+            return -1;
+        }
+        temp_ai.memoryTypeIndex = i;
+        temp_ai.allocationSize = memory_requirements.size;
+        r = vkAllocateMemory(backend->device, &temp_ai, NULL, &temp_device_memory);
+        if(r != VK_SUCCESS){
+            printf("FAILed to allocate temp_buffer\n");
+            return -1;
+        }
+        /* Upload bits to temporary buffer */
+        r = vkMapMemory(backend->device, temp_device_memory, 0,
+                        buflen, 0, &temp_device_memory_addr);
+        if(r != VK_SUCCESS){
+            printf("FAILed to map temp_buffer\n");
+            return -1;
+        }
+        memcpy(temp_device_memory_addr, buf, buflen);
+        vkUnmapMemory(backend->device, temp_device_memory);
+        r = vkBindBufferMemory(backend->device, 
+                               temp_buffer, temp_device_memory, 0);
+        if(r != VK_SUCCESS){
+            printf("FAILed to bind temp_buffer\n");
+            return -1;
+        }
     }
 
     /* Create image */
@@ -264,7 +267,7 @@ cwgl_backend_texImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target,
     }
 
     /* Convert format */
-    { /* Tentative */
+    if(buf && buflen){ /* Tentative */
         VkBufferImageCopy rgn;
         rgn.bufferOffset = 0;
         rgn.bufferRowLength = 0;
@@ -365,8 +368,11 @@ cwgl_backend_texImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target,
     texture_backend->width = width;
     texture_backend->height = height;
     texture_backend->format = vkformat;
-    vkDestroyBuffer(backend->device, temp_buffer, NULL);
-    vkFreeMemory(backend->device, temp_device_memory, NULL);
+
+    if(buf && buflen){
+        vkDestroyBuffer(backend->device, temp_buffer, NULL);
+        vkFreeMemory(backend->device, temp_device_memory, NULL);
+    }
 
     return 0;
 }
