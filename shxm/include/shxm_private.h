@@ -124,6 +124,7 @@ struct shxm_spirv_intr_s {
     shxm_spirv_ent_t* ent;
     unsigned int ent_count;
     int entrypoint; /* ID for entrypoint */
+    int entrypoint_loc; /* OpEntryPoint location */
     int preamble_end; /* First OpName location */
     int defs_start;
     int defs_end;

@@ -157,6 +157,7 @@ shxm_private_read_spirv(uint32_t* ir, int len){
                         failed = 1;
                     }
                     intr->entrypoint = ir[i+2];
+                    intr->entrypoint_loc = i;
                     break;
                 default:
                     /* Do nothing, skip insn */

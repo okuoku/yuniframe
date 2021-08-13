@@ -35,6 +35,7 @@ struct patchctx_s {
     int ubo_structure_id;
 
     int integers_id_base;
+    int unused_pointer_id_base;
     uint32_t* ir;
     shxm_program_t* prog;
     shxm_spirv_intr_t* intr;
@@ -263,6 +264,76 @@ nopout(uint32_t* ir){
     for(i=0;i!=len;i++){
         ir[i] = (1 << 16); /* OpNop */
     }
+}
+
+static int
+patch_unused_output(struct patchctx_s* cur, shxm_util_buf_t* defs){
+    int i;
+    int j;
+    int id;
+    int len;
+    uint32_t typeid;
+    uint32_t newtypeid = cur->unused_pointer_id_base;
+    uint32_t op[4];
+    uint32_t* ir;
+    uint32_t* ir_type;
+    shxm_attribute_t* un;
+    if(! cur->prog->unused_count){
+        /* Early Cut */
+        return 0;
+    }
+    /* Patch unused output variables into Private */
+    for(i=0;i!=cur->prog->unused_count;i++){
+        un = &cur->prog->unused[i];
+        id = un->slot->id[cur->phase];
+        ir = &cur->ir[cur->intr->ent[id].offs];
+        typeid = ir[1];
+        ir_type = &cur->ir[cur->intr->ent[typeid].offs];
+        op[0] = 32; /* OpTypePointer */
+        op[1] = newtypeid;
+        op[2] = 6; /* Private */
+        op[3] = ir_type[3];
+        if(shxm_private_util_buf_write_op(defs, op, 4)){
+            return 1;
+        }
+
+        op[0] = 59; /* OpVariable */
+        op[1] = newtypeid;
+        op[2] = id;
+        op[3] = 6; /* Private */
+        nopout(ir);
+        if(shxm_private_util_buf_write_op(defs, op, 4)){
+            return 1;
+        }
+        newtypeid++;
+    }
+    /* Remove unused variables from OpEntryPoint */
+    ir = &cur->ir[cur->intr->entrypoint_loc];
+    len = ir[0] >> 16;
+    for(i=4;i!=len;i++){
+        /* Replace unused variable ids with zero */
+        for(j=0;j!=cur->prog->unused_count;j++){
+            un = &cur->prog->unused[j];
+            if(ir[i] == un->slot->id[cur->phase]){
+                ir[i] = UINT32_MAX;
+            }
+        }
+    }
+    j=4;
+    for(i=4;i!=len;i++){
+        /* Sort */
+        if(ir[i] != UINT32_MAX){
+            ir[j] = ir[i];
+            j++;
+        }
+    }
+    ir[0] = (j<<16) + 15; /* OpEntryPoint */
+    for(i=j;i!=len;i++){
+        /* Nop out rest */
+        ir[i] = 0x10000; /* OpNop */
+    }
+
+    return 0;
 }
 
 static int
@@ -755,9 +826,19 @@ shxm_private_patch_spirv(shxm_ctx_t* ctx,
     if(fill_ubo_info(&cur)){
         goto done;
     }
+    if(phase == 0 /* Vertex shader */){
+        /* Make room for pointer ids */
+        cur.unused_pointer_id_base = cur.curid;
+        cur.curid += cur.prog->unused_count;
+    }
     cur.ir[3] = cur.curid; /* Patch Bounds */
     if(patch_uniform_to_private(&cur, patch_defs)){
         goto done;
+    }
+    if(phase == 0 /* Vertex shader */){
+        if(patch_unused_output(&cur, patch_defs)){
+            goto done;
+        }
     }
     if(inject_integers(&cur, patch_defs)){
         goto done;
