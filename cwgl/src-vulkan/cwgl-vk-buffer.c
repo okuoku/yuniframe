@@ -108,14 +108,17 @@ cwgl_backend_bufferData(cwgl_ctx_t* ctx, cwgl_enum_t target,
         newbuffer = buffer_backend->buffer;
         device_memory = buffer_backend->device_memory;
     }
-    r = vkMapMemory(backend->device, device_memory, 0,
-                    size, 0, &device_memory_addr);
-    if(r != VK_SUCCESS){
-        printf("FAILed to map memory\n");
-        return -1;
+
+    if(data){
+        r = vkMapMemory(backend->device, device_memory, 0,
+                        size, 0, &device_memory_addr);
+        if(r != VK_SUCCESS){
+            printf("FAILed to map memory\n");
+            return -1;
+        }
+        memcpy(device_memory_addr, data, size);
+        vkUnmapMemory(backend->device, device_memory);
     }
-    memcpy(device_memory_addr, data, size);
-    vkUnmapMemory(backend->device, device_memory);
 
     /* Update buffer info */
     buffer_backend->allocated = 1;
