@@ -1307,13 +1307,14 @@ cmd_barrier(cwgl_ctx_t* ctx, VkImage image, VkImageLayout from, VkImageLayout to
 int
 cwgl_backend_clear(cwgl_ctx_t* ctx, uint32_t mask){
     // FIXME: Consider SCISSOR_TEST and its rect
-    // FIXME: Implement texture framebuffer clear
     // FIXME: Implement mipmap/cubemap clear
     /* Outside of renderpass */
     VkClearColorValue c;
     VkClearDepthStencilValue d;
     VkImageSubresourceRange r;
+    VkImage img = 0;
     int is_framebuffer;
+    cwgl_backend_Framebuffer_t* fb;
 
     cwgl_backend_ctx_t* backend;
     cwgl_ctx_global_state_t* s;
@@ -1325,10 +1326,11 @@ cwgl_backend_clear(cwgl_ctx_t* ctx, uint32_t mask){
         return 0;
     }
     if(ctx->state.bin.FRAMEBUFFER_BINDING){
-        is_framebuffer = 0; // FIXME: Implement this
-        printf("Ignored bound framebuffer!\n");
+        is_framebuffer = 0;
+        fb = ctx->state.bin.FRAMEBUFFER_BINDING->backend;
     }else{
         is_framebuffer = 1;
+        fb = &backend->default_fb;
     }
     begin_cmd(ctx);
     if(mask & GL_COLOR_BUFFER_BIT){
@@ -1342,23 +1344,28 @@ cwgl_backend_clear(cwgl_ctx_t* ctx, uint32_t mask){
         r.baseArrayLayer = 0;
         r.layerCount = 1;
         if(is_framebuffer){
-            cmd_barrier(ctx, backend->cb[backend->current_image_index],
-                        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                        VK_IMAGE_ASPECT_COLOR_BIT);
-            vkCmdClearColorImage(backend->command_buffer,
-                                 backend->cb[backend->current_image_index],
-                                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                 &c,
-                                 1,
-                                 &r);
-            cmd_barrier(ctx, backend->cb[backend->current_image_index],
-                        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                        VK_IMAGE_ASPECT_COLOR_BIT);
+            img = backend->cb[backend->current_image_index];
         }else{
-            // FIXME: Implement it
+            if(fb->rb_color0){
+                img = fb->rb_color0->image;
+            }else if(fb->texture_color0){
+                img = fb->texture_color0->image;
+            }
         }
+        cmd_barrier(ctx, img,
+                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                    VK_IMAGE_ASPECT_COLOR_BIT);
+        vkCmdClearColorImage(backend->command_buffer,
+                             img,
+                             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                             &c,
+                             1,
+                             &r);
+        cmd_barrier(ctx, img,
+                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                    VK_IMAGE_ASPECT_COLOR_BIT);
     }
     //mask |= (GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     if(mask & (GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT)){
@@ -1376,23 +1383,28 @@ cwgl_backend_clear(cwgl_ctx_t* ctx, uint32_t mask){
         r.baseArrayLayer = 0;
         r.layerCount = 1;
         if(is_framebuffer){
-            cmd_barrier(ctx, backend->depth.image,
-                        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                        r.aspectMask);
-            vkCmdClearDepthStencilImage(backend->command_buffer,
-                                        backend->depth.image,
-                                        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                        &d,
-                                        1,
-                                        &r);
-            cmd_barrier(ctx, backend->depth.image,
-                        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                        r.aspectMask);
+            img = backend->depth.image;
         }else{
-            // FIXME: Implement it
+            if(fb->rb_depth_stencil){
+                img = fb->rb_depth_stencil->image;
+            }else if(fb->texture_depth_stencil){
+                img = fb->texture_depth_stencil->image;
+            }
         }
+        cmd_barrier(ctx, img,
+                    VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                    r.aspectMask);
+        vkCmdClearDepthStencilImage(backend->command_buffer,
+                                    img,
+                                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                    &d,
+                                    1,
+                                    &r);
+        cmd_barrier(ctx, img,
+                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                    VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                    r.aspectMask);
     }
     backend->queue_has_command = 1; // FIXME: Tentative
     vkEndCommandBuffer(backend->command_buffer);
