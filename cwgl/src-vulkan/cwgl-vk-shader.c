@@ -168,7 +168,7 @@ cwgl_backend_linkProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
             a[i].size = to_activesize(p->uniform[i].slot->array_length);
             a[i].name = cwgl_priv_alloc_string(ctx, p->uniform[i].slot->name,
                                                namelen);
-            a[i].offset = p->uniform[i].offset;
+            a[i].offset = p->uniform[i].offset / 4;
             a[i].location = 0; /* Unused */
         }
         o = p->uniform_size;
