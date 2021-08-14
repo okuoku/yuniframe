@@ -712,7 +712,6 @@ nopout_relaxed_precs(uint32_t* ir, int irlen){
         len = ir[i] >> 16;
         if(op == 71 && ir[i+2] == 0){
             /* OpDecorate, RelaxedPrecision */
-            printf("Patched loc = %d\n",i);
             nopout(&ir[i]);
         }
         i += len;
