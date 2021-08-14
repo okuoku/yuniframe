@@ -128,8 +128,8 @@ create_framebuffer(cwgl_ctx_t* ctx,
     cwgl_backend_ctx_t* backend;
     VkImageView as[2];
     backend = ctx->backend;
-    int has_color0;
-    int has_depthstencil;
+    int has_color0 = 0;
+    int has_depthstencil = 0;
 
 
     fi.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
