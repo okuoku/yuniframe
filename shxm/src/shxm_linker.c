@@ -673,6 +673,32 @@ layout_uniforms(shxm_program_t* prog){
 }
 
 static int
+layout_input_registers(shxm_program_t* prog){
+    int i;
+    int curoff;
+    int alignment;
+    int size;
+    int d,nd;
+    shxm_slot_t* slot;
+    curoff = 0;
+    for(i=0;i!=prog->input_count;i++){
+        slot = prog->input[i].slot;
+        alignment = calc_slot_alignment(slot);
+        size = calc_slot_size(slot);
+        d = curoff / alignment;
+        nd = alignment * d;
+        if(nd != curoff){
+            curoff = alignment * (d+1);
+        }
+        prog->input[i].offset = curoff;
+        prog->input[i].size = size;
+        curoff += size;
+    }
+    prog->input_register_size = curoff;
+    return 0;
+}
+
+static int
 bind_uniforms(shxm_program_t* prog){
     int i;
     int idx[2];
@@ -748,6 +774,11 @@ shxm_program_link(shxm_ctx_t* ctx, shxm_program_t* prog){
         return 1;
     }
 
+    if(layout_input_registers(prog)){
+        // FIXME: Release vintr, fintr
+        return 1;
+    }
+
     if(bind_uniforms(prog)){
         // FIXME: Release vintr, fintr
         return 1;
@@ -769,9 +800,11 @@ shxm_program_link(shxm_ctx_t* ctx, shxm_program_t* prog){
                prog->opaque[i].binding);
     }
     for(i=0;i!=prog->input_count;i++){
-        printf("Input__:%s:%d:%d (loc %d)\n",prog->input[i].slot->name,
+        printf("Input__:%s:%d:%d (loc %d, regoff: %d, regsize: %d)\n",
+               prog->input[i].slot->name,
                prog->input[i].slot->id[0],
-               prog->input[i].slot->id[1], prog->input[i].location);
+               prog->input[i].slot->id[1], prog->input[i].location,
+               prog->input[i].offset, prog->input[i].size);
     }
     for(i=0;i!=prog->varying_count;i++){
         printf("Varying:%s:%d:%d (loc %d)\n",prog->varying[i].slot->name,

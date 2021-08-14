@@ -43,6 +43,8 @@ typedef struct shxm_opaque_s shxm_opaque_t;
 struct shxm_attribute_s {
     shxm_slot_t* slot;
     int location;
+    unsigned int offset; /* For input register */
+    unsigned int size; /* For input register */
 };
 
 typedef struct shxm_attribute_s shxm_attribute_t;
@@ -73,6 +75,7 @@ struct shxm_program_s {
     unsigned int uniform_count;
     unsigned int uniform_size;
     unsigned int input_count;
+    unsigned int input_register_size;
     unsigned int output_count;
     unsigned int varying_count;
     unsigned int unused_count;
