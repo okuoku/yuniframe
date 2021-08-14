@@ -79,7 +79,7 @@ shxm_glslang_build(int mode, const char* source, int len,
                               &logger,
                               &opt);
         printf("%s\n", logger.getAllMessages().c_str());
-        spv::Disassemble(std::cout, spirv);
+        //spv::Disassemble(std::cout, spirv);
         // Override version
         spirv[1] = 0x10300; // SPIR-V 1.3
         {
