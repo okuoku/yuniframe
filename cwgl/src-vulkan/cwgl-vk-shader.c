@@ -14,7 +14,6 @@ cwgl_vkpriv_destroy_program(cwgl_ctx_t* ctx, cwgl_backend_Program_t* program_bac
     backend = ctx->backend;
     // FIXME: Free SHXM object here.
     cwgl_vkpriv_destroy_buffer(ctx, &program_backend->uniform_buffer);
-    cwgl_vkpriv_destroy_buffer(ctx, &program_backend->attribute_registers);
     if(program_backend->allocated){
         vkDestroyShaderModule(backend->device, program_backend->pixel_shader, NULL);
         vkDestroyShaderModule(backend->device, program_backend->vertex_shader, NULL);
@@ -158,7 +157,7 @@ cwgl_backend_linkProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
             a[i].size = to_activesize(p->input[i].slot->array_length);
             a[i].name = cwgl_priv_alloc_string(ctx, p->input[i].slot->name,
                                                namelen);
-            a[i].offset = 0;
+            a[i].offset = p->input[i].offset;
             a[i].location = p->input[i].location;
 
         }
@@ -278,7 +277,7 @@ cwgl_backend_linkProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
                 printf("Failed to create pipeline layout\n");
             }
         }
-        /* Allocate uniform buffer */
+        /* Allocate uniform and vertex register buffer */
         {
             int memtypeidx;
             VkBufferCreateInfo bi;
@@ -290,7 +289,7 @@ cwgl_backend_linkProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
             bi.pNext = NULL;
             bi.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
             bi.flags = 0;
-            bi.size = p->uniform_size;
+            bi.size = p->uniform_size + p->input_register_size;
             bi.queueFamilyIndexCount = 1;
             bi.pQueueFamilyIndices = &backend->queue_family_index;
             bi.sharingMode = VK_SHARING_MODE_EXCLUSIVE;

@@ -536,6 +536,26 @@ to_vk_value_format(int size, cwgl_enum_t type, int normalized){
     }
 }
 
+static VkFormat
+to_vk_value_format_floatreg(cwgl_enum_t type){
+    switch(type){
+        default:
+            return 0;
+        case FLOAT:
+            return VK_FORMAT_R32_SFLOAT;
+        case FLOAT_VEC2:
+        case FLOAT_MAT2:
+            return VK_FORMAT_R32G32_SFLOAT;
+        case FLOAT_VEC3:
+        case FLOAT_MAT3:
+            return VK_FORMAT_R32G32B32_SFLOAT;
+        case FLOAT_VEC4:
+        case FLOAT_MAT4:
+            return VK_FORMAT_R32G32B32A32_SFLOAT;
+    }
+
+}
+
 struct cwgl_backend_pipeline_vtxbinds_s {
     VkBuffer bind_buffers[CWGL_MAX_VAO_SIZE]; /* Cache */
     VkDeviceSize bind_offsets[CWGL_MAX_VAO_SIZE]; /* Cache */
@@ -567,36 +587,37 @@ configure_shaders(cwgl_ctx_t* ctx, VkPipelineShaderStageCreateInfo* vxi,
     use_attrib_register = 0;
     bind_at = 0;
     a = program->state.attributes;
-    /* Pass1: Arrays */
+
     for(i=0;i!=CWGL_MAX_VAO_SIZE;i++){
         ai = program->state.attriblocations[i].active_index;
         if(ai >= 0){
             location = a[ai].location;
             attrib = &vao->attrib[i];
+            id->attrs[location].location = location;
+            id->attrs[location].binding = bind_at;
+            id->binds[bind_at].binding = bind_at;
+            id->binds[bind_at].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
             if(attrib->VERTEX_ATTRIB_ARRAY_ENABLED){
-                id->attrs[location].location = location;
                 id->attrs[location].format = 
                     to_vk_value_format(attrib->VERTEX_ATTRIB_ARRAY_SIZE,
                                        attrib->VERTEX_ATTRIB_ARRAY_TYPE, 
                                        attrib->VERTEX_ATTRIB_ARRAY_NORMALIZED ? 1 : 0);
-                id->attrs[location].binding = bind_at;
                 id->attrs[location].offset = 0;
-                id->binds[bind_at].binding = bind_at;
                 id->binds[bind_at].stride = attrib->VERTEX_ATTRIB_ARRAY_STRIDE;
-                id->binds[bind_at].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
                 vtx->bind_buffers[bind_at] = attrib->VERTEX_ATTRIB_ARRAY_BUFFER_BINDING->backend->buffer;
                 vtx->bind_offsets[bind_at] = attrib->VERTEX_ATTRIB_ARRAY_POINTER;
-                bind_at++;
             }else{
-                printf("Ignored attrib register!\n");
-                use_attrib_register = 1;
+                /* Use input register, already bound as uniform buffer */
+                id->attrs[location].format = to_vk_value_format_floatreg(a[ai].type);
+                id->attrs[location].offset = 0;
+                id->binds[bind_at].stride = 0;
+                vtx->bind_buffers[bind_at] = program_backend->uniform_buffer.buffer;
+                vtx->bind_offsets[bind_at] = a[ai].offset;
             }
+            bind_at++;
         }
     }
     id->bind_count = bind_at;
-    /* Pass2: Registers */
-    // FIXME: program_backend->bind_count = bind_at + use_attrib_register;
-    // FIXME: Implement it
 
     vxi->sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     vxi->pNext = NULL;
@@ -617,7 +638,6 @@ configure_shaders(cwgl_ctx_t* ctx, VkPipelineShaderStageCreateInfo* vxi,
     vii->sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vii->pNext = NULL;
     vii->flags = 0;
-    // FIXME: vii->vertexBindingDescriptionCount = bind_at + use_attrib_register;
     vii->vertexBindingDescriptionCount = bind_at;
     vii->pVertexBindingDescriptions = id->binds;
     vii->vertexAttributeDescriptionCount = program_backend->input_count;

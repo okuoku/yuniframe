@@ -140,10 +140,9 @@ struct cwgl_backend_Program_s {
     VkDescriptorSetLayout desc_set_layout;
     VkDescriptorSet desc_set;
     VkPipelineLayout pipeline_layout;
-    cwgl_backend_Buffer_t uniform_buffer;
+    cwgl_backend_Buffer_t uniform_buffer; /* Includes vertex registers */
     /* Vulkan: Vertex attributes */
     int input_count; /* Cache */
-    cwgl_backend_Buffer_t attribute_registers;
     /* SHXM */
     shxm_program_t* program;
 };
