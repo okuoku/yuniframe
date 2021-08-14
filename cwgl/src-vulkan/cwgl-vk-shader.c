@@ -287,7 +287,7 @@ cwgl_backend_linkProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
             VkMemoryRequirements mr;
             bi.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
             bi.pNext = NULL;
-            bi.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+            bi.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
             bi.flags = 0;
             bi.size = p->uniform_size + p->input_register_size;
             bi.queueFamilyIndexCount = 1;
