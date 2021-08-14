@@ -229,7 +229,7 @@ cwgl_backend_linkProgram(cwgl_ctx_t* ctx, cwgl_Program_t* program){
             dpi.pNext = NULL;
             dpi.flags = 0;
             dpi.maxSets = 1;
-            dpi.poolSizeCount = 2;
+            dpi.poolSizeCount = p->opaque_count ? 2 : 1;
             dpi.pPoolSizes = two;
             rv = vkCreateDescriptorPool(backend->device, &dpi, NULL, &program_backend->desc_pool);
             if(rv != VK_SUCCESS){
