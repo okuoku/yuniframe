@@ -262,9 +262,9 @@ create_renderpass(cwgl_ctx_t* ctx,
     sp.inputAttachmentCount = 0;
     sp.pInputAttachments = NULL;
     sp.colorAttachmentCount = 1;
-    sp.pColorAttachments = &cr;
+    sp.pColorAttachments = has_color ? &cr : NULL;
     sp.pResolveAttachments = NULL;
-    sp.pDepthStencilAttachment = &dr;
+    sp.pDepthStencilAttachment = has_depthstencil ? &dr : NULL;
     sp.preserveAttachmentCount = 0;
     sp.pPreserveAttachments = NULL;
 
