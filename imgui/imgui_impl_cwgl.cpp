@@ -56,10 +56,10 @@ ImGui_ImplCwgl_Init(cwgl_ctx_t* ctx){
     g_FragHandle = cwgl_createShader(g_ctx, FRAGMENT_SHADER);
     g_VertHandle = cwgl_createShader(g_ctx, VERTEX_SHADER);
     cwgl_shaderSource(g_ctx, g_FragHandle, shader_frag,
-                      sizeof(shader_frag));
+                      sizeof(shader_frag)-1);
     cwgl_compileShader(g_ctx,g_FragHandle);
     cwgl_shaderSource(g_ctx, g_VertHandle, shader_vert,
-                      sizeof(shader_vert));
+                      sizeof(shader_vert)-1);
     cwgl_compileShader(g_ctx, g_VertHandle);
     g_ShaderHandle = cwgl_createProgram(g_ctx);
     cwgl_attachShader(g_ctx, g_ShaderHandle, g_FragHandle);
