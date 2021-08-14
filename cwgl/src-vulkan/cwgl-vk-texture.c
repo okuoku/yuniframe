@@ -211,7 +211,7 @@ cwgl_backend_texImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target,
     ii.queueFamilyIndexCount = 1;
     ii.pQueueFamilyIndices = &backend->queue_family_index;
     ii.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    ii.usage =  VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    ii.usage =  VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     r = vkCreateImage(backend->device, &ii, NULL, &image);
     if(r != VK_SUCCESS){
         printf("FAILed to create image\n");

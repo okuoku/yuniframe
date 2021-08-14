@@ -56,20 +56,21 @@ prepare_rb(cwgl_ctx_t* ctx, cwgl_backend_Renderbuffer_t* rb, cwgl_enum_t fmt,
     }
 
     switch(fmt){
+        case 0x88f0: //FIXME: WebGL2 DEPTH24_STENCIL8
         case DEPTH_STENCIL:
-            usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+            usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
             aspect_mask = VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_DEPTH_BIT;
             break;
         case STENCIL_INDEX8:
-            usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+            usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
             aspect_mask = VK_IMAGE_ASPECT_STENCIL_BIT;
             break;
         case DEPTH_COMPONENT16:
-            usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+            usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
             aspect_mask = VK_IMAGE_ASPECT_DEPTH_BIT;
             break;
         default: /* Colour buffer */
-            usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+            usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
             aspect_mask = VK_IMAGE_ASPECT_COLOR_BIT;
             break;
 
