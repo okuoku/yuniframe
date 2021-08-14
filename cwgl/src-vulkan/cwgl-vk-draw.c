@@ -1171,6 +1171,7 @@ transfer_opaques(cwgl_ctx_t* ctx, cwgl_Program_t* program){
 
 static void
 transfer_uniforms(cwgl_ctx_t* ctx, cwgl_Program_t* program){
+    /* Also transfer input register contents */
     VkResult r;
     cwgl_backend_Program_t* program_backend;
     cwgl_backend_ctx_t* backend;
@@ -1186,7 +1187,10 @@ transfer_uniforms(cwgl_ctx_t* ctx, cwgl_Program_t* program){
     uc = program->state.uniformcontents;
 
     r = vkMapMemory(backend->device, program_backend->uniform_buffer.device_memory,
-                    0, program_backend->program->uniform_size, 0, &device_memory_addr);
+                    0, 
+                    program_backend->program->uniform_size +
+                    program_backend->program->input_register_size,
+                    0, &device_memory_addr);
     if(r != VK_SUCCESS){
         printf("Failed to map uniform buffer\n");
         return;
@@ -1194,6 +1198,93 @@ transfer_uniforms(cwgl_ctx_t* ctx, cwgl_Program_t* program){
     /* Fill in Uniforms */
     memcpy(device_memory_addr, program->state.uniformcontents,
            program_backend->program->uniform_size);
+    /* Fill in vertex input registers */
+    {
+        uint8_t* input_register = device_memory_addr + program_backend->program->uniform_size;
+        float* loc;
+        int i;
+        int ai;
+        cwgl_VertexArrayObject_t* vao;
+        cwgl_vao_attrib_state_t* attrib;
+        cwgl_activeinfo_t* a;
+
+        vao = current_vao(ctx);
+        a = program->state.attributes;
+
+        for(i=0;i!=CWGL_MAX_VAO_SIZE;i++){
+            ai = program->state.attriblocations[i].active_index;
+            if(ai >= 0){
+                attrib = &vao->attrib[i];
+                if(! attrib->VERTEX_ATTRIB_ARRAY_ENABLED){
+                    loc = (float*)(input_register + a[ai].offset);
+                    switch(a[ai].type){
+                        default:
+                            break;
+                        case FLOAT:
+                            loc[0] = attrib->CURRENT_VERTEX_ATTRIB[0];
+                            break;
+                        case FLOAT_VEC2:
+                            loc[0] = attrib->CURRENT_VERTEX_ATTRIB[0];
+                            loc[1] = attrib->CURRENT_VERTEX_ATTRIB[1];
+                            break;
+                        case FLOAT_VEC3:
+                            loc[0] = attrib->CURRENT_VERTEX_ATTRIB[0];
+                            loc[1] = attrib->CURRENT_VERTEX_ATTRIB[1];
+                            loc[2] = attrib->CURRENT_VERTEX_ATTRIB[2];
+                            break;
+                        case FLOAT_VEC4:
+                            loc[0] = attrib->CURRENT_VERTEX_ATTRIB[0];
+                            loc[1] = attrib->CURRENT_VERTEX_ATTRIB[1];
+                            loc[2] = attrib->CURRENT_VERTEX_ATTRIB[2];
+                            loc[3] = attrib->CURRENT_VERTEX_ATTRIB[3];
+                            break;
+                        case FLOAT_MAT2:
+                            loc[0] = attrib->CURRENT_VERTEX_ATTRIB[0];
+                            loc[1] = attrib->CURRENT_VERTEX_ATTRIB[1];
+                            attrib = &vao->attrib[i+1];
+                            loc[2] = attrib->CURRENT_VERTEX_ATTRIB[0];
+                            loc[3] = attrib->CURRENT_VERTEX_ATTRIB[1];
+                            break;
+                        case FLOAT_MAT3:
+                            loc[0] = attrib->CURRENT_VERTEX_ATTRIB[0];
+                            loc[1] = attrib->CURRENT_VERTEX_ATTRIB[1];
+                            loc[2] = attrib->CURRENT_VERTEX_ATTRIB[2];
+                            attrib = &vao->attrib[i+1];
+                            loc[0] = attrib->CURRENT_VERTEX_ATTRIB[0];
+                            loc[1] = attrib->CURRENT_VERTEX_ATTRIB[1];
+                            loc[2] = attrib->CURRENT_VERTEX_ATTRIB[2];
+                            attrib = &vao->attrib[i+2];
+                            loc[0] = attrib->CURRENT_VERTEX_ATTRIB[0];
+                            loc[1] = attrib->CURRENT_VERTEX_ATTRIB[1];
+                            loc[2] = attrib->CURRENT_VERTEX_ATTRIB[2];
+                            break;
+                        case FLOAT_MAT4:
+                            loc[0] = attrib->CURRENT_VERTEX_ATTRIB[0];
+                            loc[1] = attrib->CURRENT_VERTEX_ATTRIB[1];
+                            loc[2] = attrib->CURRENT_VERTEX_ATTRIB[2];
+                            loc[3] = attrib->CURRENT_VERTEX_ATTRIB[3];
+                            attrib = &vao->attrib[i+1];
+                            loc[0] = attrib->CURRENT_VERTEX_ATTRIB[0];
+                            loc[1] = attrib->CURRENT_VERTEX_ATTRIB[1];
+                            loc[2] = attrib->CURRENT_VERTEX_ATTRIB[2];
+                            loc[3] = attrib->CURRENT_VERTEX_ATTRIB[3];
+                            attrib = &vao->attrib[i+2];
+                            loc[0] = attrib->CURRENT_VERTEX_ATTRIB[0];
+                            loc[1] = attrib->CURRENT_VERTEX_ATTRIB[1];
+                            loc[2] = attrib->CURRENT_VERTEX_ATTRIB[2];
+                            loc[3] = attrib->CURRENT_VERTEX_ATTRIB[3];
+                            attrib = &vao->attrib[i+3];
+                            loc[0] = attrib->CURRENT_VERTEX_ATTRIB[0];
+                            loc[1] = attrib->CURRENT_VERTEX_ATTRIB[1];
+                            loc[2] = attrib->CURRENT_VERTEX_ATTRIB[2];
+                            loc[3] = attrib->CURRENT_VERTEX_ATTRIB[3];
+                            break;
+                    }
+                }
+            }
+        }
+
+    }
     vkUnmapMemory(backend->device, program_backend->uniform_buffer.device_memory);
 }
 
