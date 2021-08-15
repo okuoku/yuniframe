@@ -1288,17 +1288,16 @@ transfer_uniforms(cwgl_ctx_t* ctx, cwgl_Program_t* program){
     vkUnmapMemory(backend->device, program_backend->uniform_buffer.device_memory);
 }
 
-
-int
-cwgl_backend_drawArrays(cwgl_ctx_t* ctx, cwgl_enum_t mode,
-                        int32_t first, uint32_t count){
-    return 0;
-}
-
-
-int
-cwgl_backend_drawElements(cwgl_ctx_t* ctx, cwgl_enum_t mode,
-                          uint32_t count, cwgl_enum_t type, uint32_t offset){
+struct drawreq {
+    int use_index;
+    cwgl_enum_t mode;
+    cwgl_enum_t index_type;
+    uint32_t first;
+    uint32_t count;
+    uint32_t offset;
+};
+static int
+kick_draw(cwgl_ctx_t* ctx, struct drawreq* dr){
     VkRenderPass renderpass;
     VkFramebuffer framebuffer;
     int is_framebuffer;
@@ -1323,7 +1322,7 @@ cwgl_backend_drawElements(cwgl_ctx_t* ctx, cwgl_enum_t mode,
     update_framebuffer(ctx, framebuffer_backend, is_framebuffer);
     renderpass = framebuffer_backend->renderpass;
     framebuffer = framebuffer_backend->framebuffer;
-    create_pipeline(ctx, mode, framebuffer_backend, program_backend, &pipeline_backend, &vtxbinds);
+    create_pipeline(ctx, dr->mode, framebuffer_backend, program_backend, &pipeline_backend, &vtxbinds);
     begin_cmd(ctx);
     begin_renderpass(ctx, framebuffer_backend, renderpass, framebuffer);
     vkCmdBindPipeline(backend->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_backend->pipeline);
@@ -1368,13 +1367,18 @@ cwgl_backend_drawElements(cwgl_ctx_t* ctx, cwgl_enum_t mode,
     }
     /* Draw */
     {
-        vao = current_vao(ctx);
-        vkCmdBindIndexBuffer(backend->command_buffer,
-                             vao->state.ELEMENT_ARRAY_BUFFER_BINDING->backend->buffer,
-                             offset,
-                             VK_INDEX_TYPE_UINT16);
-        vkCmdDrawIndexed(backend->command_buffer,
-                         count, 1, 0, 0, 0);
+        if(dr->use_index){
+            vao = current_vao(ctx);
+            vkCmdBindIndexBuffer(backend->command_buffer,
+                                 vao->state.ELEMENT_ARRAY_BUFFER_BINDING->backend->buffer,
+                                 dr->offset,
+                                 VK_INDEX_TYPE_UINT16);
+            vkCmdDrawIndexed(backend->command_buffer,
+                             dr->count, 1, 0, 0, 0);
+        }else{
+            vkCmdDraw(backend->command_buffer,
+                      dr->count, 1, dr->first, 0);
+        }
     }
     vkCmdEndRenderPass(backend->command_buffer);
     vkEndCommandBuffer(backend->command_buffer);
@@ -1382,6 +1386,29 @@ cwgl_backend_drawElements(cwgl_ctx_t* ctx, cwgl_enum_t mode,
     cwgl_vkpriv_graphics_submit(ctx);
     cwgl_vkpriv_graphics_wait(ctx);
     return 0;
+}
+
+int
+cwgl_backend_drawArrays(cwgl_ctx_t* ctx, cwgl_enum_t mode,
+                        int32_t first, uint32_t count){
+    struct drawreq dr;
+    dr.use_index = 0;
+    dr.count = count;
+    dr.first = first;
+    dr.mode = mode;
+    return kick_draw(ctx, &dr);
+}
+
+int
+cwgl_backend_drawElements(cwgl_ctx_t* ctx, cwgl_enum_t mode,
+                          uint32_t count, cwgl_enum_t type, uint32_t offset){
+    struct drawreq dr;
+    dr.mode = mode;
+    dr.use_index = 1;
+    dr.count = count;
+    dr.index_type = type;
+    dr.offset = offset;
+    return kick_draw(ctx, &dr);
 }
 
 #define GL_DEPTH_BUFFER_BIT 0x00000100
