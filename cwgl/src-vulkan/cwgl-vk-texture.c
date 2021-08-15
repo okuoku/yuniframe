@@ -108,6 +108,26 @@ to_vulkan_format(cwgl_enum_t format, cwgl_enum_t type){
     }
 }
 
+static int
+to_vk_cubemap_face(cwgl_enum_t target){
+    switch(target){
+        default:
+            return -1;
+        case TEXTURE_CUBE_MAP_POSITIVE_X:
+            return 0;
+        case TEXTURE_CUBE_MAP_NEGATIVE_X:
+            return 1;
+        case TEXTURE_CUBE_MAP_POSITIVE_Y:
+            return 2;
+        case TEXTURE_CUBE_MAP_NEGATIVE_Y:
+            return 3;
+        case TEXTURE_CUBE_MAP_POSITIVE_Z:
+            return 4;
+        case TEXTURE_CUBE_MAP_NEGATIVE_Z:
+            return 5;
+    }
+}
+
 int
 cwgl_backend_texImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target,
                         int32_t level, cwgl_enum_t internalformat,
@@ -119,6 +139,8 @@ cwgl_backend_texImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target,
     cwgl_backend_ctx_t* backend;
     cwgl_backend_Texture_t* texture_backend;
     int i;
+    int is_cubemap;
+    int cubemap_face;
     VkResult r;
     VkBufferCreateInfo temp_bi;
     VkMemoryAllocateInfo temp_ai;
@@ -141,8 +163,14 @@ cwgl_backend_texImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target,
         return 0;
     }
     // FIXME: Support CubeMap
+    cubemap_face = to_vk_cubemap_face(target);
+    if(cubemap_face >= 0){
+        is_cubemap = 1;
+    }else{
+        is_cubemap = 0;
+    }
 
-    if(texture_backend->allocated){
+    if(!is_cubemap && texture_backend->allocated){
         cwgl_vkpriv_graphics_wait(ctx);
         cwgl_vkpriv_destroy_texture(ctx, texture_backend);
     }
@@ -199,43 +227,53 @@ cwgl_backend_texImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target,
     }
 
     /* Create image */
-    ii.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    ii.pNext = NULL;
-    ii.flags = 0;
-    ii.imageType = VK_IMAGE_TYPE_2D;
-    vkformat = to_vulkan_format(format, type);
-    ii.format = vkformat;
-    ii.extent.width = width;
-    ii.extent.height = height;
-    ii.extent.depth = 1;
-    ii.mipLevels = 1;
-    ii.arrayLayers = 1;
-    ii.samples = VK_SAMPLE_COUNT_1_BIT;
-    ii.tiling = VK_IMAGE_TILING_OPTIMAL;
-    ii.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    ii.queueFamilyIndexCount = 1;
-    ii.pQueueFamilyIndices = &backend->queue_family_index;
-    ii.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    ii.usage =  VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    r = vkCreateImage(backend->device, &ii, NULL, &image);
-    if(r != VK_SUCCESS){
-        printf("FAILed to create image\n");
-        return -1;
+    if(! texture_backend->allocated){
+        ii.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        ii.pNext = NULL;
+        ii.flags = 0;
+        ii.imageType = VK_IMAGE_TYPE_2D;
+        vkformat = to_vulkan_format(format, type);
+        ii.format = vkformat;
+        ii.extent.width = width;
+        ii.extent.height = height;
+        ii.extent.depth = 1;
+        ii.mipLevels = 1;
+        if(is_cubemap){
+            ii.arrayLayers = 6;
+        }else{
+            ii.arrayLayers = 1;
+        }
+        ii.samples = VK_SAMPLE_COUNT_1_BIT;
+        ii.tiling = VK_IMAGE_TILING_OPTIMAL;
+        ii.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        ii.queueFamilyIndexCount = 1;
+        ii.pQueueFamilyIndices = &backend->queue_family_index;
+        ii.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        ii.usage =  VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        r = vkCreateImage(backend->device, &ii, NULL, &image);
+        if(r != VK_SUCCESS){
+            printf("FAILed to create image\n");
+            return -1;
+        }
+        vkGetImageMemoryRequirements(backend->device, image, &memory_requirements);
+        ai.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        ai.pNext = NULL;
+        ai.allocationSize = memory_requirements.size;
+        ai.memoryTypeIndex = 
+            cwgl_vkpriv_select_memory_type(ctx,
+                                           memory_requirements.memoryTypeBits,
+                                           VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        r = vkAllocateMemory(backend->device, &ai, NULL, &device_memory);
+        if(r != VK_SUCCESS){
+            printf("FAILed to allocate image memory");
+            return -1;
+        }
+        vkBindImageMemory(backend->device, image, device_memory, 0);
+    }else{
+        image = texture_backend->image;
+        device_memory = texture_backend->device_memory;
+        vkformat = texture_backend->format;
     }
-    vkGetImageMemoryRequirements(backend->device, image, &memory_requirements);
-    ai.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    ai.pNext = NULL;
-    ai.allocationSize = memory_requirements.size;
-    ai.memoryTypeIndex = 
-        cwgl_vkpriv_select_memory_type(ctx,
-                                       memory_requirements.memoryTypeBits,
-                                       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    r = vkAllocateMemory(backend->device, &ai, NULL, &device_memory);
-    if(r != VK_SUCCESS){
-        printf("FAILed to allocate image memory");
-        return -1;
-    }
-    vkBindImageMemory(backend->device, image, device_memory, 0);
 
     /* Translate imageformat */
     { /* Tentative */
@@ -258,7 +296,11 @@ cwgl_backend_texImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target,
         ibi.subresourceRange.baseMipLevel = 0;
         ibi.subresourceRange.levelCount = 1;
         ibi.subresourceRange.baseArrayLayer = 0;
-        ibi.subresourceRange.layerCount = 1;
+        if(is_cubemap){
+            ibi.subresourceRange.layerCount = 6;
+        }else{
+            ibi.subresourceRange.layerCount = 1;
+        }
         ibi.image = image;
         vkCmdPipelineBarrier(backend->command_buffer,
                              VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
@@ -279,7 +321,11 @@ cwgl_backend_texImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target,
         rgn.bufferImageHeight = 0;
         rgn.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         rgn.imageSubresource.mipLevel = 0;
-        rgn.imageSubresource.baseArrayLayer = 0;
+        if(is_cubemap){
+            rgn.imageSubresource.baseArrayLayer = cubemap_face;
+        }else{
+            rgn.imageSubresource.baseArrayLayer = 0;
+        }
         rgn.imageSubresource.layerCount = 1;
         rgn.imageOffset.x = rgn.imageOffset.y = rgn.imageOffset.z = 0;
         rgn.imageExtent.width = width;
@@ -326,7 +372,11 @@ cwgl_backend_texImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target,
         ibi.subresourceRange.baseMipLevel = 0;
         ibi.subresourceRange.levelCount = 1;
         ibi.subresourceRange.baseArrayLayer = 0;
-        ibi.subresourceRange.layerCount = 1;
+        if(is_cubemap){
+            ibi.subresourceRange.layerCount = 6;
+        }else{
+            ibi.subresourceRange.layerCount = 1;
+        }
         ibi.image = image;
         vkCmdPipelineBarrier(backend->command_buffer,
                              VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
@@ -340,7 +390,7 @@ cwgl_backend_texImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target,
     }
 
     /* Generate ImageView */
-    { /* Tentative */
+    if(! texture_backend->allocated){ /* Tentative */
         VkImageViewCreateInfo vci;
         vci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         vci.pNext = NULL;
@@ -358,22 +408,29 @@ cwgl_backend_texImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target,
         vci.subresourceRange.baseMipLevel = 0;
         vci.subresourceRange.levelCount = 1;
         vci.subresourceRange.baseArrayLayer = 0;
-        vci.subresourceRange.layerCount = 1;
+        if(is_cubemap){
+            vci.subresourceRange.layerCount = 6;
+        }else{
+            vci.subresourceRange.layerCount = 1;
+        }
         r = vkCreateImageView(backend->device, &vci, NULL, 
                               &texture_backend->view);
         if(r != VK_SUCCESS){
             printf("Failed to create imageview");
         }
     }
-    /* Destroy temp_buffer */
-    texture_backend->allocated = 1;
+
+    if(! texture_backend->allocated){
+        texture_backend->allocated = 1;
+        texture_backend->ident = cwgl_vkpriv_newident(ctx);
+    }
     texture_backend->image = image;
     texture_backend->device_memory = device_memory;
-    texture_backend->ident = cwgl_vkpriv_newident(ctx);
     texture_backend->width = width;
     texture_backend->height = height;
     texture_backend->format = vkformat;
 
+    /* Destroy temp_buffer */
     if(buf && buflen){
         vkDestroyBuffer(backend->device, temp_buffer, NULL);
         vkFreeMemory(backend->device, temp_device_memory, NULL);
