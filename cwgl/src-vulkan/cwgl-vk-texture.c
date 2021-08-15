@@ -135,6 +135,11 @@ cwgl_backend_texImage2D(cwgl_ctx_t* ctx, cwgl_enum_t target,
     texture = current_texture(ctx, target);
     texture_backend = texture->backend;
 
+    // FIXME: Support mipmap
+    if(level != 0){
+        // Ignore mipmap
+        return 0;
+    }
     // FIXME: Support CubeMap
 
     if(texture_backend->allocated){
