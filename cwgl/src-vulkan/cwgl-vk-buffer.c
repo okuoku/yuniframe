@@ -34,9 +34,10 @@ cwgl_vkpriv_destroy_buffer(cwgl_ctx_t* ctx, cwgl_backend_Buffer_t* buffer_backen
     }
 }
 
-int
-cwgl_backend_bufferData(cwgl_ctx_t* ctx, cwgl_enum_t target,
-                        uint32_t size, void* data, cwgl_enum_t usage){
+static int
+update_buffer(cwgl_ctx_t* ctx, cwgl_enum_t target,
+              uint32_t size, void* data, uint32_t offset,
+              cwgl_enum_t usage, int allow_reallocate){
     cwgl_Buffer_t* buffer;
     cwgl_backend_ctx_t* backend;
     cwgl_backend_Buffer_t* buffer_backend;
@@ -53,16 +54,22 @@ cwgl_backend_bufferData(cwgl_ctx_t* ctx, cwgl_enum_t target,
     buffer = current_buffer(ctx, target);
     backend = ctx->backend;
     buffer_backend = buffer->backend;
-    createbuffer = 1;
-    if(buffer_backend->allocated){
-        if(buffer->state.BUFFER_SIZE != size){
-            cwgl_vkpriv_graphics_wait(ctx);
-            cwgl_vkpriv_destroy_buffer(ctx, buffer_backend);
-            createbuffer = 1;
-        }else{
-            createbuffer = 0;
+    if(allow_reallocate){
+        createbuffer = 1;
+        if(buffer_backend->allocated){
+            if(buffer->state.BUFFER_SIZE != size){
+                cwgl_vkpriv_graphics_wait(ctx);
+                cwgl_vkpriv_destroy_buffer(ctx, buffer_backend);
+                createbuffer = 1;
+            }else{
+                createbuffer = 0;
+            }
         }
+    }else{
+        createbuffer = 0;
+        // FIXME: Check range here
     }
+
 
     if(createbuffer){
         /* Allocate buffer */
@@ -110,7 +117,7 @@ cwgl_backend_bufferData(cwgl_ctx_t* ctx, cwgl_enum_t target,
     }
 
     if(data){
-        r = vkMapMemory(backend->device, device_memory, 0,
+        r = vkMapMemory(backend->device, device_memory, offset,
                         size, 0, &device_memory_addr);
         if(r != VK_SUCCESS){
             printf("FAILed to map memory\n");
@@ -120,22 +127,30 @@ cwgl_backend_bufferData(cwgl_ctx_t* ctx, cwgl_enum_t target,
         vkUnmapMemory(backend->device, device_memory);
     }
 
-    /* Update buffer info */
-    buffer_backend->allocated = 1;
-    buffer_backend->buffer = newbuffer;
-    buffer_backend->device_memory = device_memory;
+    if(createbuffer){
+        /* Update buffer info */
+        buffer_backend->allocated = 1;
+        buffer_backend->buffer = newbuffer;
+        buffer_backend->device_memory = device_memory;
 
-    /* Update buffer states */
-    buffer->state.BUFFER_SIZE = size;
-    buffer->state.BUFFER_USAGE = usage;
+        /* Update buffer states */
+        buffer->state.BUFFER_SIZE = size;
+        buffer->state.BUFFER_USAGE = usage;
+    }
 
     return 0;
 }
 
 int
+cwgl_backend_bufferData(cwgl_ctx_t* ctx, cwgl_enum_t target,
+                        uint32_t size, void* data, cwgl_enum_t usage){
+    return update_buffer(ctx, target, size, data, 0, usage, 1);
+}
+
+
+int
 cwgl_backend_bufferSubData(cwgl_ctx_t* ctx, cwgl_enum_t target,
                            uint32_t offset, void* data, size_t buflen){
-    // FIXME: Implement this
-    return 0;
+    return update_buffer(ctx, target, buflen, data, offset, NONE, 0);
 }
 
