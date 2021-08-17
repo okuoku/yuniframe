@@ -1445,6 +1445,7 @@ cmd_barrier(cwgl_ctx_t* ctx, VkImage image, VkImageLayout from, VkImageLayout to
 int
 cwgl_backend_clear(cwgl_ctx_t* ctx, uint32_t mask){
     // FIXME: Consider SCISSOR_TEST and its rect
+    // FIXME: Consider COLOR_WRITEMASK
     // FIXME: Implement mipmap/cubemap clear
     /* Outside of renderpass */
     VkClearColorValue c;
@@ -1469,6 +1470,14 @@ cwgl_backend_clear(cwgl_ctx_t* ctx, uint32_t mask){
     }else{
         is_framebuffer = 1;
         fb = &backend->default_fb;
+    }
+    if(is_framebuffer){
+        // FIXME: Workaround for Unity clears alpha channel before present
+        if(!(s->COLOR_WRITEMASK[0]) &&
+           !(s->COLOR_WRITEMASK[1]) &&
+           !(s->COLOR_WRITEMASK[2])){
+            return 0;
+        }
     }
     begin_cmd(ctx);
     if(mask & GL_COLOR_BUFFER_BIT){
