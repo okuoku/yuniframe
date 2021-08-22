@@ -77,7 +77,7 @@ struct cwgl_backend_pipeline_s {
 
 typedef struct cwgl_backend_pipeline_s cwgl_backend_pipeline_t;
 
-#define CWGL_PIPELINE_CACHE_SIZE 16
+#define CWGL_PIPELINE_CACHE_SIZE 40
 
 struct cwgl_backend_ctx_s {
     /* Vulkan */
