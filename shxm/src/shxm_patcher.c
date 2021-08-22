@@ -40,6 +40,12 @@ struct patchctx_s {
     shxm_program_t* prog;
     shxm_spirv_intr_t* intr;
     struct idpatchparam_s* idpatch; /* Indexed by ID */
+
+    /* main() related */
+    int fakemain_id;
+    int glposition_id;
+    int ptr_output_float_id;
+    int float_half_id;
 };
 
 static int
@@ -243,6 +249,10 @@ fill_ubo_info(struct patchctx_s* cur){
             }
         }
     }
+    /* Ensure we have at least integers to 3 */
+    if(cur->integers < 3){
+        cur->integers = 3;
+    }
     cur->integers_id_base = curid;
     curid += (cur->integers + 1);
     cur->ubo_variable_id = curid;
@@ -278,6 +288,12 @@ patch_unused_output(struct patchctx_s* cur, shxm_util_buf_t* defs){
     uint32_t* ir;
     uint32_t* ir_type;
     shxm_attribute_t* un;
+    ir = &cur->ir[cur->intr->entrypoint_loc];
+    /* Patch to call fakemain */
+    if(cur->fakemain_id){
+        ir[2] = cur->fakemain_id;
+    }
+
     if(! cur->prog->unused_count){
         /* Early Cut */
         return 0;
@@ -332,7 +348,6 @@ patch_unused_output(struct patchctx_s* cur, shxm_util_buf_t* defs){
         /* Nop out rest */
         ir[i] = 0x10000; /* OpNop */
     }
-
     return 0;
 }
 
@@ -409,7 +424,6 @@ patch_uniform_to_private(struct patchctx_s* cur, shxm_util_buf_t* defs){
                     }
                 }
             }
-
         }
     }
 
@@ -615,6 +629,159 @@ inject_ubo_def(struct patchctx_s* cur,
 }
 
 static int
+inject_fakemain(struct patchctx_s* cur, 
+                shxm_util_buf_t* names,
+                shxm_util_buf_t* defs,
+                shxm_util_buf_t* body){
+    const float f = 0.5;
+    uint32_t op[5];
+    int curid;
+    int ac2, ac3;
+    curid = cur->curid;
+    /* Assign IDs */
+    cur->fakemain_id = curid;
+    curid++;
+    cur->ptr_output_float_id = curid;
+    curid++;
+    cur->float_half_id = curid;
+    curid++;
+
+    /* Inject entrypoint name */
+    if(inject_opname(names, cur->fakemain_id, "cwgl_entrypoint")){
+        return 1;
+    }
+    /* Inject definitions */
+    op[0] = 43; /* OpConstant */
+    op[1] = cur->intr->float32_type_id;
+    op[2] = cur->float_half_id;
+    memcpy(&op[3], &f, sizeof(float));
+    //_Static_assert((sizeof(float) == sizeof(uint32_t)), "expecting 32bit float");
+    if(shxm_private_util_buf_write_op(defs, op, 4)){
+        return 1;
+    }
+    if(! cur->intr->float32_type_id){
+        cur->intr->float32_type_id = curid;
+        curid++;
+        op[0] = 22; /* OpTypeFloat */
+        op[1] = cur->intr->float32_type_id;
+        op[2] = 32;
+        if(shxm_private_util_buf_write_op(defs, op, 3)){
+            return 1;
+        }
+    }
+    op[0] = 32; /* OpTypePointer */
+    op[1] = cur->ptr_output_float_id;
+    op[2] = 3; /* Output */
+    op[3] = cur->intr->float32_type_id;
+    if(shxm_private_util_buf_write_op(defs, op, 4)){
+        return 1;
+    }
+
+    /* Inject fakemain */
+    op[0] = 54; /* OpFunction */
+    op[1] = cur->intr->void_type_id;
+    op[2] = cur->fakemain_id;
+    op[3] = 0; /* None */
+    op[4] = cur->intr->voidfunc_type_id;
+    if(shxm_private_util_buf_write_op(body, op, 5)){
+        return 1;
+    }
+    op[0] = 248; /* OpLabel */
+    op[1] = curid; /* bogus */
+    curid++;
+    if(shxm_private_util_buf_write_op(body, op, 2)){
+        return 1;
+    }
+    op[0] = 57; /* OpFunctionCall */
+    op[1] = cur->intr->void_type_id;
+    op[2] = curid; /* bogus */
+    curid++;
+    op[3] = cur->intr->entrypoint;
+    if(shxm_private_util_buf_write_op(body, op, 4)){
+        return 1;
+    }
+    ac2 = curid;
+    curid++;
+    ac3 = curid;
+    curid++;
+    op[0] = 65; /* OpAccessChain */
+    op[1] = cur->ptr_output_float_id;
+    op[2] = ac2;
+    op[3] = cur->glposition_id;
+    op[4] = cur->integers_id_base + 2;
+    if(shxm_private_util_buf_write_op(body, op, 5)){
+        return 1;
+    }
+    op[0] = 65; /* OpAccessChain */
+    op[1] = cur->ptr_output_float_id;
+    op[2] = ac3;
+    op[3] = cur->glposition_id;
+    op[4] = cur->integers_id_base + 3;
+    if(shxm_private_util_buf_write_op(body, op, 5)){
+        return 1;
+    }
+    int temp_z;
+    int temp_w;
+    temp_z = curid;
+    curid++;
+    temp_w = curid;
+    curid++;
+    op[0] = 61; /* OpLoad */
+    op[1] = cur->intr->float32_type_id;
+    op[2] = temp_z;
+    op[3] = ac2;
+    if(shxm_private_util_buf_write_op(body, op, 4)){
+        return 1;
+    }
+    op[0] = 61; /* OpLoad */
+    op[1] = cur->intr->float32_type_id;
+    op[2] = temp_w;
+    op[3] = ac3;
+    if(shxm_private_util_buf_write_op(body, op, 4)){
+        return 1;
+    }
+    int temp_ac;
+    temp_ac = curid;
+    curid++;
+    op[0] = 129; /* OpFAdd */
+    op[1] = cur->intr->float32_type_id;
+    op[2] = temp_ac;
+    op[3] = temp_z;
+    op[4] = temp_w;
+    if(shxm_private_util_buf_write_op(body, op, 5)){
+        return 1;
+    }
+    int out_z;
+    out_z = curid;
+    curid++;
+    op[0] = 133; /* OpFMul */
+    op[1] = cur->intr->float32_type_id;
+    op[2] = out_z;
+    op[3] = temp_ac;
+    op[4] = cur->float_half_id;
+    if(shxm_private_util_buf_write_op(body, op, 5)){
+        return 1;
+    }
+    op[0] = 62; /* OpStore */
+    op[1] = ac2;
+    op[2] = out_z;
+    if(shxm_private_util_buf_write_op(body, op, 3)){
+        return 1;
+    }
+    op[0] = 253; /* OpReturn */
+    if(shxm_private_util_buf_write_op(body, op, 1)){
+        return 1;
+    }
+    op[0] = 56; /* OpFunctionEnd */
+    if(shxm_private_util_buf_write_op(body, op, 1)){
+        return 1;
+    }
+
+    cur->curid = curid;
+    return 0;
+}
+
+static int
 patch_binding_numbers(struct patchctx_s* cur, shxm_util_buf_t* decorations){
     int i;
     int id;
@@ -748,6 +915,8 @@ shxm_private_patch_spirv(shxm_ctx_t* ctx,
                          shxm_program_t* prog,
                          shxm_spirv_intr_t* intr,
                          int phase){
+    int is_vertex_shader;
+    int has_glposition;
     int failed = 1;
     int defs_start;
     int defs_end;
@@ -755,12 +924,14 @@ shxm_private_patch_spirv(shxm_ctx_t* ctx,
     int entrypoint_start;
     int curid;
     int total_len;
+    int i;
 
     struct patchctx_s cur;
     shxm_util_buf_t* patch_names;
     shxm_util_buf_t* patch_decoration;
     shxm_util_buf_t* patch_defs;
     shxm_util_buf_t* patch_main;
+    shxm_util_buf_t* fakemain_body;
     shxm_util_buf_t* final_output;
 
     uint32_t* source_ir;
@@ -771,9 +942,24 @@ shxm_private_patch_spirv(shxm_ctx_t* ctx,
     if(phase == 0){
         source_ir = prog->vertex_shader->ir;
         source_ir_len = prog->vertex_shader->ir_len;
+        is_vertex_shader = 1;
     }else{
         source_ir = prog->fragment_shader->ir;
         source_ir_len = prog->fragment_shader->ir_len;
+        is_vertex_shader = 0;
+    }
+
+    has_glposition = 0;
+    if(is_vertex_shader){
+        /* Detect gl_Position reference */
+        for(i=0;i!=prog->varying_count;i++){
+            if(! strncmp("gl_Position", prog->varying[i].slot->name,
+                         11)){
+                cur.glposition_id = prog->varying[i].slot->id[0];
+                has_glposition = 1;
+                break;
+            }
+        }
     }
 
     temp_ir = malloc(sizeof(uint32_t)*source_ir_len);
@@ -814,6 +1000,12 @@ shxm_private_patch_spirv(shxm_ctx_t* ctx,
     if(!patch_main){
         goto fail_main;
     }
+    if(has_glposition){
+        fakemain_body = shxm_private_util_buf_new(PATCH_MAX_LEN);
+        if(!fakemain_body){
+            goto fail_main;
+        }
+    }
 
     /* Generate patches */
     if(patch_binding_numbers(&cur, patch_decoration)){
@@ -825,16 +1017,21 @@ shxm_private_patch_spirv(shxm_ctx_t* ctx,
     if(fill_ubo_info(&cur)){
         goto done;
     }
-    if(phase == 0 /* Vertex shader */){
+    if(is_vertex_shader){
         /* Make room for pointer ids */
         cur.unused_pointer_id_base = cur.curid;
         cur.curid += cur.prog->unused_count;
     }
-    cur.ir[3] = cur.curid; /* Patch Bounds */
     if(patch_uniform_to_private(&cur, patch_defs)){
         goto done;
     }
-    if(phase == 0 /* Vertex shader */){
+    cur.fakemain_id = 0;
+    if(has_glposition){
+        if(inject_fakemain(&cur, patch_names, patch_defs, fakemain_body)){
+            goto done;
+        }
+    }
+    if(is_vertex_shader){
         if(patch_unused_output(&cur, patch_defs)){
             goto done;
         }
@@ -848,6 +1045,7 @@ shxm_private_patch_spirv(shxm_ctx_t* ctx,
     if(patch_main_load(&cur, patch_main)){
         goto done;
     }
+    cur.ir[3] = cur.curid; /* Patch Bounds */
 
     preamble_end = intr->preamble_end;
     defs_start = intr->defs_start;
@@ -864,6 +1062,9 @@ shxm_private_patch_spirv(shxm_ctx_t* ctx,
         shxm_private_util_buf_size(patch_decoration) +
         shxm_private_util_buf_size(patch_defs) +
         shxm_private_util_buf_size(patch_main);
+    if(has_glposition){
+        total_len += shxm_private_util_buf_size(fakemain_body);
+    }
 
     printf("Total len = %d\n",total_len);
     final_output = shxm_private_util_buf_new(total_len);
@@ -905,11 +1106,16 @@ shxm_private_patch_spirv(shxm_ctx_t* ctx,
                                        temp_ir_len - entrypoint_start)){
         goto done;
     }
+    if(has_glposition){
+        if(shxm_private_util_buf_merge(final_output, fakemain_body)){
+            goto done;
+        }
+    }
 
     shxm_private_util_buf_clearnop(final_output);
 
     /* Allocate and copy final output */
-    if(phase == 0){
+    if(is_vertex_shader){
         failed = shxm_private_util_buf_dup(final_output,
                                            &prog->vertex_ir,
                                            &prog->vertex_ir_len);

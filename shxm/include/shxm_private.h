@@ -132,6 +132,10 @@ struct shxm_spirv_intr_s {
     int defs_start;
     int defs_end;
     int int32_type_id;
+    /* main() related */
+    int float32_type_id;
+    int void_type_id;
+    int voidfunc_type_id;
 };
 
 typedef struct shxm_spirv_intr_s shxm_spirv_intr_t;

@@ -56,6 +56,9 @@ shxm_private_read_spirv(uint32_t* ir, int len){
     intr->defs_end = 0;
     intr->preamble_end = 0;
     intr->int32_type_id = 0;
+    intr->float32_type_id = 0;
+    intr->voidfunc_type_id = 0;
+    intr->void_type_id = 0;
     if(ent){
         intr->ent = ent;
         intr->ent_count = bound;
@@ -113,9 +116,23 @@ shxm_private_read_spirv(uint32_t* ir, int len){
                     if(! intr->defs_start){
                         intr->defs_start = i;
                     }
+                    if(op == 19 /* OpTypeVoid */){
+                        intr->void_type_id = ir[i+1];
+                    }
                     if(op == 21 /* OpTypeInt */){
                         if(ir[i+2] == 32 && ir[i+3] == 0){
                             intr->int32_type_id = ir[i+1];
+                        }
+                    }
+                    if(op == 22 /* OpTypeFloat */){
+                        if(ir[i+2] == 32){
+                            intr->float32_type_id = ir[i+1];
+                        }
+                    }
+                    if(op == 33 /* OpTypeFunction */){
+                        if(ir[i+2] == intr->void_type_id &&
+                           oplen == 3){
+                            intr->voidfunc_type_id = ir[i+1];
                         }
                     }
                     break;
