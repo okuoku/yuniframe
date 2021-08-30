@@ -36,7 +36,7 @@ cwgl_vkpriv_destroy_buffer(cwgl_ctx_t* ctx, cwgl_backend_Buffer_t* buffer_backen
 
 static int
 update_buffer(cwgl_ctx_t* ctx, cwgl_enum_t target,
-              uint32_t size, void* data, uint32_t offset,
+              size_t size, void* data, uint32_t offset,
               cwgl_enum_t usage, int allow_reallocate){
     cwgl_Buffer_t* buffer;
     cwgl_backend_ctx_t* backend;
