@@ -1343,10 +1343,10 @@ kick_draw(cwgl_ctx_t* ctx, struct drawreq* dr){
     {
         VkViewport vp;
         VkRect2D sc;
-        vp.x = s->VIEWPORT[0];
-        vp.y = s->VIEWPORT[3] - s->VIEWPORT[1];
-        vp.width = s->VIEWPORT[2];
-        vp.height = -s->VIEWPORT[3];
+        vp.x = (float)s->VIEWPORT[0];
+        vp.y = (float)(s->VIEWPORT[3] - s->VIEWPORT[1]);
+        vp.width = (float)s->VIEWPORT[2];
+        vp.height = (float)(-s->VIEWPORT[3]);
         vp.minDepth = s->DEPTH_RANGE[0];
         vp.maxDepth = s->DEPTH_RANGE[1];
         if(s->SCISSOR_TEST){
