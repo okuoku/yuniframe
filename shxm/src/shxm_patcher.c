@@ -52,7 +52,6 @@ static int
 patch_main_load(struct patchctx_s* cur, shxm_util_buf_t* target){
     int u;
     int id;
-    int curid;
     int i;
     uint32_t op[6];
     struct idpatchparam_s* param;
@@ -922,7 +921,6 @@ shxm_private_patch_spirv(shxm_ctx_t* ctx,
     int defs_end;
     int preamble_end;
     int entrypoint_start;
-    int curid;
     int total_len;
     int i;
 
