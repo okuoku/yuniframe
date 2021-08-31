@@ -175,6 +175,9 @@ int shxm_private_util_buf_dup(shxm_util_buf_t* buf,
                               int* out_count);
 void shxm_private_util_buf_clearnop(shxm_util_buf_t* buf);
 
+/* Private: minishade0 */
+void shxm_ms_test0(int phase, uint32_t* ir, int len);
+
 // {
 #ifdef __cplusplus
 };

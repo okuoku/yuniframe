@@ -845,6 +845,8 @@ shxm_program_link(shxm_ctx_t* ctx, shxm_program_t* prog){
     }else{
         //shxm_private_spirv_dis(opt_ir, opt_ir_len);
         shxm_private_decomp_spirv(opt_ir, opt_ir_len);
+        // TEMP: MiniShade
+        shxm_ms_test0(0, opt_ir, opt_ir_len);
     }
     printf("== Optimized(FLG) ==\n");
     if(shxm_private_spvopt_run(prog->fragment_ir, prog->fragment_ir_len,
@@ -853,6 +855,8 @@ shxm_program_link(shxm_ctx_t* ctx, shxm_program_t* prog){
     }else{
         //shxm_private_spirv_dis(opt_ir, opt_ir_len);
         shxm_private_decomp_spirv(opt_ir, opt_ir_len);
+        // TEMP: MiniShade
+        shxm_ms_test0(1, opt_ir, opt_ir_len);
     }
 
     return 0;
