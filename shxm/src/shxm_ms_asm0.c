@@ -4,20 +4,40 @@
 #include <stdio.h>
 #include <stdint.h>
 
+
 struct iddata_s {
+    enum {
+        TYPE_LABEL,
+        TYPE_REGISTER,
+        TYPE_VARIABLE
+    } type;
     int loc_set;
     int loc_lastref;
+    int regno;
+    /* link list for registers */
+    int prev;
+    int next;
 };
 
 typedef struct iddata_s iddata_t;
 
+struct asmctx_s {
+    int last_reg;
+    iddata_t* idd;
+};
+
+typedef struct asmctx_s asmctx_t;
+
+static int max_regs = 0;
+
 static int /* bool */
-fill_opinfo(int idx, uint32_t op, int oplen, uint32_t* ops, iddata_t* idd){
+fill_opinfo(int idx, uint32_t op, int oplen, uint32_t* ops, asmctx_t* ctx){
     uint32_t in0 = 0;
     uint32_t in1 = 0;
     uint32_t in2 = 0;
     uint32_t out = 0;
     int i;
+    iddata_t* idd = ctx->idd;
 
     (void) oplen;
     switch(op){
@@ -134,7 +154,7 @@ fill_opinfo(int idx, uint32_t op, int oplen, uint32_t* ops, iddata_t* idd){
         case 247: /* OpSelectionMerge */
             break;
         case 248: /* OpLabel */
-            // FIXME: Set is_label
+            idd[ops[1]].type = TYPE_LABEL;
             break;
         case 249: /* OpBranch */
             break;
@@ -160,7 +180,15 @@ fill_opinfo(int idx, uint32_t op, int oplen, uint32_t* ops, iddata_t* idd){
         case 46: /* OpConstantNull */
         case 54: /* OpFunction */
         case 56: /* OpFunctionEnd */
+            break;
         case 59: /* OpVariable */
+            if(ops[3] == 6 /* Private */ ||
+               ops[3] == 7 /* Function */){
+                printf("Unrecognized variable storage class %d\n", ops[3]);
+                abort();
+            }
+            idd[ops[2]].type = TYPE_VARIABLE;
+            break;
         /** Metadata **/
         case 3: /* OpSource */
         case 4: /* OpSourceExtension */
@@ -185,6 +213,9 @@ fill_opinfo(int idx, uint32_t op, int oplen, uint32_t* ops, iddata_t* idd){
             printf("Doubly set id\n");
             abort();
         }
+        idd[out].prev = ctx->last_reg;
+        idd[ctx->last_reg].next = out;
+        ctx->last_reg = out;
         idd[out].loc_set = idx;
     }
     if(in0){
@@ -199,34 +230,91 @@ fill_opinfo(int idx, uint32_t op, int oplen, uint32_t* ops, iddata_t* idd){
     return 1;
 }
 
+#define MAX_REGS 4096
+
 int
 shxm_ms_asm0(uint32_t* ops, int len){
     int cur;
     int op;
     int oplen;
     int idcount;
-    int i;
+    int i,r;
+    int* regs;
+    int curreg;
+    asmctx_t ctx;
     iddata_t* idd;
     idcount = ops[3];
-    cur = 5;
     idd = malloc(sizeof(iddata_t)*idcount);
 
     for(i=0;i!=idcount;i++){
+        idd[i].type = TYPE_REGISTER;
         idd[i].loc_set = 0;
         idd[i].loc_lastref = 0;
+        idd[i].next = 0;
+        idd[i].prev = 0;
     }
+    ctx.idd = idd;
+    ctx.last_reg = 0;
 
+    /* Pass1: Check for types and liveness */
+    cur = 5;
     for(;;){
         op = ops[cur] & 0xffff;
         oplen = ops[cur] >> 16;
-        if(! fill_opinfo(cur, op, oplen, &ops[cur], idd)){
+        if(! fill_opinfo(cur, op, oplen, &ops[cur], &ctx)){
             return 1;
         }
         cur += oplen;
         if(cur >= len){
-            return 0;
+            break;
         }
     }
+
+    regs = malloc(sizeof(int)*MAX_REGS);
+    for(i=0;i!=MAX_REGS;i++){
+        regs[i] = -1;
+    }
+    /* Pass2: Allocate registers */
+    curreg = ctx.last_reg;
+    if(curreg){
+        for(;;){
+            if(! idd[curreg].prev){
+                break;
+            }
+            curreg = idd[curreg].prev;
+        }
+        while(curreg){
+            if(idd[curreg].type == TYPE_REGISTER){
+                for(r=0;r!=MAX_REGS;r++){
+                    if(regs[r] < idd[curreg].loc_set){
+                        idd[curreg].regno = r;
+                        regs[r] = idd[curreg].loc_lastref;
+                        break;
+                    }
+                }
+                if(r == MAX_REGS){
+                    printf("Insufficient registers...\n");
+                    abort();
+                }
+            }
+            curreg = idd[curreg].next;
+        }
+        r = 0;
+        for(i=0;i!=MAX_REGS;i++){
+            if(regs[i] != -1){
+                r++;
+            }
+        }
+        if(r > max_regs){
+            max_regs = r;
+        }
+        printf("Register pressure = %d (max %d)\n",r,max_regs);
+    }
+    
+
+    free(idd);
+    free(regs);
+    return 0;
 }
 
 
