@@ -9,8 +9,23 @@ struct iddata_s {
     enum {
         TYPE_LABEL,
         TYPE_REGISTER,
-        TYPE_VARIABLE
+        TYPE_VARIABLE,
+        TYPE_TYPE,
+        TYPE_CONSTANT_VALUE,
+        TYPE_CONSTANT_UNDEF,
+        TYPE_CONSTANT_COMPOSITE
     } type;
+    cwgl_var_type_t cls; /* GL type for type object */
+    int bitwidth;
+    int elms;
+    union {
+        int32_t asInt;
+        uint32_t asId;
+        float asFloat;
+    } value[16];
+    int typeid;
+    int basetype;
+    /* Register assignment work area */
     int loc_set;
     int loc_lastref;
     int regno;
@@ -36,6 +51,7 @@ fill_opinfo(int idx, uint32_t op, int oplen, uint32_t* ops, asmctx_t* ctx){
     uint32_t in1 = 0;
     uint32_t in2 = 0;
     uint32_t out = 0;
+    uint32_t typeid = 0;
     int i;
     iddata_t* idd = ctx->idd;
 
@@ -43,6 +59,7 @@ fill_opinfo(int idx, uint32_t op, int oplen, uint32_t* ops, asmctx_t* ctx){
     switch(op){
         /** Ext **/
         case 12: /* OpExtInst */
+            typeid = ops[1];
             out = ops[2];
             switch(ops[4]){ // Assume GLSL.std.450
                 case 4: /* FAbs x */
@@ -72,6 +89,7 @@ fill_opinfo(int idx, uint32_t op, int oplen, uint32_t* ops, asmctx_t* ctx){
             break;
         /** Arithmetic **/
         case 127: /* OpFNegate */
+            typeid = ops[1];
             out = ops[2];
             in0 = ops[3];
             break;
@@ -84,11 +102,13 @@ fill_opinfo(int idx, uint32_t op, int oplen, uint32_t* ops, asmctx_t* ctx){
         case 183: /* OpFUnordNotEqual */
         case 184: /* OpFOrdLessThan */
         case 190: /* OpFOrdGreaterThanEqual */
+            typeid = ops[1];
             out = ops[2];
             in0 = ops[3];
             in1 = ops[4];
             break;
         case 169: /* OpSelect */
+            typeid = ops[1];
             out = ops[2];
             in0 = ops[3];
             in1 = ops[4];
@@ -96,19 +116,24 @@ fill_opinfo(int idx, uint32_t op, int oplen, uint32_t* ops, asmctx_t* ctx){
             break;
         /** Memory ops **/
         case 61: /* OpLoad */
+            typeid = ops[1];
             out = ops[2];
             break;
         case 62: /* OpStore */
+            typeid = ops[1];
             in0 = ops[2];
             break;
         case 65: /* OpAccessChain */
+            // FIXME:
             break;
         case 79: /* OpVectorShuffle */
+            typeid = ops[1];
             out = ops[2];
             in0 = ops[3];
             in1 = ops[4];
             break;
         case 80: /* OpCompositeConstruct */
+            typeid = ops[1];
             out = ops[2];
             for(i=3;i!=oplen;i++){
                 // NB: Special handling
@@ -116,10 +141,12 @@ fill_opinfo(int idx, uint32_t op, int oplen, uint32_t* ops, asmctx_t* ctx){
             }
             break;
         case 81: /* OpCompositeExtract */
+            typeid = ops[1];
             out = ops[2];
             in0 = ops[3];
             break;
         case 82: /* OpCompositeInsert */
+            typeid = ops[1];
             out = ops[2];
             in0 = ops[3];
             in1 = ops[4];
@@ -127,6 +154,7 @@ fill_opinfo(int idx, uint32_t op, int oplen, uint32_t* ops, asmctx_t* ctx){
         /** Shader ops **/
         case 87: /* OpImageSampleImplicitLod */
         case 88: /* OpImageSampleExplicitLod */
+            typeid = ops[1];
             out = ops[2];
             in0 = ops[3];
             in1 = ops[4];
@@ -145,6 +173,7 @@ fill_opinfo(int idx, uint32_t op, int oplen, uint32_t* ops, asmctx_t* ctx){
             break;
         /** Flow **/
         case 245: /* OpPhi */
+            typeid = ops[1];
             out = ops[2];
             for(i=3;i!=oplen;i++){
                 // NB: Special handling
@@ -154,7 +183,8 @@ fill_opinfo(int idx, uint32_t op, int oplen, uint32_t* ops, asmctx_t* ctx){
         case 247: /* OpSelectionMerge */
             break;
         case 248: /* OpLabel */
-            idd[ops[1]].type = TYPE_LABEL;
+            out = ops[1];
+            idd[out].type = TYPE_LABEL;
             break;
         case 249: /* OpBranch */
             break;
@@ -164,22 +194,82 @@ fill_opinfo(int idx, uint32_t op, int oplen, uint32_t* ops, asmctx_t* ctx){
             break;
         /** Decl **/
         case 1: /* OpUndef */
+            out = ops[1];
+            idd[out].type = TYPE_CONSTANT_UNDEF;
+            break;
         case 19: /* OpTypeVoid */
+            out = ops[1];
+            idd[out].type = TYPE_TYPE;
+            idd[out].cls = CWGL_VAR_VOID;
+            break;
         case 20: /* OpTypeBool */
+            out = ops[1];
+            idd[out].type = TYPE_TYPE;
+            idd[out].cls = CWGL_VAR_BOOL;
+            break;
         case 21: /* OpTypeInt */
+            out = ops[1];
+            idd[out].type = TYPE_TYPE;
+            idd[out].cls = CWGL_VAR_INT;
+            idd[out].bitwidth = ops[2];
+            // FIXME: Implement signedness ??
+            break;
         case 22: /* OpTypeFloat */
+            out = ops[1];
+            idd[out].type = TYPE_TYPE;
+            idd[out].cls = CWGL_VAR_FLOAT;
+            idd[out].bitwidth = ops[2];
+            break;
         case 23: /* OpTypeVector */
+            // FIXME:
+            break;
         case 25: /* OpTypeImage */
+            // FIXME:
+            break;
         case 27: /* OpTypeSampledImage */
+            out = ops[1];
+            typeid = ops[2];
+            idd[out].type = CWGL_VAR_SAMPLER_2D; // FIXME: Resolve this
+            break;
         case 28: /* OpTypeArray */
+            out = ops[1];
+            typeid = ops[2];
+            idd[out].elms = ops[3];
+            idd[out].type = CWGL_VAR_ARRAY;
+            break;
         case 30: /* OpTypeStruct */
+            // FIXME:
+            break;
         case 32: /* OpTypePointer */
+            /* Storage Class is checked through SPIR-V validation */
+            out = ops[1];
+            idd[out].type = TYPE_POINTER;
+            typeid = ops[3];
+            break;
         case 33: /* OpTypeFunction */
+            break;
         case 43: /* OpConstant */
+            if(oplen != 4){
+                printf("Constant too large\n");
+                abort();
+            }
+            typeid = ops[1];
+            out = ops[2];
+            idd[out].value.asInt = ops[3];
+            idd[out].type = TYPE_CONSTANT_VALUE;
+            break;
         case 44: /* OpConstantComposite */
+            // FIXME:
+            break;
         case 46: /* OpConstantNull */
+            typeid = ops[1];
+            out = ops[2];
+            idd[out].value.asInt = 0;
+            idd[out].type = TYPE_CONSTANT_VALUE;
+            break;
         case 54: /* OpFunction */
         case 56: /* OpFunctionEnd */
+            // FIXME:
             break;
         case 59: /* OpVariable */
             if(ops[3] == 6 /* Private */ ||
@@ -187,7 +277,9 @@ fill_opinfo(int idx, uint32_t op, int oplen, uint32_t* ops, asmctx_t* ctx){
                 printf("Unrecognized variable storage class %d\n", ops[3]);
                 abort();
             }
-            idd[ops[2]].type = TYPE_VARIABLE;
+            typeid = ops[1];
+            out = ops[2];
+            idd[out].type = TYPE_VARIABLE;
             break;
         /** Metadata **/
         case 3: /* OpSource */
@@ -217,6 +309,7 @@ fill_opinfo(int idx, uint32_t op, int oplen, uint32_t* ops, asmctx_t* ctx){
         idd[ctx->last_reg].next = out;
         ctx->last_reg = out;
         idd[out].loc_set = idx;
+        idd[out].typeid = typeid;
     }
     if(in0){
         idd[in0].loc_lastref = idx;

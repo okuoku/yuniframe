@@ -37,6 +37,7 @@ enum cwgl_var_type_e {
     /* Virtual */
     CWGL_VAR_STRUCT,
     CWGL_VAR_ARRAY,
+    CWGL_VAR_VOID,
 
     /* Dummy */
     CWGL_VAR_DUMMY = 0x7fffffff
