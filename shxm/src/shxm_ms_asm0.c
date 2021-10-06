@@ -11,6 +11,7 @@ struct iddata_s {
         TYPE_REGISTER,
         TYPE_VARIABLE,
         TYPE_TYPE,
+        TYPE_POINTER,
         TYPE_CONSTANT_VALUE,
         TYPE_CONSTANT_UNDEF,
         TYPE_CONSTANT_COMPOSITE
@@ -255,7 +256,7 @@ fill_opinfo(int idx, uint32_t op, int oplen, uint32_t* ops, asmctx_t* ctx){
             }
             typeid = ops[1];
             out = ops[2];
-            idd[out].value.asInt = ops[3];
+            idd[out].value->asInt = ops[3];
             idd[out].type = TYPE_CONSTANT_VALUE;
             break;
         case 44: /* OpConstantComposite */
@@ -264,7 +265,7 @@ fill_opinfo(int idx, uint32_t op, int oplen, uint32_t* ops, asmctx_t* ctx){
         case 46: /* OpConstantNull */
             typeid = ops[1];
             out = ops[2];
-            idd[out].value.asInt = 0;
+            idd[out].value->asInt = 0;
             idd[out].type = TYPE_CONSTANT_VALUE;
             break;
         case 54: /* OpFunction */
