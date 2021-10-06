@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "spirv_cross_c.h"
+
 static void
 dummy_consumer(spv_message_level_t level, const char*,
                const spv_position_t& position, const char* message) {
@@ -59,6 +61,30 @@ extern "C" int shxm_ms_asm0(uint32_t * ops, int len);
 
 extern "C" void
 shxm_ms_test0(int phase, uint32_t* ir, int len){
+    spvc_context scctx = NULL;
+    spvc_parsed_ir scir = NULL;
+    spvc_compiler sccomp = NULL;
+    spvc_compiler_options scopts = NULL;
+    const char* src = NULL;
+    spvc_context_create(&scctx);
+
+    spvc_context_parse_spirv(scctx, ir, len, &scir);
+    spvc_context_create_compiler(scctx, SPVC_BACKEND_HLSL,
+                                 scir, SPVC_CAPTURE_MODE_TAKE_OWNERSHIP,
+                                 &sccomp);
+
+    spvc_compiler_create_compiler_options(sccomp, &scopts);
+    spvc_compiler_options_set_uint(scopts,
+                                   SPVC_COMPILER_OPTION_HLSL_SHADER_MODEL,
+                                   50);
+    spvc_compiler_install_compiler_options(sccomp, scopts);
+    spvc_compiler_compile(sccomp, &src);
+    printf("HLSL:\n%s\n", src);
+    spvc_context_destroy(scctx);
+
+
+
+#if 0
     uint32_t* xir;
     int xir_len;
 
@@ -70,4 +96,5 @@ shxm_ms_test0(int phase, uint32_t* ir, int len){
         }
         free(xir);
     }
+#endif
 }
