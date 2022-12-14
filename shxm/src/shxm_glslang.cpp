@@ -1,13 +1,10 @@
 #include "ShaderLang.h"
 #include "SPIRV/GlslangToSpv.h"
 #include "SPIRV/disassemble.h"
+#include "glslang/Public/ResourceLimits.h"
 #include <iostream>
 
 #include <stdlib.h>
-
-namespace glslang {
-    extern const TBuiltInResource DefaultTBuiltInResource;
-};
 
 extern "C" void
 shxm_glslang_init(void){
@@ -61,7 +58,7 @@ shxm_glslang_build(int mode, const char* source, int len,
     ts->setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_0);
     */
 
-    if(ts->parse(&glslang::DefaultTBuiltInResource,
+    if(ts->parse(GetDefaultResources(),
                  100,
                  false,
                  EShMsgDefault,
