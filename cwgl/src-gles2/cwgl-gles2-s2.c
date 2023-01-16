@@ -290,9 +290,28 @@ CWGL_API cwgl_query_result_t
 cwgl_getActiveAttrib(cwgl_ctx_t* ctx, cwgl_Program_t* program, 
                      int32_t index, int32_t* out_size, 
                      int32_t* type, cwgl_string_t** name){
+    GLuint tname;
+    GLsizei length;
+    GLint tsize;
+    GLenum ttype;
+    GLenum e;
+    char namebuf[1024];
+    CTX_ENTER(ctx);
+    tname = CTX_GETNAME(ctx, program);
+    while(glGetError()){}
+    glGetActiveAttrib(tname, index, 1024, &length, &tsize, &ttype, namebuf);
+    e = glGetError();
+    if(e){
+        return CWGL_QR_GLERROR;
+    }
+    *out_size = tsize;
+    *type = ttype;
+    *name = cwgl_priv_alloc_string(ctx, namebuf, length);
+    CTX_LEAVE(ctx);
     // FIXME: Implement this
-    return CWGL_QR_UNIMPLEMENTED;
+    return CWGL_QR_SUCCESS;
 }
+
 CWGL_API int32_t 
 cwgl_getAttribLocation(cwgl_ctx_t* ctx, cwgl_Program_t* program, 
                        const char* name){
