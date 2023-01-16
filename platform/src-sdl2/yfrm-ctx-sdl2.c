@@ -32,7 +32,10 @@ static cwgl_platform_ctx_t* cur;
 static cwgl_ctx_t* cur;
 #endif
 
-void* eglGetProcAddress(char const * procname);
+#ifdef _WIN32
+#define STDCALL __stdcall
+#endif
+void* STDCALL eglGetProcAddress(char const * procname);
 void (*ptr_glGenVertexArrays)(size_t n, unsigned int *arrays);
 void (*ptr_glBindVertexArray)(unsigned int array);
 
