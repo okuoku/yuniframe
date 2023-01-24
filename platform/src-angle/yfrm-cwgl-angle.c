@@ -9,17 +9,32 @@
 typedef struct {
     EGLDisplay egl_disp;
     EGLSurface egl_surf;
+    EGLContext egl_ctx;
+    EGLConfig egl_cfg;
 } pfctx_angle_t;
+
+static const EGLint glesattrs[] = {
+    EGL_CONTEXT_CLIENT_VERSION, 2,
+    EGL_NONE
+};
+
+void
+yfrm_cwgl_pfctx_reset_angle(void* ctx){
+    pfctx_angle_t* pf = (pfctx_angle_t*)ctx;
+
+    eglDestroyContext(pf->egl_disp, pf->egl_ctx);
+    pf->egl_ctx = eglCreateContext(pf->egl_disp, pf->egl_cfg, NULL, glesattrs);
+    if(pf->egl_ctx ==  EGL_NO_CONTEXT){
+        abort();
+    }
+    eglMakeCurrent(pf->egl_disp, pf->egl_surf, pf->egl_surf, pf->egl_ctx);
+}
 
 void* /* pfctx */
 yfrm_cwgl_pfctx_create_angle(void* pfdev, void* pfwnd){
-    EGLDeviceEXT egl_dev;
     EGLDisplay egl_disp;
     EGLSurface egl_surf;
-    EGLConfig egl_cfg;
     EGLint egl_ncfg;
-    EGLContext egl_ctx;
-    SDL_SysWMinfo info;
     pfctx_angle_t* r;
 
     /* ANGLE EGL+GLES context creation */
@@ -41,17 +56,16 @@ yfrm_cwgl_pfctx_create_angle(void* pfdev, void* pfwnd){
         EGL_RED_SIZE, 8,
         EGL_NONE
     };
-    eglChooseConfig(egl_disp, attrs, &egl_cfg, 1, &egl_ncfg);
-    egl_surf = eglCreateWindowSurface(egl_disp, egl_cfg, pfwnd, NULL);
-    const EGLint glesattrs[] = {
-        EGL_CONTEXT_CLIENT_VERSION, 2,
-        EGL_NONE
-    };
-    eglBindAPI(EGL_OPENGL_ES_API);
-    egl_ctx = eglCreateContext(egl_disp, egl_cfg, NULL, glesattrs);
-    eglMakeCurrent(egl_disp, egl_surf, egl_surf, egl_ctx);
-
     r = malloc(sizeof(pfctx_angle_t));
+    if(! r){
+        abort();
+    }
+    eglChooseConfig(egl_disp, attrs, &r->egl_cfg, 1, &egl_ncfg);
+    egl_surf = eglCreateWindowSurface(egl_disp, r->egl_cfg, pfwnd, NULL);
+    eglBindAPI(EGL_OPENGL_ES_API);
+    r->egl_ctx = eglCreateContext(egl_disp, r->egl_cfg, NULL, glesattrs);
+    eglMakeCurrent(egl_disp, egl_surf, egl_surf, r->egl_ctx);
+
     r->egl_surf = egl_surf;
     r->egl_disp = egl_disp;
 

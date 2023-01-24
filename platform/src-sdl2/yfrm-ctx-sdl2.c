@@ -19,6 +19,7 @@
 int cwgl_backend_beginframe(cwgl_ctx_t* ctx); // FIXME: Define it elsewhere
 int cwgl_backend_endframe(cwgl_ctx_t* ctx); // FIXME: Define it elsewhere
 void* yfrm_cwgl_pfctx_create_angle(void* pfdev, void* pfwnd);
+void yfrm_cwgl_pfctx_reset_angle(void* ctx);
 void yfrm_cwgl_pfctx_flip_angle(void* pf);
 void* yfrm_gpu_initpfdev_d3d11(void);
 
@@ -292,6 +293,18 @@ ctx_create_ANGLE(int32_t width, int32_t height, int32_t reserved,
 
     return r;
 }
+
+static cwgl_ctx_t*
+ctx_reset_ANGLE(cwgl_ctx_t* ctx){
+#ifdef CWGL_EXPERIMENTAL_TRACKER
+    abort(); // Need to reset tracker
+#else
+    printf("=== reset ctx ===\n");
+    yfrm_cwgl_pfctx_reset_angle(ctx->pf);
+#endif
+    return ctx;
+}
+
 #endif
 
 YFRM_API cwgl_ctx_t*
@@ -303,6 +316,15 @@ yfrm_cwgl_ctx_create(int32_t width, int32_t height, int32_t reserved,
     return ctx_create_EGL(width, height, reserved, flags);
 #else
     return ctx_create_ANGLE(width, height, reserved, flags);
+#endif
+}
+
+YFRM_API cwgl_ctx_t*
+yfrm_cwgl_ctx_reset0(cwgl_ctx_t* ctx){
+#if defined(YFRM_CWGL_USE_ANGLE)
+    return ctx_reset_ANGLE(ctx);
+#else
+    abort();
 #endif
 }
 
