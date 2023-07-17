@@ -1,4 +1,4 @@
-#include "SDL_main.h"
+#include "SDL2/SDL_main.h"
 
 int YFRM_ENTRYPOINT(int ac, const char** av);
 

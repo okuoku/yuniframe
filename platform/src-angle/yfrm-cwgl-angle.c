@@ -39,6 +39,7 @@ yfrm_cwgl_pfctx_create_angle(void* pfdev, void* pfwnd){
 
     /* ANGLE EGL+GLES context creation */
 #ifdef YFRM_CWGL_USE_DX11
+    EGLDeviceEXT egl_dev;
     egl_dev = eglCreateDeviceANGLE(EGL_D3D11_DEVICE_ANGLE, pfdev, NULL);
     egl_disp = eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT,
                                         egl_dev, NULL);

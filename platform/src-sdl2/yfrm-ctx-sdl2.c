@@ -2,11 +2,11 @@
 #include "cwgl.h"
 #include "cwgl-tracker-priv.h"
 #endif
-#include "yfrm.h"
+#include "yuniframe/yfrm.h"
 
 #include <string.h>
 #include <stdio.h>
-#include "SDL.h"
+#include "SDL2/SDL.h"
 
 #ifdef YFRM_CWGL_USE_ANGLE
 #include "SDL_syswm.h"

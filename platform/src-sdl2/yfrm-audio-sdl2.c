@@ -1,8 +1,8 @@
-#include <yfrm.h>
+#include <yuniframe/yfrm.h>
 
 #include <string.h>
 #include <stdio.h>
-#include <SDL.h>
+#include <SDL2/SDL.h>
 
 static SDL_AudioDeviceID audiodevice;
 static SDL_mutex* audiolock;

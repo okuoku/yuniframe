@@ -1,8 +1,8 @@
-#include <yfrm.h>
+#include <yuniframe/yfrm.h>
 
 #include <string.h>
 #include <stdio.h>
-#include <SDL.h>
+#include <SDL2/SDL.h>
 
 /* Event handling */
 #define MIN_EVENT_SIZE 32 /* ??? */
