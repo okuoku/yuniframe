@@ -30,11 +30,9 @@ set(yfrmsrc
     platform/src-sdl2/yfrm-events-sdl2.c
     )
 
-if(NOT YFRM_BUILD_MODULE)
-    list(APPEND yfrmsrc
-        platform/src-sdl2/yfrm-main-sdl2.c
+set(yfrmmainsrc
+    platform/src-sdl2/yfrm-main-sdl2.c
     )
-endif()
 
 if(YFRM_FS_USE_SDL)
     list(APPEND yfrmsrc
@@ -74,6 +72,9 @@ endif()
 add_library(yfrm OBJECT 
     ${yfrmsrc})
 
+add_library(yfrm_main OBJECT
+    ${yfrmmainsrc})
+
 if(YFRM_CWGL_PREFIX)
     # FIXME: Refactor yfrm not to require specify cwgl location
     target_include_directories(yfrm PRIVATE ${YFRM_CWGL_PREFIX}/include)
@@ -84,20 +85,23 @@ if(CWGL_KHRONOS_HEADER_DIR)
 endif()
 
 target_link_libraries(yfrm PUBLIC SDL2::SDL2-static)
-target_link_libraries(yfrm PUBLIC SDL2::SDL2main)
+target_link_libraries(yfrm_main PUBLIC SDL2::SDL2-static SDL2::SDL2main)
 if(YFRM_SDL2_PREFIX)
     # Unfortunately, we have to generate SDL2 prefix in some way
     # Because the SDL2 repository uses `include/SDL.h` but standard
     # include procedure is `include/SDL2/SDL.h`. 
     target_include_directories(yfrm PRIVATE ${YFRM_SDL2_PREFIX})
+    target_include_directories(yfrm_main PRIVATE ${YFRM_SDL2_PREFIX})
 endif()
 if(TARGET sdl2headers)
     # `sdl2headers` target will be declared in proj/sdl2
     add_dependencies(yfrm sdl2headers)
+    add_dependencies(yfrm_main sdl2headers)
 endif()
 
 
 target_include_directories(yfrm PUBLIC include)
+target_include_directories(yfrm_main PUBLIC include)
 
 # NCCC Module (with CWGL)
 add_subdirectory(nccc)
