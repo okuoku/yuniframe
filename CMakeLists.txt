@@ -99,3 +99,5 @@ endif()
 
 target_include_directories(yfrm PUBLIC include)
 
+# NCCC Module (with CWGL)
+add_subdirectory(nccc)
