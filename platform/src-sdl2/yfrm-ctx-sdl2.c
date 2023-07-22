@@ -35,6 +35,8 @@ static cwgl_ctx_t* cur;
 
 #ifdef _WIN32
 #define STDCALL __stdcall
+#elif __APPLE__
+#define STDCALL
 #endif
 void* STDCALL eglGetProcAddress(char const * procname);
 void (*ptr_glGenVertexArrays)(size_t n, unsigned int *arrays);
