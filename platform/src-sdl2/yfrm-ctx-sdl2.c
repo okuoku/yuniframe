@@ -1,5 +1,5 @@
 #ifdef CWGL_EXPERIMENTAL_TRACKER
-#include "cwgl.h"
+#include "yuniframe/cwgl.h"
 #include "cwgl-tracker-priv.h"
 #endif
 #include "yuniframe/yfrm.h"

@@ -61,6 +61,10 @@ if(YFRM_CWGL_USE_ANGLE)
         )
 endif()
 
+if(YFRM_CWGL_EXPERIMENTAL_TRACKER)
+    add_definitions(-DCWGL_EXPERIMENTAL_TRACKER)
+endif()
+
 if(WINDOWS_STORE)
     add_definitions(-DYFRM_USE_UWP)
 elseif(WIN32)
@@ -78,6 +82,9 @@ add_library(yfrm_main OBJECT
 if(YFRM_CWGL_PREFIX)
     # FIXME: Refactor yfrm not to require specify cwgl location
     target_include_directories(yfrm PRIVATE ${YFRM_CWGL_PREFIX}/include)
+    if(YFRM_CWGL_EXPERIMENTAL_TRACKER)
+        target_include_directories(yfrm PRIVATE ${YFRM_CWGL_PREFIX}/src-tracker)
+    endif()
 endif()
 if(CWGL_KHRONOS_HEADER_DIR)
     # FIXME: ditto
