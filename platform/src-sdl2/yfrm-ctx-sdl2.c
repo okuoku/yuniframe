@@ -35,7 +35,7 @@ static cwgl_ctx_t* cur;
 
 #ifdef _WIN32
 #define STDCALL __stdcall
-#elif __APPLE__
+#else
 #define STDCALL
 #endif
 void* STDCALL eglGetProcAddress(char const * procname);
