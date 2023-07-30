@@ -17,7 +17,13 @@ include(${CWGL_ROOT}/nccc/stub_cwgl.cmake)
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR} ${NCCC_ROOT}/stubsupport)
 
-add_library(nccc_yfrm MODULE
+if(YFRM_BUILD_MODULE)
+    set(libtype MODULE)
+else()
+    set(libtype STATIC)
+endif()
+
+add_library(nccc_yfrm ${libtype}
     nccc_cwgl.c
     nccc_yfrm.c)
 
