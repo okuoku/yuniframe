@@ -5,15 +5,17 @@ if(NOT CMAKE_CXX_STANDARD)
     set(CMAKE_CXX_STANDARD 17)
 endif()
 
-add_definitions(
-    # Use static-link
-    -DANGLE_EXPORT=
-    -DKHRONOS_STATIC
-    #-DEGLAPI=
-    #-DGL_API=
-    #-DGL_APIENTRY=
-    #-DGL_APICALL=
-    )
+if(NOT YFRM_CWGL_USE_PLATFORMGLES)
+    add_definitions(
+        # Use static-link
+        -DANGLE_EXPORT=
+        -DKHRONOS_STATIC
+        #-DEGLAPI=
+        #-DGL_API=
+        #-DGL_APIENTRY=
+        #-DGL_APICALL=
+        )
+endif()
 
 if(YFRM_BUILD_MODULE)
     add_definitions(
