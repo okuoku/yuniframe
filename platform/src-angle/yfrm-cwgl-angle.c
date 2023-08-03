@@ -1,6 +1,6 @@
 #include <stdlib.h>
 
-#include "SDL_syswm.h"
+#include "SDL2/SDL_syswm.h"
 #include "EGL/egl.h"
 #define EGL_EGLEXT_PROTOTYPES
 #include "EGL/eglext.h"

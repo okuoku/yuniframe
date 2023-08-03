@@ -9,11 +9,11 @@
 #include "SDL2/SDL.h"
 
 #ifdef YFRM_CWGL_USE_ANGLE
-#include "SDL_syswm.h"
+#include "SDL2/SDL_syswm.h"
 #endif
 
 #ifdef CWGL_EXPERIMENTAL_TRACKER
-#include "SDL_vulkan.h"
+#include "SDL2/SDL_vulkan.h"
 #endif
 
 int cwgl_backend_beginframe(cwgl_ctx_t* ctx); // FIXME: Define it elsewhere
