@@ -93,8 +93,9 @@ if(CWGL_KHRONOS_HEADER_DIR)
     target_include_directories(yfrm PRIVATE ${CWGL_KHRONOS_HEADER_DIR})
 endif()
 
-target_link_libraries(yfrm PUBLIC SDL2::SDL2-static)
-target_link_libraries(yfrm_main PUBLIC SDL2::SDL2-static SDL2::SDL2main)
+set(sdl2libprefix) # FIXME: Use "SDL2::" for Platform SDL2
+target_link_libraries(yfrm PUBLIC ${sdl2libprefix}SDL2-static)
+target_link_libraries(yfrm_main PUBLIC ${sdl2libprefix}SDL2-static ${sdl2libprefix}SDL2main)
 if(YFRM_SDL2_PREFIX)
     # Unfortunately, we have to generate SDL2 prefix in some way
     # Because the SDL2 repository uses `include/SDL.h` but standard
