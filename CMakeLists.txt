@@ -95,7 +95,13 @@ endif()
 
 set(sdl2libprefix) # FIXME: Use "SDL2::" for Platform SDL2
 target_link_libraries(yfrm PUBLIC ${sdl2libprefix}SDL2-static)
-target_link_libraries(yfrm_main PUBLIC ${sdl2libprefix}SDL2-static ${sdl2libprefix}SDL2main)
+if("${CMAKE_SYSTEM_NAME}" STREQUAL WindowsStore)
+    target_link_libraries(yfrm_main PUBLIC ${sdl2libprefix}SDL2-static)
+else()
+    target_link_libraries(yfrm_main PUBLIC ${sdl2libprefix}SDL2-static 
+        ${sdl2libprefix}SDL2main)
+endif()
+
 if(YFRM_SDL2_PREFIX)
     # Unfortunately, we have to generate SDL2 prefix in some way
     # Because the SDL2 repository uses `include/SDL.h` but standard
