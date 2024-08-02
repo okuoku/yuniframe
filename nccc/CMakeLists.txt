@@ -21,6 +21,7 @@ include(${CWGL_ROOT}/nccc/stub_cwgl.cmake)
 include_directories(${CMAKE_CURRENT_BINARY_DIR} ${NCCC_ROOT}/stubsupport)
 
 if(YFRM_BUILD_MODULE)
+    add_definitions(-DNCCC_DLL)
     set(libtype MODULE)
 else()
     set(libtype STATIC)
