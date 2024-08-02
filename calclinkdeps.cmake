@@ -11,25 +11,13 @@ endif()
 set(backendlibs)
 if(YFRM_CWGL_USE_DX11)
     list(APPEND backendlibs
-        # angle (Yuniframe)
-        dxgi
-        dxguid
         # yuniframe
         d3d11
-        )
-endif()
-if(YFRM_CWGL_USE_VULKAN OR YFRM_CWGL_USE_METAL)
-    list(APPEND backendlibs
-        SPIRV-Tools-static
         )
 endif()
 if(YFRM_CWGL_USE_ANGLE)
     list(APPEND backendlibs
         angle_static)
-    if(WIN32)
-        list(APPEND backendlibs
-            synchronization)
-    endif()
 endif()
 if(YFRM_CWGL_EXPERIMENTAL_TRACKER)
     # FIXME: Move this to shxm dependency
@@ -65,9 +53,5 @@ if(APPLE)
             ${YFRM_MOLTENVK_PREFIX}/MoltenVK/dynamic/MoltenVK.xcframework
             )
     endif()
-    # FIXME: Why do we need it actually?
-    list(APPEND backendlibs
-        "-framework IOSurface"
-        )
 endif()
 
