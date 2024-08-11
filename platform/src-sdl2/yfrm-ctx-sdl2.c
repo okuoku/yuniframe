@@ -123,6 +123,7 @@ cwgl_integ_vkpriv_createsurface(cwgl_ctx_t* ctx,
 static cwgl_ctx_t*
 ctx_create_VK(int32_t width, int32_t height, int32_t reserved,
                      int32_t flags){
+    uint32_t extraflags = 0;
     SDL_GLContext glc;
     cwgl_ctx_t* r;
     cwgl_platform_ctx_t* p;
@@ -135,11 +136,15 @@ ctx_create_VK(int32_t width, int32_t height, int32_t reserved,
             return NULL;
         }
 
+        if(flags & YFRM_SCREEN_RESIZABLE){
+            extraflags |= SDL_WINDOW_RESIZABLE;
+        }
+
         if(!(window = SDL_CreateWindow("cwgl",
                                        SDL_WINDOWPOS_UNDEFINED,
                                        SDL_WINDOWPOS_UNDEFINED,
                                        width, height,
-                                       SDL_WINDOW_VULKAN))){
+                                       extraflags|SDL_WINDOW_VULKAN))){
             SDL_Quit();
             printf("SDL CreateWindow failed.\n");
             return NULL;
@@ -162,6 +167,7 @@ ctx_create_VK(int32_t width, int32_t height, int32_t reserved,
 static cwgl_ctx_t*
 ctx_create_EGL(int32_t width, int32_t height, int32_t reserved,
                      int32_t flags){
+    uint32_t extraflags = 0;
     SDL_GLContext glc;
     cwgl_ctx_t* r;
 #ifdef CWGL_EXPERIMENTAL_TRACKER
@@ -174,6 +180,10 @@ ctx_create_EGL(int32_t width, int32_t height, int32_t reserved,
         if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_GAMECONTROLLER|SDL_INIT_AUDIO|SDL_INIT_TIMER)){
             printf("SDL Init failed.\n");
             return NULL;
+        }
+
+        if(flags & YFRM_SCREEN_RESIZABLE){
+            extraflags |= SDL_WINDOW_RESIZABLE;
         }
 
         SDL_SetHint(SDL_HINT_OPENGL_ES_DRIVER, "1");
@@ -190,7 +200,7 @@ ctx_create_EGL(int32_t width, int32_t height, int32_t reserved,
                                        SDL_WINDOWPOS_UNDEFINED,
                                        SDL_WINDOWPOS_UNDEFINED,
                                        width, height,
-                                       SDL_WINDOW_OPENGL))){
+                                       extraflags|SDL_WINDOW_OPENGL))){
             SDL_Quit();
             printf("SDL CreateWindow failed.\n");
             return NULL;
@@ -235,6 +245,10 @@ ctx_create_ANGLE(int32_t width, int32_t height, int32_t reserved,
 #if defined(SDL_VIDEO_DRIVER_COCOA) || defined(SDL_VIDEO_DRIVER_UIKIT)
     wndflags |= SDL_WINDOW_METAL|SDL_WINDOW_ALLOW_HIGHDPI;
 #endif
+
+    if(flags & YFRM_SCREEN_RESIZABLE){
+        wndflags |= SDL_WINDOW_RESIZABLE;
+    }
 
     if(! wnd){
         SDL_Window* window;

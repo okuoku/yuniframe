@@ -34,11 +34,29 @@ struct cwgl_ctx_s;
 typedef struct cwgl_ctx_s cwgl_ctx_t;
 YFRM_API int yfrm_init(void); /* Tentative */
 YFRM_API void yfrm_terminate(void); /* Tentative */
+#define YFRM_SCREEN_RESIZABLE 1
 YFRM_API cwgl_ctx_t* yfrm_cwgl_ctx_create(int32_t width, int32_t height, int32_t reserved, int32_t flags);
 YFRM_API cwgl_ctx_t* yfrm_cwgl_ctx_reset0(cwgl_ctx_t* ctx); /* Tentative */
 YFRM_API void yfrm_cwgl_ctx_release(cwgl_ctx_t* ctx);
 
 /* Events */
+#define YFRM_EVENT_MINSIZE 32
+#define YFRM_SCREEN_EVENT_MOUSEBUTTONDOWN 0 /* [0 x y button buttons] */
+#define YFRM_SCREEN_EVENT_MOUSEBUTTONUP 1 /* [1 x y button buttons] */
+#define YFRM_SCREEN_EVENT_MOUSEMOTION 3 /* [3 x y xrel yrel buttons] */
+#define YFRM_SCREEN_EVENT_MOUSEWHEEL 4 /* [4 dx dy] */
+#define YFRM_SCREEN_EVENT_PADBUTTON_RELEASED 100 /* [100 ident button] */
+#define YFRM_SCREEN_EVENT_PADBUTTON_PRESSED 101 /* [101 ident button] */
+#define YFRM_SCREEN_EVENT_PADAXIS_UPDATE 102 /* [102 ident axis value frac] */
+#define YFRM_SCREEN_EVENT_KEYDOWN 200 /* [200 type keycode flags keyname] */
+#define YFRM_SCREEN_EVENT_KEYUP 201 /* [201 type keycode flags keyname] */
+#define YFRM_SCREEN_EVENT_KEY_FLAG_REPEAT 1
+#define YFRM_SCREEN_EVENT_KEY_FLAG_SHIFT 2
+#define YFRM_SCREEN_EVENT_KEY_FLAG_CTRL 4
+#define YFRM_SCREEN_EVENT_KEY_FLAG_ALT 8
+#define YFRM_SCREEN_EVENT_KEY_FLAG_GUI 16
+#define YFRM_SCREEN_EVENT_QUIT 300 /* [300] */
+#define YFRM_SCREEN_EVENT_RESIZE 301 /* [301 x y] */
 YFRM_API int yfrm_query0(int32_t slot, int32_t* buf, size_t buflen);
 
 /* Frame */

@@ -437,6 +437,28 @@ fill_keyevent(int32_t* buf, size_t offs, SDL_Event* evt){
 
     return offs;
 }
+static size_t
+fill_windowevent(int32_t* buf, size_t offs, SDL_Event* evt){
+    const int32_t LEN_windowresizeevent = 4;
+    /* 0 */ const int32_t len_resize = LEN_windowresizeevent;
+    /* 1 */ int32_t type;
+    /* 2 */ int32_t x;
+    /* 3 */ int32_t y;
+    if(evt->window.event == SDL_WINDOWEVENT_RESIZED){
+        x = evt->window.data1;
+        y = evt->window.data2;
+        buf[offs] = len_resize;
+        offs++;
+        buf[offs] = type;
+        offs++;
+        buf[offs] = x;
+        offs++;
+        buf[offs] = y;
+        offs++;
+    }
+    return offs;
+}
+
 
 SDL_GameController* cur_controller = NULL;
 
@@ -481,6 +503,9 @@ yfrm_query0(int32_t slot, int32_t* buf, size_t buflen){
                 case SDL_KEYDOWN:
                 case SDL_KEYUP:
                     cur = fill_keyevent(buf, cur, &evt);
+                    break;
+                case SDL_WINDOWEVENT:
+                    cur = fill_windowevent(buf, cur, &evt);
                     break;
                 default:
                     /* Do nothing */
