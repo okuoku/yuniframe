@@ -58,6 +58,7 @@ YFRM_API void yfrm_cwgl_ctx_release(cwgl_ctx_t* ctx);
 #define YFRM_SCREEN_EVENT_QUIT 300 /* [300] */
 #define YFRM_SCREEN_EVENT_RESIZE 301 /* [301 x y] */
 YFRM_API int yfrm_query0(int32_t slot, int32_t* buf, size_t buflen);
+YFRM_API void yfrm_wait0(int32_t timeout);
 
 /* Frame */
 YFRM_API void yfrm_frame_begin0(void*);

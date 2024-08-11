@@ -13,6 +13,8 @@ nccc_api(yfrm_cwgl_ctx_release
 nccc_api(yfrm_query0
     IN u32 ptr u64
     OUT u32)
+nccc_api(yfrm_wait0
+    IN s32 OUT)
 
 # Frame
 nccc_api(yfrm_frame_begin0

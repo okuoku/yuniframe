@@ -517,3 +517,12 @@ yfrm_query0(int32_t slot, int32_t* buf, size_t buflen){
         return -1;
     }
 }
+
+YFRM_API void
+yfrm_wait0(int32_t timeout){
+    if(timeout > 0){
+        (void)SDL_WaitEventTimeout(0, timeout);
+    }else{
+        (void)SDL_WaitEvent(0);
+    }
+}
