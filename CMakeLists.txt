@@ -30,6 +30,8 @@ set(yfrmsrc
     platform/src-sdl2/yfrm-audio-sdl2.c
     platform/src-sdl2/yfrm-ctx-sdl2.c
     platform/src-sdl2/yfrm-events-sdl2.c
+    platform/src-sdl2/yfrm-thr-sdl2.c
+    platform/src-sdl2/yfrm-sync-sdl2.c
     )
 
 set(yfrmmainsrc

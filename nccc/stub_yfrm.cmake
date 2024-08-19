@@ -22,6 +22,36 @@ nccc_api(yfrm_frame_begin0
 nccc_api(yfrm_frame_end0
     IN ptr OUT)
 
+# Threading
+nccc_api(yfrm_thr_create
+    IN ptr ptr ptr ptr ptr OUT ptr)
+nccc_api(yfrm_thr_join
+    IN ptr OUT)
+nccc_api(yfrm_thr_detach
+    IN ptr OUT)
+
+# Sync objects
+nccc_api(yfrm_sync_tagtype
+    IN s32 OUT)
+nccc_api(yfrm_mtx_create
+    IN ptr ptr OUT ptr)
+nccc_api(yfrm_mtx_release
+    IN ptr OUT)
+nccc_api(yfrm_cond_create
+    IN ptr ptr OUT ptr)
+nccc_api(yfrm_cond_release
+    IN ptr OUT)
+nccc_api(yfrm_mtx_lock
+    IN ptr OUT)
+nccc_api(yfrm_mtx_unlock
+    IN ptr OUT)
+nccc_api(yfrm_cond_wait
+    IN ptr ptr OUT)
+nccc_api(yfrm_cond_broadcast
+    IN ptr OUT)
+nccc_api(yfrm_cond_signal
+    IN ptr OUT)
+
 # Audio
 nccc_api(yfrm_audio_enqueue0
     IN ptr ptr u32

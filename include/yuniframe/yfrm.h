@@ -64,6 +64,32 @@ YFRM_API void yfrm_wait0(int32_t timeout);
 YFRM_API void yfrm_frame_begin0(void*);
 YFRM_API void yfrm_frame_end0(void*);
 
+/* Threading */
+typedef void yfrm_thr;
+typedef void (*yfrm_cb_thr_entry)(const void* in, void* out);
+YFRM_API yfrm_thr* yfrm_thr_create(const void* param, yfrm_cb_thr_entry entry,
+                                        const char* name, const void* in,
+                                        void* out);
+YFRM_API void yfrm_thr_join(yfrm_thr* thr);
+YFRM_API void yfrm_thr_detach(yfrm_thr* thr);
+
+/* Sync objects */
+typedef void yfrm_mtx;
+typedef void yfrm_cond;
+YFRM_API void yfrm_sync_tagtype(int tagtype);
+#define YFRM_SYNC_TAG_TYPE_IGNORE 0
+#define YFRM_SYNC_TAG_TYPE_POINTER 1 /* Implementation dependent type tag */
+#define YFRM_SYNC_TAG_TYPE_STRING 2 /* Name pointer for debug/profiling */
+YFRM_API yfrm_mtx* yfrm_mtx_create(const void* param, const void* tag);
+YFRM_API void yfrm_mtx_release(yfrm_mtx* mtx);
+YFRM_API yfrm_cond* yfrm_cond_create(const void* param, const void* tag);
+YFRM_API void yfrm_cond_release(yfrm_cond* cnd);
+YFRM_API void yfrm_mtx_lock(yfrm_mtx* mtx);
+YFRM_API void yfrm_mtx_unlock(yfrm_mtx* mtx);
+YFRM_API void yfrm_cond_wait(yfrm_cond* cnd, yfrm_mtx* mtx);
+YFRM_API void yfrm_cond_broadcast(yfrm_cond* cnd);
+YFRM_API void yfrm_cond_signal(yfrm_cond* cnd);
+
 /* Audio */
 YFRM_API void yfrm_audio_enqueue0(float* ch0, float* ch1, int32_t samples);
 YFRM_API void yfrm_audio_pause0(void);
