@@ -1,10 +1,12 @@
 #include <stdlib.h>
 
-#include "SDL2/SDL_syswm.h"
 #include "EGL/egl.h"
 #define EGL_EGLEXT_PROTOTYPES
 #include "EGL/eglext.h"
+
+#ifdef YFRM_CWGL_USE_DX11
 #include "EGL/eglext_angle.h"
+#endif
 
 struct pfctx_egl_s {
     EGLDisplay egl_disp;
