@@ -18,9 +18,9 @@
 
 int cwgl_backend_beginframe(cwgl_ctx_t* ctx); // FIXME: Define it elsewhere
 int cwgl_backend_endframe(cwgl_ctx_t* ctx); // FIXME: Define it elsewhere
-void* yfrm_cwgl_pfctx_create_angle(void* pfdev, void* pfwnd);
-void yfrm_cwgl_pfctx_reset_angle(void* ctx);
-void yfrm_cwgl_pfctx_flip_angle(void* pf);
+void* yfrm_cwgl_pfctx_create_egl(void* pfdev, void* pfwnd);
+void yfrm_cwgl_pfctx_reset_egl(void* ctx);
+void yfrm_cwgl_pfctx_flip_egl(void* pf);
 void* yfrm_gpu_initpfdev_d3d11(void);
 
 /* Globals */
@@ -291,7 +291,7 @@ ctx_create_ANGLE(int32_t width, int32_t height, int32_t reserved,
     pfwnd = NULL; //FIXME
 #endif
 
-    pf = yfrm_cwgl_pfctx_create_angle(dev, pfwnd);
+    pf = yfrm_cwgl_pfctx_create_egl(dev, pfwnd);
 
     r = malloc(sizeof(cwgl_ctx_t));
 #ifdef CWGL_EXPERIMENTAL_TRACKER
@@ -316,7 +316,7 @@ ctx_reset_ANGLE(cwgl_ctx_t* ctx){
     abort(); // Need to reset tracker
 #else
     printf("=== reset ctx ===\n");
-    yfrm_cwgl_pfctx_reset_angle(ctx->pf);
+    yfrm_cwgl_pfctx_reset_egl(ctx->pf);
 #endif
     return ctx;
 }
@@ -378,7 +378,7 @@ yfrm_frame_end0(void* c){
 #if defined(CWGL_EXPERIMENTAL_TRACKER) && defined(YFRM_CWGL_USE_VULKAN)
     cwgl_backend_endframe((cwgl_ctx_t*)c);
 #elif defined(YFRM_CWGL_USE_ANGLE)
-    yfrm_cwgl_pfctx_flip_angle(ctx->pf);
+    yfrm_cwgl_pfctx_flip_egl(ctx->pf);
 #else
     SDL_GL_SwapWindow(ctx->wnd);
 #endif

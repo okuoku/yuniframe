@@ -6,12 +6,14 @@
 #include "EGL/eglext.h"
 #include "EGL/eglext_angle.h"
 
-typedef struct {
+struct pfctx_egl_s {
     EGLDisplay egl_disp;
     EGLSurface egl_surf;
     EGLContext egl_ctx;
     EGLConfig egl_cfg;
-} pfctx_angle_t;
+};
+
+typedef struct pfctx_egl_s pfctx_egl;
 
 static const EGLint glesattrs[] = {
     EGL_CONTEXT_CLIENT_VERSION, 2,
@@ -19,8 +21,8 @@ static const EGLint glesattrs[] = {
 };
 
 void
-yfrm_cwgl_pfctx_reset_angle(void* ctx){
-    pfctx_angle_t* pf = (pfctx_angle_t*)ctx;
+yfrm_cwgl_pfctx_reset_egl(void* ctx){
+    pfctx_egl* pf = (pfctx_egl*)ctx;
 
     eglDestroyContext(pf->egl_disp, pf->egl_ctx);
     pf->egl_ctx = eglCreateContext(pf->egl_disp, pf->egl_cfg, NULL, glesattrs);
@@ -31,11 +33,11 @@ yfrm_cwgl_pfctx_reset_angle(void* ctx){
 }
 
 void* /* pfctx */
-yfrm_cwgl_pfctx_create_angle(void* pfdev, void* pfwnd){
+yfrm_cwgl_pfctx_create_egl(void* pfdev, void* pfwnd){
     EGLDisplay egl_disp;
     EGLSurface egl_surf;
     EGLint egl_ncfg;
-    pfctx_angle_t* r;
+    pfctx_egl* r;
 
     /* ANGLE EGL+GLES context creation */
 #ifdef YFRM_CWGL_USE_DX11
@@ -57,7 +59,7 @@ yfrm_cwgl_pfctx_create_angle(void* pfdev, void* pfwnd){
         EGL_RED_SIZE, 8,
         EGL_NONE
     };
-    r = malloc(sizeof(pfctx_angle_t));
+    r = malloc(sizeof(pfctx_egl));
     if(! r){
         abort();
     }
@@ -74,7 +76,7 @@ yfrm_cwgl_pfctx_create_angle(void* pfdev, void* pfwnd){
 }
 
 void
-yfrm_cwgl_pfctx_flip_angle(void* pf){
-    pfctx_angle_t* pfctx = (pfctx_angle_t*)pf;
+yfrm_cwgl_pfctx_flip_egl(void* pf){
+    pfctx_egl* pfctx = (pfctx_egl*)pf;
     eglSwapBuffers(pfctx->egl_disp, pfctx->egl_surf);
 }
