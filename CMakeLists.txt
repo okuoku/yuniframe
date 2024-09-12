@@ -61,7 +61,7 @@ endif()
 if(YFRM_CWGL_USE_ANGLE)
     add_definitions(-DYFRM_CWGL_USE_ANGLE)
     list(APPEND yfrmsrc
-        platform/src-angle/yfrm-cwgl-angle.c
+        platform/src-egl/yfrm-cwgl-egl.c
         )
 endif()
 
