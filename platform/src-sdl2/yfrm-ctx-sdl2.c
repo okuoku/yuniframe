@@ -21,6 +21,7 @@ int cwgl_backend_endframe(cwgl_ctx_t* ctx); // FIXME: Define it elsewhere
 void* yfrm_cwgl_pfctx_create_egl(void* pfdev, void* pfwnd);
 void yfrm_cwgl_pfctx_reset_egl(void* ctx);
 void yfrm_cwgl_pfctx_flip_egl(void* pf);
+void yfrm_cwgl_pfctx_loadext_egl(void);
 void* yfrm_gpu_initpfdev_d3d11(void);
 
 /* Globals */
@@ -33,45 +34,15 @@ static cwgl_platform_ctx_t* cur;
 static cwgl_ctx_t* cur;
 #endif
 
-#ifdef _WIN32
-#define STDCALL __stdcall
-#else
-#define STDCALL
-#endif
-void* STDCALL eglGetProcAddress(char const * procname);
-void (*ptr_glGenVertexArrays)(size_t n, unsigned int *arrays);
-void (*ptr_glBindVertexArray)(unsigned int array);
-
 YFRM_API int
 yfrm_init(void){
-#ifndef CWGL_EXPERIMENTAL_TRACKER
-#ifdef __APPLE__
-extern void glGenVertexArraysOES(size_t n, unsigned int *arrays);
-extern void glBindVertexArrayOES(unsigned int array);
-    ptr_glGenVertexArrays = glGenVertexArraysOES;
-    ptr_glBindVertexArray = glBindVertexArrayOES;
-#else
-    ptr_glGenVertexArrays = eglGetProcAddress("glGenVertexArraysOES");
-    ptr_glBindVertexArray = eglGetProcAddress("glBindVertexArrayOES");
-#endif
+#if !defined(CWGL_EXPERIMENTAL_TRACKER) && !defined(__APPLE__)
+    yfrm_cwgl_pfctx_loadext_egl();
 #endif
     wnd = NULL;
     cur = NULL;
     return 0;
 }
-
-void 
-cwgl_ctx_glGenVertexArray(uintptr_t* id){
-    unsigned int i;
-    ptr_glGenVertexArrays(1, &i);
-    *id = i;
-}
-
-void 
-cwgl_ctx_glBindVertexArray(uintptr_t id){
-    ptr_glBindVertexArray(id);
-}
-
 
 YFRM_API void
 yfrm_terminate(void){

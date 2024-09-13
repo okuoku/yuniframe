@@ -66,7 +66,8 @@ yfrm_cwgl_pfctx_create_egl(void* pfdev, void* pfwnd){
         abort();
     }
     eglChooseConfig(egl_disp, attrs, &r->egl_cfg, 1, &egl_ncfg);
-    egl_surf = eglCreateWindowSurface(egl_disp, r->egl_cfg, pfwnd, NULL);
+    egl_surf = eglCreateWindowSurface(egl_disp, r->egl_cfg, 
+                                      (EGLNativeWindowType)pfwnd, NULL);
     eglBindAPI(EGL_OPENGL_ES_API);
     r->egl_ctx = eglCreateContext(egl_disp, r->egl_cfg, NULL, glesattrs);
     eglMakeCurrent(egl_disp, egl_surf, egl_surf, r->egl_ctx);
@@ -75,6 +76,29 @@ yfrm_cwgl_pfctx_create_egl(void* pfdev, void* pfwnd){
     r->egl_disp = egl_disp;
 
     return r;
+}
+
+void (*ptr_glGenVertexArrays)(size_t n, unsigned int *arrays);
+void (*ptr_glBindVertexArray)(unsigned int array);
+
+void
+cwgl_ctx_glGenVertexArray(uintptr_t* id){
+    unsigned int i;
+    ptr_glGenVertexArrays(1, &i);
+    *id = i;
+}
+
+void
+cwgl_ctx_glBindVertexArray(uintptr_t id){
+    ptr_glBindVertexArray(id);
+}
+
+void
+yfrm_cwgl_pfctx_loadext_egl(void){
+#ifndef CWGL_EXPERIMENTAL_TRACKER
+    ptr_glGenVertexArrays = (void*)eglGetProcAddress("glGenVertexArraysOES");
+    ptr_glBindVertexArray = (void*)eglGetProcAddress("glBindVertexArrayOES");
+#endif
 }
 
 void
