@@ -58,10 +58,12 @@ endif()
 if(YFRM_CWGL_USE_VULKAN)
     add_definitions(-DYFRM_CWGL_USE_VULKAN)
 elseif(WIN32 OR WINDOWS_STORE)
-    add_definitions(-DYFRM_CWGL_USE_DX11)
-    list(APPEND yfrmsrc
-        platform/src-win/yfrm-gpu-d3d11.c
+    if(YFRM_CWGL_USE_ANGLE)
+        add_definitions(-DYFRM_CWGL_USE_DX11)
+        list(APPEND yfrmsrc
+            platform/src-win/yfrm-gpu-d3d11.c
         )
+    endif()
 endif()
 
 # Detect EGL/Extension handler
