@@ -38,7 +38,7 @@ YFRM_API cwgl_ctx_t*
 yfrm_cwgl_ctx_create(int32_t width, int32_t height, int32_t reserved,
                      int32_t flags){
     void* pf;
-    pf = yfrm_cwgl_pfctx_create_egl(0, (void*)EGL_DEFAULT_DISPLAY);
+    pf = yfrm_cwgl_pfctx_create_egl(0, 0);
     return (cwgl_ctx_t*)pf;
 }
 
