@@ -8,7 +8,7 @@ struct sdl2_thread_param {
     yfrm_cb_thr_entry entry;
 };
 
-static SDLCALL int
+static int SDLCALL
 thr_run(void* data){
     struct sdl2_thread_param myparam;
     myparam = *(struct sdl2_thread_param*)data;
