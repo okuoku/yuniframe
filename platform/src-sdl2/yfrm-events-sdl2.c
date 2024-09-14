@@ -447,6 +447,7 @@ fill_windowevent(int32_t* buf, size_t offs, SDL_Event* evt){
     if(evt->window.event == SDL_WINDOWEVENT_RESIZED){
         x = evt->window.data1;
         y = evt->window.data2;
+        type = YFRM_SCREEN_EVENT_RESIZE;
         buf[offs] = len_resize;
         offs++;
         buf[offs] = type;
