@@ -38,8 +38,11 @@ if(YFRM_USE_SDL2)
     set(yfrmmainsrc
         platform/src-sdl2/yfrm-main-sdl2.c
         )
-elseif(EMSCRIPTEN)
-    set(yfrmsrc)
+elseif(EMSCRIPTEN) # Native emscripten
+    set(yfrmsrc
+        platform/src-egl/yfrm-ctx-egl.c
+        platform/src-emscripten/yfrm-events-emscripten.c
+        )
     set(yfrmmainsrc
         platform/src-stdc/yfrm-main-stdc.c
         )
