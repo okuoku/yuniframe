@@ -28,33 +28,33 @@ endif()
 
 if(YFRM_USE_SDL2)
     set(yfrmsrc
-        platform/src-sdl2/yfrm-audio-sdl2.c
-        platform/src-sdl2/yfrm-ctx-sdl2.c
-        platform/src-sdl2/yfrm-events-sdl2.c
-        platform/src-sdl2/yfrm-thr-sdl2.c
-        platform/src-sdl2/yfrm-sync-sdl2.c
+        src-sdl2/yfrm-audio-sdl2.c
+        src-sdl2/yfrm-ctx-sdl2.c
+        src-sdl2/yfrm-events-sdl2.c
+        src-sdl2/yfrm-thr-sdl2.c
+        src-sdl2/yfrm-sync-sdl2.c
         )
 
     set(yfrmmainsrc
-        platform/src-sdl2/yfrm-main-sdl2.c
+        src-sdl2/yfrm-main-sdl2.c
         )
 elseif(EMSCRIPTEN) # Native emscripten
     set(yfrmsrc
-        platform/src-egl/yfrm-ctx-egl.c
-        platform/src-emscripten/yfrm-events-emscripten.c
+        src-egl/yfrm-ctx-egl.c
+        src-emscripten/yfrm-events-emscripten.c
         )
     set(yfrmmainsrc
-        platform/src-stdc/yfrm-main-stdc.c
+        src-stdc/yfrm-main-stdc.c
         )
 endif()
 
 if(YFRM_FS_USE_SDL)
     list(APPEND yfrmsrc
-        platform/src-sdl2/yfrm-fs-sdl2.c
+        src-sdl2/yfrm-fs-sdl2.c
         )
 elseif(YFRM_FS_USE_CXX17)
     list(APPEND yfrmsrc
-        platform/src-cxx17/yfrm-fs-cxx17.cpp
+        src-cxx17/yfrm-fs-cxx17.cpp
         )
 endif()
 
@@ -64,7 +64,7 @@ elseif(WIN32 OR WINDOWS_STORE)
     if(YFRM_CWGL_USE_ANGLE)
         add_definitions(-DYFRM_CWGL_USE_DX11)
         list(APPEND yfrmsrc
-            platform/src-win/yfrm-gpu-d3d11.c
+            src-win/yfrm-gpu-d3d11.c
         )
     endif()
 endif()
@@ -84,13 +84,13 @@ endif()
 
 if(useegl)
     list(APPEND yfrmsrc
-        platform/src-egl/yfrm-cwgl-egl.c
+        src-egl/yfrm-cwgl-egl.c
         )
 endif()
 
 if(usedirectext)
     list(APPEND yfrmsrc
-        platform/src-gles/yfrm-cwgl-gles-dummy.c
+        src-gles/yfrm-cwgl-gles-dummy.c
         )
 endif()
 
@@ -106,7 +106,7 @@ if(WINDOWS_STORE)
     add_definitions(-DYFRM_USE_UWP)
 elseif(WIN32)
     list(APPEND yfrmsrc
-        platform/src-win/yfrm-execpath-win32.c
+        src-win/yfrm-execpath-win32.c
         )
 endif()
 
