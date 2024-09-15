@@ -1,7 +1,3 @@
-#ifdef CWGL_EXPERIMENTAL_TRACKER
-#include "yuniframe/cwgl.h"
-#include "cwgl-tracker-priv.h"
-#endif
 #include "yuniframe/yfrm.h"
 
 #include <string.h>
@@ -16,6 +12,10 @@
 #include "SDL2/SDL_vulkan.h"
 #endif
 
+void* cwgl_ctx_platform_get(void* ctx);
+void* cwgl_ctx_alloc(void* platform);
+void cwgl_ctx_destroy(void* ctx);
+
 int cwgl_backend_beginframe(cwgl_ctx_t* ctx); // FIXME: Define it elsewhere
 int cwgl_backend_endframe(cwgl_ctx_t* ctx); // FIXME: Define it elsewhere
 void* yfrm_cwgl_pfctx_create_egl(void* pfdev, void* pfwnd);
@@ -26,13 +26,9 @@ void* yfrm_gpu_initpfdev_d3d11(void);
 
 /* Globals */
 static SDL_Window* wnd;
-#ifdef CWGL_EXPERIMENTAL_TRACKER
 struct cwgl_platform_ctx_s;
-typedef struct cwgl_platform_ctx_s cwgl_platform_ctx_t;
-static cwgl_platform_ctx_t* cur;
-#else
+typedef struct platform_ctx_s platform_ctx;
 static cwgl_ctx_t* cur;
-#endif
 
 YFRM_API int
 yfrm_init(void){
@@ -53,27 +49,19 @@ yfrm_terminate(void){
     cur = NULL;
 }
 
-#ifdef CWGL_EXPERIMENTAL_TRACKER
-struct cwgl_platform_ctx_s {
+struct platform_ctx_s {
     SDL_Window* wnd;
     SDL_GLContext glc;
     void* pf;
 };
-#else
-struct cwgl_ctx_s {
-    SDL_Window* wnd;
-    SDL_GLContext glc;
-    void* pf;
-};
-#endif
 
 #ifdef CWGL_EXPERIMENTAL_TRACKER
 int
 cwgl_integ_vkpriv_getextensions(cwgl_ctx_t* ctx,
                                 int* out_count,
                                 const char** out_extensions){
-    cwgl_platform_ctx_t* p;
-    p = (cwgl_platform_ctx_t*)ctx->platform;
+    platform_ctx* p;
+    p = (platform_ctx*)cwgl_ctx_platform_get(ctx);
     if(SDL_Vulkan_GetInstanceExtensions(p->wnd, out_count, out_extensions)){
         return 0;
     }
@@ -83,8 +71,8 @@ cwgl_integ_vkpriv_getextensions(cwgl_ctx_t* ctx,
 int
 cwgl_integ_vkpriv_createsurface(cwgl_ctx_t* ctx,
                                 VkInstance instance, VkSurfaceKHR* surface){
-    cwgl_platform_ctx_t* p;
-    p = (cwgl_platform_ctx_t*)ctx->platform;
+    platform_ctx* p;
+    p = (platform_ctx*)cwgl_ctx_platform_get(ctx);
     if(SDL_Vulkan_CreateSurface(p->wnd, instance, surface)){
         return 0;
     }
@@ -97,7 +85,7 @@ ctx_create_VK(int32_t width, int32_t height, int32_t reserved,
     uint32_t extraflags = 0;
     SDL_GLContext glc;
     cwgl_ctx_t* r;
-    cwgl_platform_ctx_t* p;
+    platform_ctx* p;
 
     if(! wnd){
         SDL_Window* window;
@@ -123,14 +111,9 @@ ctx_create_VK(int32_t width, int32_t height, int32_t reserved,
         wnd = window;
     }
 
-    r = malloc(sizeof(cwgl_ctx_t));
-    p = malloc(sizeof(cwgl_platform_ctx_t));
+    p = malloc(sizeof(platform_ctx));
+    r = cwgl_ctx_alloc(p);
     p->wnd = wnd;
-    //p->glc = glc;
-    r->platform = p;
-
-    // FIXME: Move this to tracker
-    cwgl_integ_ctx_init(r);
     return r;
 }
 #endif
@@ -141,9 +124,7 @@ ctx_create_EGL(int32_t width, int32_t height, int32_t reserved,
     uint32_t extraflags = 0;
     SDL_GLContext glc;
     cwgl_ctx_t* r;
-#ifdef CWGL_EXPERIMENTAL_TRACKER
-    cwgl_platform_ctx_t* p;
-#endif
+    platform_ctx* p;
 
     if(! wnd){
         SDL_Window* window;
@@ -184,19 +165,10 @@ ctx_create_EGL(int32_t width, int32_t height, int32_t reserved,
 
     SDL_GL_SetSwapInterval(0);
 
-    r = malloc(sizeof(cwgl_ctx_t));
-#ifdef CWGL_EXPERIMENTAL_TRACKER
-    p = malloc(sizeof(cwgl_platform_ctx_t));
+    p = malloc(sizeof(platform_ctx));
+    r = (cwgl_ctx_t*)cwgl_ctx_alloc(p);
     p->wnd = wnd;
     p->glc = glc;
-    r->platform = p;
-    // FIXME: Move this to tracker
-    cwgl_integ_ctx_init(r);
-#else
-    r->wnd = wnd;
-    r->glc = glc;
-#endif
-
     return r;
 }
 
@@ -210,9 +182,7 @@ ctx_create_ANGLE(int32_t width, int32_t height, int32_t reserved,
     void* pfwnd;
     void* pf;
     uint32_t wndflags = 0;
-#ifdef CWGL_EXPERIMENTAL_TRACKER
-    cwgl_platform_ctx_t* p;
-#endif
+    platform_ctx* p;
 #if defined(SDL_VIDEO_DRIVER_COCOA) || defined(SDL_VIDEO_DRIVER_UIKIT)
     wndflags |= SDL_WINDOW_METAL|SDL_WINDOW_ALLOW_HIGHDPI;
 #endif
@@ -264,20 +234,11 @@ ctx_create_ANGLE(int32_t width, int32_t height, int32_t reserved,
 
     pf = yfrm_cwgl_pfctx_create_egl(dev, pfwnd);
 
-    r = malloc(sizeof(cwgl_ctx_t));
-#ifdef CWGL_EXPERIMENTAL_TRACKER
-    cwgl_integ_ctx_init(r);
-    p = malloc(sizeof(cwgl_platform_ctx_t));
+    p = malloc(sizeof(platform_ctx));
+    r = (cwgl_ctx_t*)cwgl_ctx_alloc(p);
     p->wnd = wnd;
     p->glc = NULL;
     p->pf = pf;
-    r->platform = p;
-#else
-    r->wnd = wnd;
-    r->glc = NULL;
-    r->pf = pf;
-#endif
-
     return r;
 }
 
@@ -286,8 +247,10 @@ ctx_reset_ANGLE(cwgl_ctx_t* ctx){
 #ifdef CWGL_EXPERIMENTAL_TRACKER
     abort(); // Need to reset tracker
 #else
+    platform_ctx* p;
+    p = (platform_ctx*)cwgl_ctx_platform_get(ctx);
     printf("=== reset ctx ===\n");
-    yfrm_cwgl_pfctx_reset_egl(ctx->pf);
+    yfrm_cwgl_pfctx_reset_egl(p->pf);
 #endif
     return ctx;
 }
@@ -317,7 +280,10 @@ yfrm_cwgl_ctx_reset0(cwgl_ctx_t* ctx){
 
 YFRM_API void
 yfrm_cwgl_ctx_release(cwgl_ctx_t* ctx){
-    free(ctx);
+#ifdef CWGL_EXPERIMENTAL_TRACKER
+    free(cwgl_ctx_platform_get(ctx));
+#endif
+    cwgl_ctx_destroy(ctx);
 }
 
 YFRM_API void
@@ -326,12 +292,8 @@ yfrm_frame_begin0(void* c){
     if(cur){
         printf("WARNING: Overriding frame !\n");
     }
+    cur = c;
 
-#ifdef CWGL_EXPERIMENTAL_TRACKER
-    cur = (cwgl_platform_ctx_t*)((cwgl_ctx_t*)c)->platform;
-#else
-    cur = (cwgl_ctx_t*)c;
-#endif
 #if defined(CWGL_EXPERIMENTAL_TRACKER) && defined(YFRM_CWGL_USE_VULKAN)
     cwgl_backend_beginframe((cwgl_ctx_t*)c);
 #endif
@@ -340,31 +302,21 @@ yfrm_frame_begin0(void* c){
 
 YFRM_API void
 yfrm_frame_end0(void* c){
-#ifdef CWGL_EXPERIMENTAL_TRACKER
-    cwgl_platform_ctx_t* ctx = (cwgl_platform_ctx_t*)((cwgl_ctx_t*)c)->platform;
-#else
-    cwgl_ctx_t* ctx = (cwgl_ctx_t*)c;
-#endif
     cur = NULL;
 #if defined(CWGL_EXPERIMENTAL_TRACKER) && defined(YFRM_CWGL_USE_VULKAN)
     cwgl_backend_endframe((cwgl_ctx_t*)c);
 #elif defined(YFRM_CWGL_USE_ANGLE)
-    yfrm_cwgl_pfctx_flip_egl(ctx->pf);
+    yfrm_cwgl_pfctx_flip_egl(cwgl_ctx_platform_get(c));
 #else
-    SDL_GL_SwapWindow(ctx->wnd);
+    platform_ctx* p;
+    p = (platform_ctx*)cwgl_ctx_platform_get(c);
+    SDL_GL_SwapWindow(p->wnd);
 #endif
 }
 
 void
 cwgl_priv_check_current(cwgl_ctx_t* ctx){
-#ifdef CWGL_EXPERIMENTAL_TRACKER
-    if(ctx->platform != (void*)cur){
-        printf("WARNING: Submitting cross context command !\n");
-    }
-#else
     if(ctx != cur){
         printf("WARNING: Submitting cross context command !\n");
     }
-#endif
 }
-
