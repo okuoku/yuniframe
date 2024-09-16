@@ -119,15 +119,8 @@ add_library(yfrm OBJECT
 add_library(yfrm_main OBJECT
     ${yfrmmainsrc})
 
-if(YFRM_CWGL_PREFIX)
-    # FIXME: Refactor yfrm not to require specify cwgl location
-    target_include_directories(yfrm PRIVATE ${YFRM_CWGL_PREFIX}/include)
-    if(YFRM_CWGL_EXPERIMENTAL_TRACKER)
-        target_include_directories(yfrm PRIVATE ${YFRM_CWGL_PREFIX}/src-tracker)
-    endif()
-endif()
 if(CWGL_KHRONOS_HEADER_DIR)
-    # FIXME: ditto
+    # FIXME: Reconsider on Khronos header location
     target_include_directories(yfrm PRIVATE ${CWGL_KHRONOS_HEADER_DIR})
 endif()
 

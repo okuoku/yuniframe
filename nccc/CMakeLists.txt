@@ -18,7 +18,8 @@ include(${NCCC_ROOT}/stubsupport/cmake/NcccStubMacros.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/stub_yfrm.cmake)
 include(${CWGL_ROOT}/nccc/stub_cwgl.cmake)
 
-include_directories(${CMAKE_CURRENT_BINARY_DIR} ${NCCC_ROOT}/stubsupport)
+include_directories(${CWGL_ROOT}/include
+    ${CMAKE_CURRENT_BINARY_DIR} ${NCCC_ROOT}/stubsupport)
 
 if(YFRM_BUILD_MODULE)
     add_definitions(-DNCCC_DLL)
