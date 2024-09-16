@@ -26,7 +26,8 @@ if(YFRM_BUILD_MODULE)
         )
 endif()
 
-if(YFRM_USE_SDL2)
+# Choose base platform layer
+if(YFRM_USE_SDL2) # SDL2
     set(yfrmsrc
         src-sdl2/yfrm-audio-sdl2.c
         src-sdl2/yfrm-ctx-sdl2.c
@@ -48,6 +49,7 @@ elseif(EMSCRIPTEN) # Native emscripten
         )
 endif()
 
+# Choose Filesystem
 if(YFRM_FS_USE_SDL)
     list(APPEND yfrmsrc
         src-sdl2/yfrm-fs-sdl2.c
@@ -58,14 +60,15 @@ elseif(YFRM_FS_USE_CXX17)
         )
 endif()
 
+# Choose graphics backend/platform
 if(YFRM_CWGL_USE_VULKAN)
     add_definitions(-DYFRM_CWGL_USE_VULKAN)
-elseif(WIN32 OR WINDOWS_STORE)
-    if(YFRM_CWGL_USE_ANGLE)
+elseif(YFRM_CWGL_USE_ANGLE)
+    # On Windows && !VULKAN, prefer DX11
+    if(WIN32 OR WINDOWS_STORE)
         add_definitions(-DYFRM_CWGL_USE_DX11)
         list(APPEND yfrmsrc
-            src-win/yfrm-gpu-d3d11.c
-        )
+            src-win/yfrm-gpu-d3d11.c)
     endif()
 endif()
 
