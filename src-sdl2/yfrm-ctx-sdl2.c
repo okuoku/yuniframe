@@ -302,13 +302,14 @@ yfrm_frame_begin0(void* c){
 
 YFRM_API void
 yfrm_frame_end0(void* c){
+    platform_ctx* p;
     cur = NULL;
 #if defined(CWGL_EXPERIMENTAL_TRACKER) && defined(YFRM_CWGL_USE_VULKAN)
     cwgl_backend_endframe((cwgl_ctx_t*)c);
 #elif defined(YFRM_CWGL_USE_ANGLE)
-    yfrm_cwgl_pfctx_flip_egl(cwgl_ctx_platform_get(c));
+    p = (platform_ctx*)cwgl_ctx_platform_get(c);
+    yfrm_cwgl_pfctx_flip_egl(p->pf);
 #else
-    platform_ctx* p;
     p = (platform_ctx*)cwgl_ctx_platform_get(c);
     SDL_GL_SwapWindow(p->wnd);
 #endif
