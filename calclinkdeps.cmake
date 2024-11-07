@@ -20,14 +20,16 @@ if(YFRM_CWGL_USE_ANGLE)
         angle_static)
 endif()
 if(YFRM_CWGL_EXPERIMENTAL_TRACKER)
-    # FIXME: Move this to shxm dependency
-    list(APPEND backendlibs
-        glslang
-        my-glslang-default-resource-limits
-        SPIRV
-        SPIRV-Tools-opt
-        spirv-cross-c
-        )
+    if(YFRM_CWGL_USE_VULKAN)
+        # FIXME: Move this to shxm dependency
+        list(APPEND backendlibs
+            glslang
+            my-glslang-default-resource-limits
+            SPIRV
+            SPIRV-Tools-opt
+            spirv-cross-c
+            )
+    endif()
 endif()
 
 if(YFRM_CWGL_USE_PLATFORMGLES)
