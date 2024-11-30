@@ -64,6 +64,8 @@ endif()
 if(YFRM_CWGL_USE_VULKAN)
     add_definitions(-DYFRM_CWGL_USE_VULKAN)
 elseif(YFRM_CWGL_USE_ANGLE)
+    set(CWGL_LEVEL_L2 ON)
+    add_definitions(-DCWGL_LEVEL_L2)
     # On Windows && !VULKAN, prefer DX11
     if(WIN32 OR WINDOWS_STORE)
         add_definitions(-DYFRM_CWGL_USE_DX11)
