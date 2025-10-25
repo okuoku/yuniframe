@@ -18,6 +18,13 @@ endif()
 if(YFRM_CWGL_USE_ANGLE)
     list(APPEND backendlibs
         angle_static)
+    if(UNIX)
+        # FIXME: Move to somewhere
+        list(APPEND backendlibs
+            xcb
+            wayland-client
+        )
+    endif()
 endif()
 if(YFRM_CWGL_EXPERIMENTAL_TRACKER)
     if(YFRM_CWGL_USE_VULKAN)

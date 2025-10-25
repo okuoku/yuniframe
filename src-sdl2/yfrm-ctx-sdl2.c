@@ -193,6 +193,10 @@ ctx_create_ANGLE(int32_t width, int32_t height, int32_t reserved,
 
     if(! wnd){
         SDL_Window* window;
+#ifdef YFRM_CWGL_USE_WAYLAND
+        SDL_SetHint(SDL_HINT_VIDEODRIVER, "wayland");
+        wndflags |= SDL_WINDOW_OPENGL /* for egl surface */;
+#endif
         /* Init SDL and Create a window */
         if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_GAMECONTROLLER|SDL_INIT_TIMER)){
             printf("SDL Init failed.\n");
@@ -213,14 +217,17 @@ ctx_create_ANGLE(int32_t width, int32_t height, int32_t reserved,
         wnd = window;
     }
 
+    SDL_VERSION(&info.version);
+    SDL_GetWindowWMInfo(wnd, &info);
+
 #ifdef YFRM_CWGL_USE_DX11
     dev = yfrm_gpu_initpfdev_d3d11();
+#elif defined(YFRM_CWGL_USE_WAYLAND)
+    dev = info.info.wl.display;
 #else
     dev = NULL;
 #endif
 
-    SDL_VERSION(&info.version);
-    SDL_GetWindowWMInfo(wnd, &info);
 #ifdef YFRM_USE_UWP
     pfwnd = info.info.winrt.window;
 #elif defined(_WIN32)
@@ -228,6 +235,8 @@ ctx_create_ANGLE(int32_t width, int32_t height, int32_t reserved,
 #elif defined(SDL_VIDEO_DRIVER_COCOA) || defined(SDL_VIDEO_DRIVER_UIKIT)
     // pfwnd is CALayer 
     pfwnd = SDL_Metal_GetLayer(SDL_Metal_CreateView(wnd));
+#elif defined(YFRM_CWGL_USE_WAYLAND)
+    pfwnd = info.info.wl.egl_window;
 #else
     pfwnd = NULL; //FIXME
 #endif

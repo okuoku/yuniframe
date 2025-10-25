@@ -47,6 +47,10 @@ yfrm_cwgl_pfctx_create_egl(void* pfdev, void* pfwnd){
     egl_dev = eglCreateDeviceANGLE(EGL_D3D11_DEVICE_ANGLE, pfdev, NULL);
     egl_disp = eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT,
                                         egl_dev, NULL);
+#elif defined(YFRM_CWGL_USE_WAYLAND)
+    egl_disp = eglGetPlatformDisplayEXT(EGL_PLATFORM_WAYLAND_EXT, 
+                                        pfdev /* (struct wl_display) */,
+                                        NULL);
 #else
     (void)pfdev;
     egl_disp = eglGetDisplay((EGLNativeDisplayType)EGL_DEFAULT_DISPLAY);
@@ -66,8 +70,16 @@ yfrm_cwgl_pfctx_create_egl(void* pfdev, void* pfwnd){
         abort();
     }
     eglChooseConfig(egl_disp, attrs, &r->egl_cfg, 1, &egl_ncfg);
+#ifndef YFRM_CWGL_USE_WAYLAND
     egl_surf = eglCreateWindowSurface(egl_disp, r->egl_cfg, 
                                       (EGLNativeWindowType)pfwnd, NULL);
+#else
+    /* FIXME: https://registry.khronos.org/EGL/extensions/EXT/EGL_EXT_platform_wayland.txt */
+    /*        says wl_egl_surface */
+    egl_surf = eglCreatePlatformWindowSurfaceEXT(egl_disp, r->egl_cfg, 
+                                                 /* (struct wl_egl_window) */
+                                                 pfwnd, NULL);
+#endif
     eglBindAPI(EGL_OPENGL_ES_API);
     r->egl_ctx = eglCreateContext(egl_disp, r->egl_cfg, NULL, glesattrs);
     eglMakeCurrent(egl_disp, egl_surf, egl_surf, r->egl_ctx);

@@ -39,6 +39,11 @@ if(YFRM_USE_SDL2) # SDL2
     set(yfrmmainsrc
         src-sdl2/yfrm-main-sdl2.c
         )
+    if(NOT YFRM_CWGL_USE_PLATFORMGLES)
+        if(LINUX)
+            add_definitions(-DYFRM_CWGL_USE_WAYLAND)
+        endif()
+    endif()
 elseif(EMSCRIPTEN) # Native emscripten
     set(yfrmsrc
         src-egl/yfrm-ctx-egl.c
