@@ -35,7 +35,7 @@ yfrm_cwgl_pfctx_reset_egl(void* ctx){
 }
 
 void* /* pfctx */
-yfrm_cwgl_pfctx_create_egl(void* pfdev, void* pfwnd){
+yfrm_cwgl_pfctx_create_egl(int pftype, void* pfdev, void* pfwnd){
     EGLDisplay egl_disp;
     EGLSurface egl_surf;
     EGLint egl_ncfg;
@@ -48,9 +48,15 @@ yfrm_cwgl_pfctx_create_egl(void* pfdev, void* pfwnd){
     egl_disp = eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT,
                                         egl_dev, NULL);
 #elif defined(YFRM_CWGL_USE_WAYLAND)
-    egl_disp = eglGetPlatformDisplayEXT(EGL_PLATFORM_WAYLAND_EXT, 
-                                        pfdev /* (struct wl_display) */,
-                                        NULL);
+    if(pftype == 0){
+        egl_disp = eglGetPlatformDisplayEXT(EGL_PLATFORM_WAYLAND_EXT, 
+                                            pfdev /* (struct wl_display) */,
+                                            NULL);
+    }else{
+        /* X11: ANGLE do not support EGL_PLATFORM_X11_KHR for display
+         *      specification */
+        egl_disp = eglGetDisplay((EGLNativeDisplayType)EGL_DEFAULT_DISPLAY);
+    }
 #else
     (void)pfdev;
     egl_disp = eglGetDisplay((EGLNativeDisplayType)EGL_DEFAULT_DISPLAY);
@@ -76,9 +82,17 @@ yfrm_cwgl_pfctx_create_egl(void* pfdev, void* pfwnd){
 #else
     /* FIXME: https://registry.khronos.org/EGL/extensions/EXT/EGL_EXT_platform_wayland.txt */
     /*        says wl_egl_surface */
-    egl_surf = eglCreatePlatformWindowSurfaceEXT(egl_disp, r->egl_cfg, 
-                                                 /* (struct wl_egl_window) */
-                                                 pfwnd, NULL);
+    if(pftype == 0){
+        egl_surf = eglCreatePlatformWindowSurfaceEXT(egl_disp, r->egl_cfg, 
+                                                     /* (struct wl_egl_window) */
+                                                     pfwnd, NULL);
+    }else{
+        void* nwnd;
+        nwnd = (void*)(uintptr_t)pfwnd;
+        egl_surf = eglCreatePlatformWindowSurfaceEXT(egl_disp, r->egl_cfg,
+                                                     /* Window */
+                                                     &nwnd, NULL);
+    }
 #endif
     eglBindAPI(EGL_OPENGL_ES_API);
     r->egl_ctx = eglCreateContext(egl_disp, r->egl_cfg, NULL, glesattrs);

@@ -18,7 +18,7 @@ void cwgl_ctx_destroy(void* ctx);
 
 int cwgl_backend_beginframe(cwgl_ctx_t* ctx); // FIXME: Define it elsewhere
 int cwgl_backend_endframe(cwgl_ctx_t* ctx); // FIXME: Define it elsewhere
-void* yfrm_cwgl_pfctx_create_egl(void* pfdev, void* pfwnd);
+void* yfrm_cwgl_pfctx_create_egl(int pftype, void* pfdev, void* pfwnd);
 void yfrm_cwgl_pfctx_reset_egl(void* ctx);
 void yfrm_cwgl_pfctx_flip_egl(void* pf);
 void yfrm_cwgl_pfctx_loadext_egl(void);
@@ -173,12 +173,18 @@ ctx_create_EGL(int32_t width, int32_t height, int32_t reserved,
 }
 
 #ifdef YFRM_CWGL_USE_ANGLE
+
+#if defined(SDL_VIDEO_DRIVER_X11) || defined(SDL_VIDEO_DRIVER_WAYLAND)
+#define SELECT_VIDEO_X11_WAYLAND
+#endif
+
 static cwgl_ctx_t*
 ctx_create_ANGLE(int32_t width, int32_t height, int32_t reserved,
                  int32_t flags){
     void* dev;
     cwgl_ctx_t* r;
     SDL_SysWMinfo info;
+    int pftype = 0;
     void* pfwnd;
     void* pf;
     uint32_t wndflags = 0;
@@ -193,7 +199,7 @@ ctx_create_ANGLE(int32_t width, int32_t height, int32_t reserved,
 
     if(! wnd){
         SDL_Window* window;
-#ifdef YFRM_CWGL_USE_WAYLAND
+#ifdef SDL_VIDEO_DRIVER_WAYLAND
         SDL_SetHint(SDL_HINT_VIDEODRIVER, "wayland");
         wndflags |= SDL_WINDOW_OPENGL /* for egl surface */;
 #endif
@@ -222,8 +228,16 @@ ctx_create_ANGLE(int32_t width, int32_t height, int32_t reserved,
 
 #ifdef YFRM_CWGL_USE_DX11
     dev = yfrm_gpu_initpfdev_d3d11();
-#elif defined(YFRM_CWGL_USE_WAYLAND)
-    dev = info.info.wl.display;
+#elif defined(SELECT_VIDEO_X11_WAYLAND)
+    if(info.subsystem == SDL_SYSWM_X11){
+        dev = info.info.x11.display;
+        pfwnd = (void*)(uintptr_t)info.info.x11.window;
+        pftype = 1; /* Alternative */
+    }else if(info.subsystem == SDL_SYSWM_WAYLAND){
+        dev = info.info.wl.display;
+        pfwnd = info.info.wl.egl_window;
+        pftype = 0;
+    }
 #else
     dev = NULL;
 #endif
@@ -235,13 +249,13 @@ ctx_create_ANGLE(int32_t width, int32_t height, int32_t reserved,
 #elif defined(SDL_VIDEO_DRIVER_COCOA) || defined(SDL_VIDEO_DRIVER_UIKIT)
     // pfwnd is CALayer 
     pfwnd = SDL_Metal_GetLayer(SDL_Metal_CreateView(wnd));
-#elif defined(YFRM_CWGL_USE_WAYLAND)
-    pfwnd = info.info.wl.egl_window;
+#elif defined(SELECT_VIDEO_X11_WAYLAND)
+    /* pfwnd and pftype is handled above */
 #else
     pfwnd = NULL; //FIXME
 #endif
 
-    pf = yfrm_cwgl_pfctx_create_egl(dev, pfwnd);
+    pf = yfrm_cwgl_pfctx_create_egl(pftype, dev, pfwnd);
 
     p = malloc(sizeof(platform_ctx));
     r = (cwgl_ctx_t*)cwgl_ctx_alloc(p);

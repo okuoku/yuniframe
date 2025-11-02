@@ -12,7 +12,7 @@
 
 int cwgl_backend_beginframe(cwgl_ctx_t* ctx); // FIXME: Define it elsewhere
 int cwgl_backend_endframe(cwgl_ctx_t* ctx); // FIXME: Define it elsewhere
-void* yfrm_cwgl_pfctx_create_egl(void* pfdev, void* pfwnd);
+void* yfrm_cwgl_pfctx_create_egl(int pftype, void* pfdev, void* pfwnd);
 void yfrm_cwgl_pfctx_reset_egl(void* ctx);
 void yfrm_cwgl_pfctx_flip_egl(void* pf);
 void yfrm_cwgl_pfctx_loadext_egl(void);
@@ -38,7 +38,7 @@ YFRM_API cwgl_ctx_t*
 yfrm_cwgl_ctx_create(int32_t width, int32_t height, int32_t reserved,
                      int32_t flags){
     void* pf;
-    pf = yfrm_cwgl_pfctx_create_egl(0, 0);
+    pf = yfrm_cwgl_pfctx_create_egl(0, 0, 0);
     return (cwgl_ctx_t*)pf;
 }
 
