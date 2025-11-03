@@ -17,7 +17,7 @@ execpath(void){
         goto bailout_none;
     }
     memset(buf0, 0, buf0_len);
-    buf0_siz = GetModuleFileNameW(NULL, buf0, buf0_len);
+    buf0_siz = GetModuleFileNameW(NULL, (wchar_t*)buf0, buf0_len);
     if(buf0_siz <= 0){
         goto bailout_buf0;
     }
@@ -27,9 +27,9 @@ execpath(void){
     /* Pass 1 */
     buf1_siz = WideCharToMultiByte(CP_UTF8,
                                    0,
-                                   buf0,
+                                   (wchar_t*)buf0,
                                    -1 /* Null terminated */,
-                                   NULL, NULL, NULL, NULL);
+                                   NULL, 0, NULL, NULL);
 
     if(buf1_siz > 0){
         buf1 = malloc(buf1_siz);
@@ -39,7 +39,7 @@ execpath(void){
         /* Pass 2 */
         if(!WideCharToMultiByte(CP_UTF8,
                                 0,
-                                buf0,
+                                (wchar_t*)buf0,
                                 -1 /* Null terminated */,
                                 buf1, buf1_siz, NULL, NULL)){
             goto bailout_buf1;
