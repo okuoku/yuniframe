@@ -18,7 +18,10 @@ endif()
 if(YFRM_CWGL_USE_ANGLE)
     list(APPEND backendlibs
         angle_static)
-    if(UNIX)
+    if(APPLE)
+    elseif(WIN32)
+    elseif(ANDROID)
+    elseif(UNIX)
         # FIXME: Move to somewhere
         list(APPEND backendlibs
             xcb
