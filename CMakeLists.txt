@@ -136,6 +136,18 @@ if(YFRM_USE_SDL2)
     target_link_libraries(yfrm PUBLIC ${sdl2libprefix}SDL2-static)
     if("${CMAKE_SYSTEM_NAME}" STREQUAL WindowsStore)
         target_link_libraries(yfrm_main PUBLIC ${sdl2libprefix}SDL2-static)
+    elseif("${CMAKE_SYSTEM_NAME}" STREQUAL Windows)
+        if(MSVC)
+            target_link_libraries(yfrm_main PUBLIC ${sdl2libprefix}SDL2-static 
+                ${sdl2libprefix}SDL2main)
+        else()
+            target_link_libraries(yfrm_main PUBLIC 
+                ${sdl2libprefix}SDL2-static
+                -Wl,--whole-archive
+                ${sdl2libprefix}SDL2main
+                -Wl,--no-whole-archive
+            )
+        endif()
     else()
         target_link_libraries(yfrm_main PUBLIC ${sdl2libprefix}SDL2-static 
             ${sdl2libprefix}SDL2main)
