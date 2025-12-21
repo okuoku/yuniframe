@@ -19,6 +19,8 @@ if(YFRM_CWGL_USE_ANGLE)
     list(APPEND backendlibs
         angle_static)
     if(APPLE)
+        # FIXME: Move to somewhere
+        list(APPEND backendlibs "-framework IOSurface")
     elseif(WIN32)
     elseif(ANDROID)
     elseif(UNIX)
